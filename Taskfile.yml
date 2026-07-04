@@ -1,0 +1,78 @@
+version: "3"
+
+dotenv: ['.env']
+
+vars:
+  MVNW_CMD: '{{if eq OS "windows"}}mvnw.cmd{{else}}./mvnw{{end}}'
+  BACKEND_IMAGE_NAME: kyro-backend
+
+tasks:
+  default:
+    desc: Lists available tasks
+    cmds:
+      - task --list
+
+  install:
+    desc: "Install / download dependencies"
+    cmds:
+      - "{{.MVNW_CMD}} dependency:go-offline"
+
+  dev:
+    desc: "Run Spring Boot Backend in dev profile"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run"
+
+  run:
+    desc: "Run Spring Boot Backend (default)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run"
+
+  build:
+    desc: "Build Backend Jar"
+    cmds:
+      - "{{.MVNW_CMD}} clean package -DskipTests"
+
+  test:
+    desc: "Run Backend Tests"
+    cmds:
+      - "{{.MVNW_CMD}} test"
+
+  check:
+    desc: "Compile test classes to verify compilation"
+    cmds:
+      - "{{.MVNW_CMD}} test-compile"
+
+  verify:
+    desc: "Full build: clean, build, and test everything"
+    cmds:
+      - "{{.MVNW_CMD}} clean verify"
+
+  db:up:
+    desc: "Start local Postgres database using Docker Compose"
+    cmds:
+      - docker compose up -d
+
+  db:down:
+    desc: "Stop local Postgres database"
+    cmds:
+      - docker compose down
+
+  db:down-v:
+    desc: "Stop local Postgres database and remove volumes"
+    cmds:
+      - docker compose down -v
+
+  db:logs:
+    desc: "View local database logs"
+    cmds:
+      - docker compose logs -f
+
+  docker-build:
+    desc: "Build Backend Docker Image"
+    cmds:
+      - docker build -t {{.BACKEND_IMAGE_NAME}}:latest -f Dockerfile .
+
+  docker-run:
+    desc: "Run Backend Docker Container"
+    cmds:
+      - docker run -p 8080:8080 --env-file .env {{.BACKEND_IMAGE_NAME}}:latest

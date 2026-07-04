@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="|Xác nhận đơn hàng #${order.id}|">Xác nhận đơn hàng</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; color: #333; }
+        .container { background-color: #fff; padding: 20px; border-radius: 5px; max-width: 600px; margin: auto; }
+        .header { text-align: center; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+        .header img { max-width: 150px; }
+        .content h2 { color: #333; }
+        .content p { line-height: 1.6; }
+        .order-details table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .order-details th, .order-details td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .order-details th { background-color: #f0f0f0; }
+        .footer { text-align: center; margin-top: 20px; font-size: 0.9em; color: #777; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <img th:src="${companyLogoUrl}" alt="Company Logo" />
+        <h1 th:text="|Đơn hàng #${order.id} đã được đặt thành công!|">Đặt hàng thành công!</h1>
+    </div>
+    <div class="content">
+        <p>Chào <strong th:text="${order.user.firstName} + ' ' + ${order.user.lastName}">Khách hàng</strong>,</p>
+        <p>Cảm ơn bạn đã đặt hàng tại TechShop. Dưới đây là chi tiết đơn hàng của bạn:</p>
+
+        <div class="order-details">
+            <p><strong>Mã đơn hàng:</strong> <span th:text="${order.id}">#ORDER_ID</span></p>
+            <p><strong>Ngày đặt:</strong> <span th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm')}">ORDER_DATE</span></p>
+            <p><strong>Trạng thái đơn hàng:</strong> <span th:text="${order.orderStatus.toString()}">ORDER_STATUS</span></p>
+            <p><strong>Phương thức thanh toán:</strong> <span th:text="${order.paymentMethod != null ? order.paymentMethod.toString() : 'COD'}">PAYMENT_METHOD</span></p>
+            <p><strong>Địa chỉ giao hàng:</strong>
+                <span th:if="${order.shippingAddress}"
+                      th:text="${order.shippingAddress.street + ', ' + order.shippingAddress.ward + ', ' + order.shippingAddress.district + ', ' + order.shippingAddress.province}">
+                        SHIPPING_ADDRESS
+                    </span>
+            </p>
+
+            <h3>Chi tiết sản phẩm:</h3>
+            <table>
+                <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    <th>Số lượng</th>
+                    <th>Đơn giá</th>
+                    <th>Thành tiền</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${order.orderItems}">
+                    <td th:text="${item.product.title}">Tên sản phẩm</td>
+                    <td th:text="${item.quantity}">Số lượng</td>
+                    <td th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">Đơn giá</td>
+                    <td th:text="${#numbers.formatDecimal(item.discountedPrice * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' đ'">Thành tiền</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3 style="text-align: right; margin-top: 20px;">
+                Tổng cộng: <span style="color: #d9534f; font-weight: bold;"
+                                 th:text="${#numbers.formatDecimal(order.totalDiscountedPrice, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                        TOTAL_PRICE
+                    </span>
+            </h3>
+        </div>
+    </div>
+    <div class="footer">
+        <p>Cảm ơn bạn đã tin tưởng và mua sắm tại TechShop!</p>
+        <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua email: techshopprojectteam@gmail.com</p>
+        <p>*Đây là email tự động, vui lòng không trả lời trực tiếp email này.*</p>
+    </div>
+</div>
+</body>
+</html>
