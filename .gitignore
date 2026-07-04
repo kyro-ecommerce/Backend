@@ -43,3 +43,10 @@ src/main/java/com/webanhang/team_project/config/initializer
 
 # Local Environment Variables
 .env
+
+# OS Files
+.DS_Store
+**/.DS_Store
+
+# Postman Collections
+kyro_postman_collection.json
