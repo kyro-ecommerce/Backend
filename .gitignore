@@ -50,3 +50,6 @@ src/main/java/com/webanhang/team_project/config/initializer
 
 # Postman Collections
 kyro_postman_collection.json
+
+.codegraph
+logs

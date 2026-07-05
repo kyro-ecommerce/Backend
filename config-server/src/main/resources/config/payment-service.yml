@@ -1,0 +1,24 @@
+server:
+  port: 8086
+
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/kyro_payment}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+vnpay:
+  tmnCode: ${VNPAY_TMN_CODE:mock_tmn}
+  hashSecret: ${VNPAY_HASH_SECRET:mock_secret}
+  url: ${VNPAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  apiUrl: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/merchant_webapi/api.html}
+  returnUrl: ${VNPAY_RETURN_URL:http://localhost:8080/api/v1/payment/vnpay-callback}

@@ -1,0 +1,60 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        # Route to Auth Service
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**, /api/v1/users/**
+          filters:
+            - StripPrefix=0
+
+        # Route to Cart Service with Authentication Filter
+        - id: cart-service
+          uri: lb://cart-service
+          predicates:
+            - Path=/api/v1/cart/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
+
+        # Route to Catalog Service
+        - id: catalog-service
+          uri: lb://catalog-service
+          predicates:
+            - Path=/api/v1/products/**, /api/v1/categories/**, /api/v1/reviews/**
+          filters:
+            - StripPrefix=0
+
+        # Route to Order Service with Authentication Filter
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/v1/orders/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
+
+        # Route to Payment Service
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/payment/**
+          filters:
+            - StripPrefix=0
+
+        # Fallback Route to Monolith (if anything remains)
+        - id: kyro-monolith
+          uri: lb://kyro-monolith
+          predicates:
+            - Path=/api/v1/**
+          filters:
+            - StripPrefix=0
+
+auth:
+  token:
+    jwtSecret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}

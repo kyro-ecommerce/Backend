@@ -15,5 +15,165 @@ services:
       - ./docker/postgres/init:/docker-entrypoint-initdb.d
     restart: always
 
+  redis:
+    image: redis:7-alpine
+    container_name: kyro-redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: kyro-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: always
+
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: kyro-eureka-server
+    ports:
+      - "8761:8761"
+    restart: always
+
+  config-server:
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    container_name: kyro-config-server
+    ports:
+      - "8888:8888"
+    depends_on:
+      - eureka-server
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    restart: always
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: kyro-api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - config-server
+    environment:
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    restart: always
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: kyro-auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - config-server
+      - postgres
+      - rabbitmq
+    environment:
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DATABASE_URL: jdbc:postgresql://kyro-postgres:5432/postgres
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
+      RABBITMQ_HOST: kyro-rabbitmq
+    restart: always
+
+  catalog-service:
+    build:
+      context: ./catalog-service
+      dockerfile: Dockerfile
+    container_name: kyro-catalog-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - config-server
+      - postgres
+    environment:
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DATABASE_URL: jdbc:postgresql://kyro-postgres:5432/kyro_catalog
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
+    restart: always
+
+  cart-service:
+    build:
+      context: ./cart-service
+      dockerfile: Dockerfile
+    container_name: kyro-cart-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - config-server
+      - redis
+    environment:
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      REDIS_HOST: kyro-redis
+    restart: always
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: kyro-notification-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - config-server
+      - rabbitmq
+    environment:
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      RABBITMQ_HOST: kyro-rabbitmq
+    restart: always
+
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    container_name: kyro-order-service
+    ports:
+      - "8085:8085"
+    depends_on:
+      - config-server
+      - postgres
+      - rabbitmq
+    environment:
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DATABASE_URL: jdbc:postgresql://kyro-postgres:5432/kyro_order
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
+      RABBITMQ_HOST: kyro-rabbitmq
+    restart: always
+
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    container_name: kyro-payment-service
+    ports:
+      - "8086:8086"
+    depends_on:
+      - config-server
+      - postgres
+    environment:
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DATABASE_URL: jdbc:postgresql://kyro-postgres:5432/kyro_payment
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
+    restart: always
+
 volumes:
   kyro_postgres_data:
+

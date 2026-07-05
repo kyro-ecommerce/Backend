@@ -1,0 +1,71 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+api:
+  prefix: /api/v1
+
+spring:
+  flyway:
+    baseline-on-migrate: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        globally_quoted_identifiers: false
+
+auth:
+  token:
+    jwtSecret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    accessExpirationInMils: ${JWT_ACCESS_EXPIRATION_MS:3600000}
+    refreshExpirationInMils: ${JWT_REFRESH_EXPIRATION_MS:86400000}
+
+app:
+  useSecureCookie: ${USE_SECURE_COOKIE:false}
+  otp:
+    expiration-minutes: ${OTP_EXPIRATION_MINUTES:10}
+    resend-cooldown-minutes: ${OTP_RESEND_COOLDOWN_MINUTES:1}
+  company:
+    logo:
+      url: ${COMPANY_LOGO_URL:https://kyro.com/logo.png}
+  oauth2:
+    redirectUri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
+    failureRedirectUri: ${OAUTH2_FAILURE_REDIRECT_URI:http://localhost:3000/login?error=true}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+
+cloudinary:
+  cloudName: ${CLOUDINARY_CLOUD_NAME:mock_cloud}
+  apiKey: ${CLOUDINARY_API_KEY:mock_key}
+  apiSecret: ${CLOUDINARY_API_SECRET:mock_secret}
+  apiSecure: ${CLOUDINARY_API_SECURE:true}
+
+vnpay:
+  tmnCode: ${VNPAY_TMN_CODE:mock_code}
+  hashSecret: ${VNPAY_HASH_SECRET:mock_secret}
+  url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  returnUrl: ${VNPAY_RETURN_URL:http://localhost:8080/api/v1/payment/vnpay-callback}
+
+contact:
+  info:
+    phone: ${CONTACT_PHONE:0123456789}
+    email: ${CONTACT_EMAIL:contact@kyro.com}
+    address: ${CONTACT_ADDRESS:123 Street, City}
+    businessHours: ${CONTACT_BUSINESS_HOURS:9 AM - 6 PM}
+    facebook: ${CONTACT_FACEBOOK:https://facebook.com/kyro}
+    instagram: ${CONTACT_INSTAGRAM:https://instagram.com/kyro}
+    youtube: ${CONTACT_YOUTUBE:https://youtube.com/kyro}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: false

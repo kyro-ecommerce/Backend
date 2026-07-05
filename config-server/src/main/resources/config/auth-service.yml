@@ -1,0 +1,46 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${OAUTH2_GOOGLE_CLIENT_ID:mock-google-client-id}
+            client-secret: ${OAUTH2_GOOGLE_CLIENT_SECRET:mock-google-client-secret}
+            scope: profile,email
+
+auth:
+  token:
+    jwtSecret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    accessExpirationInMils: ${JWT_ACCESS_EXPIRATION_MS:3600000}
+    refreshExpirationInMils: ${JWT_REFRESH_EXPIRATION_MS:86400000}
+
+app:
+  otp:
+    expiration-minutes: ${OTP_EXPIRATION_MINUTES:10}
+    resend-cooldown-minutes: ${OTP_RESEND_COOLDOWN_MINUTES:1}
+  company:
+    logo:
+      url: ${COMPANY_LOGO_URL:https://kyro.com/logo.png}

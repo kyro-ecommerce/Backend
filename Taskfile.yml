@@ -4,7 +4,6 @@ dotenv: ['.env']
 
 vars:
   MVNW_CMD: '{{if eq OS "windows"}}mvnw.cmd{{else}}./mvnw{{end}}'
-  BACKEND_IMAGE_NAME: kyro-backend
 
 tasks:
   default:
@@ -18,14 +17,20 @@ tasks:
       - "{{.MVNW_CMD}} dependency:go-offline"
 
   dev:
-    desc: "Run Spring Boot Backend in dev profile"
+    desc: "Build and Run all Spring Cloud Microservices inside Docker"
     cmds:
-      - "{{.MVNW_CMD}} spring-boot:run"
+      - task: build
+      - docker compose up --build -d
 
   run:
-    desc: "Run Spring Boot Backend (default)"
+    desc: "Run all Spring Cloud Microservices inside Docker (requires build)"
     cmds:
-      - "{{.MVNW_CMD}} spring-boot:run"
+      - docker compose up -d
+
+  stop:
+    desc: "Stop all running docker containers"
+    cmds:
+      - docker compose down
 
   build:
     desc: "Build Backend Jar"
@@ -48,14 +53,14 @@ tasks:
       - "{{.MVNW_CMD}} clean verify"
 
   db:up:
-    desc: "Start local Postgres database using Docker Compose"
+    desc: "Start local Postgres, Redis, and RabbitMQ using Docker Compose"
     cmds:
-      - docker compose up -d
+      - docker compose up -d postgres redis rabbitmq
 
   db:down:
-    desc: "Stop local Postgres database"
+    desc: "Stop local Postgres, Redis, and RabbitMQ"
     cmds:
-      - docker compose down
+      - docker compose stop postgres redis rabbitmq
 
   db:down-v:
     desc: "Stop local Postgres database and remove volumes"
@@ -67,12 +72,16 @@ tasks:
     cmds:
       - docker compose logs -f
 
-  docker-build:
-    desc: "Build Backend Docker Image"
+  format:
+    desc: "Format the Java codebase using Spotless (Google Java Format)"
+    env:
+      MAVEN_OPTS: "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
     cmds:
-      - docker build -t {{.BACKEND_IMAGE_NAME}}:latest -f Dockerfile .
+      - "{{.MVNW_CMD}} spotless:apply"
 
-  docker-run:
-    desc: "Run Backend Docker Container"
+  format:check:
+    desc: "Verify Java codebase formatting using Spotless (Google Java Format)"
+    env:
+      MAVEN_OPTS: "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
     cmds:
-      - docker run -p 8080:8080 --env-file .env {{.BACKEND_IMAGE_NAME}}:latest
+      - "{{.MVNW_CMD}} spotless:check"

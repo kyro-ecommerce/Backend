@@ -1,0 +1,48 @@
+package com.kyro.cart.controller;
+
+import com.kyro.cart.dto.CartDTO;
+import com.kyro.cart.dto.CartItemDTO;
+import com.kyro.cart.service.CartService;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("${api.prefix}/cart")
+public class CartController {
+
+  private final CartService cartService;
+
+  @GetMapping
+  public ResponseEntity<CartDTO> getCart(@RequestHeader("X-User-Id") String userId) {
+    return ResponseEntity.ok(cartService.getCart(userId));
+  }
+
+  @PostMapping("/add")
+  public ResponseEntity<CartDTO> addItemToCart(
+      @RequestHeader("X-User-Id") String userId, @RequestBody CartItemDTO item) {
+    return ResponseEntity.ok(cartService.addItemToCart(userId, item));
+  }
+
+  @PutMapping("/update")
+  public ResponseEntity<CartDTO> updateCartItem(
+      @RequestHeader("X-User-Id") String userId,
+      @RequestParam Long productId,
+      @RequestParam int quantity) {
+    return ResponseEntity.ok(cartService.updateCartItem(userId, productId, quantity));
+  }
+
+  @DeleteMapping("/remove/{productId}")
+  public ResponseEntity<CartDTO> removeItemFromCart(
+      @RequestHeader("X-User-Id") String userId, @PathVariable Long productId) {
+    return ResponseEntity.ok(cartService.removeItemFromCart(userId, productId));
+  }
+
+  @DeleteMapping("/clear")
+  public ResponseEntity<Map<String, String>> clearCart(@RequestHeader("X-User-Id") String userId) {
+    cartService.clearCart(userId);
+    return ResponseEntity.ok(Map.of("message", "Cart cleared successfully"));
+  }
+}
