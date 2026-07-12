@@ -29,6 +29,10 @@ public class AuthenticationFilter
     return (exchange, chain) -> {
       ServerHttpRequest request = exchange.getRequest();
 
+      if (org.springframework.http.HttpMethod.OPTIONS.equals(request.getMethod())) {
+        return chain.filter(exchange);
+      }
+
       String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
       if (authHeader == null) {
         return onError(exchange, "Missing Authorization Header", HttpStatus.UNAUTHORIZED);
