@@ -21,11 +21,14 @@ tasks:
     cmds:
       - task: build
       - docker compose up --build -d
+      - task: logs:ui
 
   run:
     desc: "Run all Spring Cloud Microservices inside Docker (requires build)"
     cmds:
       - docker compose up -d
+      - task: logs:ui
+
 
   stop:
     desc: "Stop all running docker containers"
@@ -71,6 +74,11 @@ tasks:
     desc: "View local database logs"
     cmds:
       - docker compose logs -f
+
+  logs:ui:
+    desc: "Open Dozzle Log UI in default browser"
+    cmds:
+      - open http://localhost:9999
 
   format:
     desc: "Format the Java codebase using Spotless (Google Java Format)"

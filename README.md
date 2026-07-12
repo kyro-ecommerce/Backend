@@ -119,3 +119,5 @@ Dưới đây là bảng tổng hợp các lệnh định nghĩa sẵn trong [Ta
 | `task db:up` | Chỉ khởi động các container hạ tầng (Postgres, Redis, RabbitMQ). |
 | `task db:down` | Dừng các container hạ tầng. |
 | `task db:logs` | Xem log trực tiếp của các container hạ tầng. |
+| `task logs:ui` | Mở giao diện xem log Dozzle trên trình duyệt. |
+
