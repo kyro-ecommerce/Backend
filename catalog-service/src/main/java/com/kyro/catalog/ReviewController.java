@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Controller for product review operations. */
 @RestController
-@RequestMapping("/review")
+@RequestMapping("${api.prefix}/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
 

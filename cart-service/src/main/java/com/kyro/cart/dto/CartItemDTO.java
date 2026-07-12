@@ -1,6 +1,5 @@
 package com.kyro.cart.dto;
 
-import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +10,10 @@ import lombok.NoArgsConstructor;
 public class CartItemDTO {
   private Long productId;
   private String productName;
+  private String productImageUrl;
   private int quantity;
-  private BigDecimal price;
-  private String imageUrl;
+  private int price;
+  private String size;
+  private Integer discountPercent;
+  private Integer discountedPrice;
 }

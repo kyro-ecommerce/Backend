@@ -1,7 +1,9 @@
 package com.kyro.cart.service;
 
+import com.kyro.cart.client.CatalogClient;
 import com.kyro.cart.dto.CartDTO;
 import com.kyro.cart.dto.CartItemDTO;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,8 @@ import org.springframework.stereotype.Service;
 public class CartService {
 
   private final RedisTemplate<String, Object> redisTemplate;
+  private final CatalogClient catalogClient;
+  
   private static final String CART_KEY_PREFIX = "cart:";
   private static final long CART_TTL_DAYS = 30; // Cart expires in 30 days of inactivity
 
@@ -43,9 +47,26 @@ public class CartService {
   public CartDTO addItemToCart(String userId, CartItemDTO item) {
     CartDTO cart = getCart(userId);
 
+    // Fetch product details from Catalog Service
+    CatalogClient.ProductResponse product = catalogClient.getProductById(item.getProductId());
+    if (product == null) {
+      throw new RuntimeException("Sản phẩm với ID " + item.getProductId() + " không tồn tại.");
+    }
+
+    // Populate item details
+    item.setProductName(product.getTitle());
+    item.setPrice(product.getPrice());
+    item.setDiscountPercent(product.getDiscountPersent());
+    item.setDiscountedPrice(product.getDiscountedPrice());
+    if (product.getImages() != null && !product.getImages().isEmpty()) {
+      item.setProductImageUrl(product.getImages().get(0).getDownloadUrl());
+    }
+
+    // Search for existing item with the same productId AND size
     Optional<CartItemDTO> existingItem =
         cart.getItems().stream()
-            .filter(i -> i.getProductId().equals(item.getProductId()))
+            .filter(i -> i.getProductId().equals(item.getProductId()) && 
+                         Objects.equals(i.getSize(), item.getSize()))
             .findFirst();
 
     if (existingItem.isPresent()) {

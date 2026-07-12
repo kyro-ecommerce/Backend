@@ -22,13 +22,31 @@ spring:
             - StripPrefix=0
             - AuthenticationFilter
 
-        # Route to Catalog Service
-        - id: catalog-service
+        # Route to Catalog Service (Public)
+        - id: catalog-service-public
           uri: lb://catalog-service
           predicates:
-            - Path=/api/v1/products/**, /api/v1/categories/**, /api/v1/reviews/**
+            - Path=/api/v1/products/**, /api/v1/categories/**
           filters:
             - StripPrefix=0
+
+        # Route to Catalog Service Reviews (Authenticated)
+        - id: catalog-service-reviews
+          uri: lb://catalog-service
+          predicates:
+            - Path=/api/v1/reviews/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
+
+        # Route to Catalog Service Admin Products (Authenticated)
+        - id: catalog-service-admin
+          uri: lb://catalog-service
+          predicates:
+            - Path=/api/v1/admin/products/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
 
         # Route to Order Service with Authentication Filter
         - id: order-service
@@ -39,13 +57,31 @@ spring:
             - StripPrefix=0
             - AuthenticationFilter
 
-        # Route to Payment Service
-        - id: payment-service
-          uri: lb://payment-service
+        # Route to Order Service Admin (Authenticated)
+        - id: order-service-admin
+          uri: lb://order-service
           predicates:
-            - Path=/api/v1/payment/**
+            - Path=/api/v1/admin/orders/**
           filters:
             - StripPrefix=0
+            - AuthenticationFilter
+
+        # Route to Payment Service (Public Callbacks)
+        - id: payment-service-public
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/payment/vnpay-callback
+          filters:
+            - StripPrefix=0
+
+        # Route to Payment Service (Authenticated)
+        - id: payment-service-authenticated
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/payment/create/**, /api/v1/payment/order/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
 
         # Fallback Route to Monolith (if anything remains)
         - id: kyro-monolith

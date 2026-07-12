@@ -173,6 +173,7 @@ public class UserController {
   }
 
   @GetMapping("/internal/address/{addressId}")
+  @Transactional
   public ResponseEntity<Address> getAddressByIdInternal(
       @PathVariable Long addressId, @RequestParam Long userId) {
     User user = userService.getUserById(userId);

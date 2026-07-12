@@ -15,7 +15,7 @@ public interface UserClient {
    * @param userId user ID
    * @return UserResponse containing user names
    */
-  @GetMapping("/api/v1/auth/users/internal/{userId}")
+  @GetMapping("/api/v1/users/internal/{userId}")
   UserResponse getUserById(@PathVariable("userId") Long userId);
 
   @Data

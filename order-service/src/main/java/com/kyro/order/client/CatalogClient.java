@@ -42,7 +42,7 @@ public interface CatalogClient {
   @Data
   class ImageResponse {
     private Long id;
-    private String imageUrl;
+    private String downloadUrl;
   }
 
   @Data

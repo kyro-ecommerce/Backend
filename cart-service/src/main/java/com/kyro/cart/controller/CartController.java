@@ -40,7 +40,7 @@ public class CartController {
     return ResponseEntity.ok(cartService.removeItemFromCart(userId, productId));
   }
 
-  @DeleteMapping("/clear")
+  @DeleteMapping({"", "/clear"})
   public ResponseEntity<Map<String, String>> clearCart(@RequestHeader("X-User-Id") String userId) {
     cartService.clearCart(userId);
     return ResponseEntity.ok(Map.of("message", "Cart cleared successfully"));

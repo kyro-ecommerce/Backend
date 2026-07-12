@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @FeignClient(name = "auth-service")
 public interface UserClient {
 
-  @GetMapping("/api/v1/auth/users/internal/address/{addressId}")
+  @GetMapping("/api/v1/users/internal/address/{addressId}")
   AddressResponse getAddressById(
       @PathVariable("addressId") Long addressId, @RequestParam("userId") Long userId);
 

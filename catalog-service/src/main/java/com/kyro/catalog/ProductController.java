@@ -64,9 +64,9 @@ public class ProductController {
   }
 
   @GetMapping("/internal/{productId}")
-  public ResponseEntity<Product> getProductByIdInternal(@PathVariable Long productId) {
+  public ResponseEntity<com.kyro.catalog.dto.ProductInternalResponse> getProductByIdInternal(@PathVariable Long productId) {
     Product product = productService.findProductById(productId);
-    return ResponseEntity.ok(product);
+    return ResponseEntity.ok(new com.kyro.catalog.dto.ProductInternalResponse(product));
   }
 
   @PostMapping("/internal/decrease-stock")

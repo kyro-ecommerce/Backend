@@ -140,7 +140,7 @@ public class OrderService {
       orderItem.setProductId(cartItem.getProductId());
       orderItem.setProductName(product.getTitle());
       if (product.getImages() != null && !product.getImages().isEmpty()) {
-        orderItem.setProductImageUrl(product.getImages().get(0).getImageUrl());
+        orderItem.setProductImageUrl(product.getImages().get(0).getDownloadUrl());
       }
       orderItem.setQuantity(orderedQuantity);
       orderItem.setPrice(cartItem.getPrice());
