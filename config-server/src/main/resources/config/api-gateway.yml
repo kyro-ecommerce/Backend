@@ -105,20 +105,21 @@ auth:
 springdoc:
   api-docs:
     enabled: true
-  scalar:
-    enabled: true
-  swagger-ui:
-    urls:
-      - name: Auth Service
-        url: /auth-service/v3/api-docs
-      - name: Catalog Service
-        url: /catalog-service/v3/api-docs
-      - name: Cart Service
-        url: /cart-service/v3/api-docs
-      - name: Order Service
-        url: /order-service/v3/api-docs
-      - name: Payment Service
-        url: /payment-service/v3/api-docs
-      - name: Notification Service
-        url: /notification-service/v3/api-docs
+
+scalar:
+  enabled: true
+  sources:
+    - title: Auth Service
+      url: /auth-service/v3/api-docs
+    - title: Catalog Service
+      url: /catalog-service/v3/api-docs
+    - title: Cart Service
+      url: /cart-service/v3/api-docs
+    - title: Order Service
+      url: /order-service/v3/api-docs
+    - title: Payment Service
+      url: /payment-service/v3/api-docs
+    - title: Notification Service
+      url: /notification-service/v3/api-docs
+
 
