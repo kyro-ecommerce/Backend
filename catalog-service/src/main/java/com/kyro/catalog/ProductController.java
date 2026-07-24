@@ -16,7 +16,7 @@ public class ProductController {
 
   private final ProductService productService;
 
-  @GetMapping("/")
+  @GetMapping({"", "/"})
   public ResponseEntity<List<ProductDTO>> findProductsByFilter(
       @RequestParam(required = false) String topLevelCategory,
       @RequestParam(required = false) String secondLevelCategory,

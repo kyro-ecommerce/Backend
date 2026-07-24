@@ -40,7 +40,7 @@ app:
     failureRedirectUri: ${OAUTH2_FAILURE_REDIRECT_URI:http://localhost:3000/login?error=true}
 
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:8080,http://localhost:5174}
 
 cloudinary:
   cloudName: ${CLOUDINARY_CLOUD_NAME:mock_cloud}

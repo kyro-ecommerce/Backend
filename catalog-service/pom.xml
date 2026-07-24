@@ -54,6 +54,12 @@
             </exclusions>
         </dependency>
 
+        <!-- RabbitMQ — for publishing product events to AI Service -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
         <!-- Spring Cloud Starters -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

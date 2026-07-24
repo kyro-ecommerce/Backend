@@ -2,7 +2,7 @@ name: kyro-backend
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: kyro-postgres
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
@@ -172,6 +172,27 @@ services:
       DATABASE_URL: jdbc:postgresql://kyro-postgres:5432/kyro_payment
       DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
+    restart: always
+
+  ai-service:
+    build:
+      context: ../ai-service
+      dockerfile: Dockerfile
+    container_name: kyro-ai-service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      DATABASE_URL: postgresql+psycopg://${DATABASE_USERNAME:-postgres}:${DATABASE_PASSWORD:-postgres_password}@kyro-postgres:5432/postgres
+      RABBITMQ_URL: amqp://guest:guest@kyro-rabbitmq:5672/
+      RABBITMQ_HOST: kyro-rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-""}
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     restart: always
 
   dozzle:

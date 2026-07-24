@@ -15,9 +15,19 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
 cloudinary:
   cloudName: ${CLOUDINARY_CLOUD_NAME:mock_cloud}
   apiKey: ${CLOUDINARY_API_KEY:mock_key}
   apiSecret: ${CLOUDINARY_API_SECRET:mock_secret}
   apiSecure: ${CLOUDINARY_API_SECURE:true}
+
+# Product event exchange for AI Service synchronization
+product:
+  events:
+    exchange: product.events

@@ -72,6 +72,7 @@ public class SecurityConfig {
     List<String> securedUrls = List.of(API + "/cart/**", API + "/cartItems/**", API + "/orders/**");
 
     http.csrf(AbstractHttpConfigurer::disable)
+        .cors(AbstractHttpConfigurer::disable)
         .exceptionHandling(
             exception ->
                 exception

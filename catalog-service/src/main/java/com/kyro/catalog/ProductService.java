@@ -2,6 +2,7 @@ package com.kyro.catalog;
 
 import com.kyro.catalog.dto.CreateProductRequest;
 import com.kyro.catalog.dto.ProductDTO;
+import com.kyro.catalog.messaging.ProductEventPublisher;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -25,6 +26,7 @@ public class ProductService {
   private final CategoryRepository categoryRepository;
   private final ReviewRepository reviewRepository;
   private final ImageService imageService;
+  private final ProductEventPublisher productEventPublisher;
 
   @Transactional
   public Product createProduct(CreateProductRequest req) {
@@ -105,7 +107,10 @@ public class ProductService {
       product.setImages(req.getImageUrls());
     }
 
-    return productRepository.save(product);
+    Product savedProduct = productRepository.save(product);
+    // Publish event so AI Service can index this new product
+    productEventPublisher.publishProductCreated(savedProduct);
+    return savedProduct;
   }
 
   @Transactional
@@ -285,6 +290,8 @@ public class ProductService {
 
     imageService.deleteAllProductImages(productId);
     productRepository.delete(product);
+    // Publish DELETED event so AI Service deactivates this product in its index
+    productEventPublisher.publishProductDeleted(productId);
   }
 
   @Transactional(readOnly = true)
@@ -494,6 +501,8 @@ public class ProductService {
       curProduct.setCategory(category);
     }
     Product updatedProduct = productRepository.save(curProduct);
+    // Publish event so AI Service updates its search index
+    productEventPublisher.publishProductUpdated(updatedProduct);
     return new ProductDTO(updatedProduct);
   }
 

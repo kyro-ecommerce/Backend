@@ -26,6 +26,11 @@ public class AdminProductController {
     return ResponseEntity.status(HttpStatus.CREATED).body(product);
   }
 
+  @GetMapping("/{productId}")
+  public ResponseEntity<ProductDTO> getProductById(@PathVariable Long productId) {
+    return ResponseEntity.ok(new ProductDTO(productService.findProductById(productId)));
+  }
+
   @DeleteMapping("/{productId}/delete")
   public ResponseEntity<Map<String, String>> deleteProduct(@PathVariable Long productId) {
     productService.adminDeleteProduct(productId);
