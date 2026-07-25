@@ -15,44 +15,51 @@ Dự án sử dụng **Docker Compose** và **Taskfile** (`task`) để tối gi
   * Windows (via Scoop): `scoop install task`
   * Hoặc bạn có thể chạy trực tiếp các lệnh docker/maven tương ứng.
 
-### 🚀 Khởi Chạy Dự Án
+### 🚀 Quy Trình Phát Triển Nhanh (Fast Local Dev Workflow)
 
-#### Cách 1: Sử dụng Taskfile (Khuyên Dùng)
-1. **Build và Khởi Chạy lần đầu tiên:**
-   ```bash
-   task dev
-   ```
-   *Lệnh này sẽ biên dịch mã nguồn Java, đóng gói file JAR và build các Docker Image cho 9 microservice, sau đó khởi chạy tất cả container.*
+> [!TIP]
+> **Không nên chạy `task dev` khi bạn đang liên tục viết/sửa code hàng ngày!** `task dev` sẽ xóa target, rebuild 10 file JAR và build lại toàn bộ Docker containers (tốn 1-3 phút).
+> Để phát triển nhanh với **Hot Reloading (chỉ tốn 1-2 giây khi lưu file)**, hãy áp dụng quy trình chuẩn sau:
 
-2. **Chỉ khởi chạy lại các container đã build:**
-   ```bash
-   task run
-   ```
+#### ⚡ Bước 1: Khởi động Hạ Tầng & API Gateway (Chạy 1 lần duy nhất)
+Bật các container hạ tầng cơ bản (DB, Redis, RabbitMQ, Discovery, Config, Gateway) ở background:
+```bash
+task infra
+```
+*(Các container này khởi động 1 lần và tiếp tục chạy ngầm, bạn không cần dừng hay rebuild lại).*
 
-3. **Dừng toàn bộ hệ thống:**
-   ```bash
-   task stop
-   ```
+#### ⚡ Bước 2: Chạy Service bạn đang viết code bằng Hot-Reload Mode
+Khi bạn đang viết/sửa code ở một microservice cụ thể (ví dụ `auth-service` hay `catalog-service`), hãy chạy trực tiếp service đó bằng lệnh `task dev:<service>`:
 
-4. **Xóa toàn bộ container và dữ liệu DB (nếu cần reset hoàn toàn):**
-   ```bash
-   task clean
-   ```
+```bash
+# Code & Hot-reload cho Auth Service
+task dev:auth
 
-#### Cách 2: Sử dụng Docker Compose Thủ Công
-Nếu chưa cài đặt `task`, bạn có thể thực hiện theo các bước sau:
-1. **Biên dịch và đóng gói JAR cho dự án:**
-   ```bash
-   ./mvnw clean package -DskipTests
-   ```
-2. **Khởi chạy container và build image:**
-   ```bash
-   docker compose up --build -d
-   ```
-3. **Dừng container:**
-   ```bash
-   docker compose down
-   ```
+# Hoặc code & Hot-reload cho Catalog Service
+task dev:catalog
+
+# Các service khác tương tự: task dev:cart, task dev:order, task dev:payment, task dev:notification
+```
+
+🔥 **Lợi ích**: Nhờ vào **Spring Boot DevTools**, mỗi khi bạn sửa code Java và nhấn **Save (`Ctrl + S` / `Cmd + S`)**, ứng dụng sẽ **tự động Hot-Reload lại chỉ trong 1-2 giây** mà KHÔNG cần dừng container hay rebuild Docker!
+
+---
+
+### 🐳 Danh Sách Lệnh Thao Tác (Task Commands)
+
+| Lệnh `task` | Mô tả chi tiết | Thời gian |
+| :--- | :--- | :--- |
+| `task infra` | **[KHUYÊN DÙNG]** Bật toàn bộ hạ tầng ngầm (Postgres, Redis, RabbitMQ, Eureka, Config, Gateway). | ⚡ Chạy 1 lần |
+| `task dev:auth` | **[KHUYÊN DÙNG]** Chạy `auth-service` ở máy cục bộ với **Hot Reload 1s**. | ⚡ 1 - 2 giây |
+| `task dev:catalog` | **[KHUYÊN DÙNG]** Chạy `catalog-service` ở máy cục bộ với **Hot Reload 1s**. | ⚡ 1 - 2 giây |
+| `task dev:cart` | Chạy `cart-service` ở máy cục bộ với **Hot Reload 1s**. | ⚡ 1 - 2 giây |
+| `task dev:order` | Chạy `order-service` ở máy cục bộ với **Hot Reload 1s**. | ⚡ 1 - 2 giây |
+| `task dev:payment` | Chạy `payment-service` ở máy cục bộ với **Hot Reload 1s**. | ⚡ 1 - 2 giây |
+| `task dev:notification` | Chạy `notification-service` ở máy cục bộ với **Hot Reload 1s**. | ⚡ 1 - 2 giây |
+| `task dev` | Build lại toàn bộ 10 JAR và rebuild TẤT CẢ Docker Containers (Dùng cho full test/release). | 🐢 1 - 3 phút |
+| `task run` | Bật lại tất cả container Docker đã build sẵn. | 🐢 30 giây |
+| `task stop` | Dừng tất cả container Docker đang chạy. | ⚡ Instant |
+| `task format` | Tự động căn chỉnh định dạng code theo Google Java Format. | ⚡ Instant |
 
 ---
 

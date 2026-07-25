@@ -77,13 +77,21 @@ services:
       - config-server
       - postgres
       - rabbitmq
+    env_file:
+      - .env
     environment:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      DATABASE_URL: jdbc:postgresql://kyro-postgres:5432/postgres
+      DATABASE_URL: jdbc:postgresql://kyro-postgres:5432/kyro_auth
       DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
       RABBITMQ_HOST: kyro-rabbitmq
+      OAUTH2_GOOGLE_CLIENT_ID: ${OAUTH2_GOOGLE_CLIENT_ID}
+      OAUTH2_GOOGLE_CLIENT_SECRET: ${OAUTH2_GOOGLE_CLIENT_SECRET}
+      OAUTH2_GITHUB_CLIENT_ID: ${OAUTH2_GITHUB_CLIENT_ID}
+      OAUTH2_GITHUB_CLIENT_SECRET: ${OAUTH2_GITHUB_CLIENT_SECRET}
+      OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI:-http://localhost:5173/oauth2/redirect}
+      OAUTH2_FAILURE_REDIRECT_URI: ${OAUTH2_FAILURE_REDIRECT_URI:-http://localhost:5173/login?error=true}
     restart: always
 
   catalog-service:

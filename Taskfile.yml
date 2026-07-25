@@ -21,13 +21,11 @@ tasks:
     cmds:
       - task: build
       - docker compose up --build -d
-      - task: logs:ui
 
   run:
     desc: "Run all Spring Cloud Microservices inside Docker (requires build)"
     cmds:
       - docker compose up -d
-      - task: logs:ui
 
 
   stop:
@@ -54,6 +52,41 @@ tasks:
     desc: "Full build: clean, build, and test everything"
     cmds:
       - "{{.MVNW_CMD}} clean verify"
+
+  infra:
+    desc: "Start Core Infrastructure & Gateway (Postgres, Redis, RabbitMQ, Eureka, Config, Gateway)"
+    cmds:
+      - docker compose up -d postgres redis rabbitmq eureka-server config-server api-gateway
+
+  dev:auth:
+    desc: "Run auth-service locally with Hot-Reload (Fast Dev Mode)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run -pl auth-service"
+
+  dev:catalog:
+    desc: "Run catalog-service locally with Hot-Reload (Fast Dev Mode)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run -pl catalog-service"
+
+  dev:cart:
+    desc: "Run cart-service locally with Hot-Reload (Fast Dev Mode)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run -pl cart-service"
+
+  dev:order:
+    desc: "Run order-service locally with Hot-Reload (Fast Dev Mode)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run -pl order-service"
+
+  dev:payment:
+    desc: "Run payment-service locally with Hot-Reload (Fast Dev Mode)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run -pl payment-service"
+
+  dev:notification:
+    desc: "Run notification-service locally with Hot-Reload (Fast Dev Mode)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run -pl notification-service"
 
   db:up:
     desc: "Start local Postgres, Redis, and RabbitMQ using Docker Compose"

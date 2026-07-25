@@ -107,7 +107,7 @@ public class SecurityConfig {
                     .hasAnyAuthority("CUSTOMER")
                     .requestMatchers(securedUrls.toArray(String[]::new))
                     .authenticated()
-                    .requestMatchers("/oauth2/**")
+                    .requestMatchers("/oauth2/**", "/login/oauth2/code/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
