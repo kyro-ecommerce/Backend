@@ -1,11 +1,12 @@
 server:
   port: 8081
+  forward-headers-strategy: framework
   servlet:
     context-path: /
 
 spring:
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/postgres}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/kyro_auth}
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:postgres_password}
     driver-class-name: org.postgresql.Driver
@@ -30,6 +31,10 @@ spring:
             client-id: ${OAUTH2_GOOGLE_CLIENT_ID:mock-google-client-id}
             client-secret: ${OAUTH2_GOOGLE_CLIENT_SECRET:mock-google-client-secret}
             scope: profile,email
+          github:
+            client-id: ${OAUTH2_GITHUB_CLIENT_ID:mock-github-client-id}
+            client-secret: ${OAUTH2_GITHUB_CLIENT_SECRET:mock-github-client-secret}
+            scope: user:email, read:user
 
 auth:
   token:
