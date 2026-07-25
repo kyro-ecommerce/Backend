@@ -59,6 +59,11 @@ public class OrderService {
 
   @Transactional
   public List<Order> placeOrder(Long addressId, Long userId, String userEmail) {
+    return placeOrder(addressId, userId, userEmail, PaymentMethod.COD);
+  }
+
+  @Transactional
+  public List<Order> placeOrder(Long addressId, Long userId, String userEmail, PaymentMethod paymentMethod) {
     if (userId == null) {
       log.error("User ID is null when placing order.");
       throw new IllegalArgumentException("Thông tin người dùng không hợp lệ.");
@@ -114,7 +119,7 @@ public class OrderService {
     order.setShippingAddress(shippingAddress);
     order.setOrderStatus(OrderStatus.PENDING);
     order.setPaymentStatus(PaymentStatus.PENDING);
-    order.setPaymentMethod(PaymentMethod.COD);
+    order.setPaymentMethod(paymentMethod != null ? paymentMethod : PaymentMethod.COD);
 
     order.setOriginalPrice(totalOriginalPrice);
     order.setTotalItems(totalItemsCount);

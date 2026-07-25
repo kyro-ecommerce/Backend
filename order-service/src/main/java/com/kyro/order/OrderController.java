@@ -1,6 +1,7 @@
 package com.kyro.order;
 
 import com.kyro.enums.OrderStatus;
+import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
 import com.kyro.exceptions.DomainException;
 import com.kyro.order.dto.OrderDTO;
@@ -42,9 +43,10 @@ public class OrderController {
   public ResponseEntity<Map<String, Object>> createOrder(
       @RequestHeader("X-User-Id") Long userId,
       @RequestHeader("X-User-Email") String userEmail,
-      @PathVariable("addressId") Long addressId) {
+      @PathVariable("addressId") Long addressId,
+      @RequestParam(value = "paymentMethod", required = false) PaymentMethod paymentMethod) {
 
-    List<Order> orders = orderService.placeOrder(addressId, userId, userEmail);
+    List<Order> orders = orderService.placeOrder(addressId, userId, userEmail, paymentMethod);
 
     List<OrderDTO> orderDTOs = orders.stream().map(OrderDTO::new).collect(Collectors.toList());
 

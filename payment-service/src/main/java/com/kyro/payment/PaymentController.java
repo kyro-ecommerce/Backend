@@ -5,6 +5,7 @@ import com.kyro.payment.client.OrderClient;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("${api.prefix}/payment")
+@Slf4j
 public class PaymentController {
 
   private final PaymentService paymentService;
@@ -25,12 +27,17 @@ public class PaymentController {
   /** Creates a VNPay checkout URL for an order. */
   @PostMapping("/create/{orderId}")
   public ResponseEntity<Map<String, Object>> createPayment(
-      @RequestHeader("X-User-Id") Long userId, @PathVariable Long orderId) {
+      @RequestHeader(value = "X-User-Id", required = false) Long userId, @PathVariable Long orderId) {
 
-    // Fetch order detail from order-service via FeignClient
-    OrderClient.OrderResponse order = orderClient.getOrderById(orderId);
+    OrderClient.OrderResponse order = null;
+    try {
+      order = orderClient.getOrderById(orderId);
+    } catch (Exception e) {
+      log.error("Lỗi khi lấy thông tin đơn hàng từ order-service cho orderId {}: ", orderId, e);
+      throw new DomainException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng với ID: " + orderId);
+    }
     if (order == null) {
-      throw new DomainException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng");
+      throw new DomainException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng với ID: " + orderId);
     }
 
     // Verify order ownership

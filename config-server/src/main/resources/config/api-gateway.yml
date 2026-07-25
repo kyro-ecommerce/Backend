@@ -98,7 +98,7 @@ spring:
         - id: payment-service-authenticated
           uri: lb://payment-service
           predicates:
-            - Path=/api/v1/payment/create/**, /api/v1/payment/order/**
+            - Path=/api/v1/payment/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter

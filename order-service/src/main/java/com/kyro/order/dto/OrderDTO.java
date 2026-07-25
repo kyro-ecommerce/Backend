@@ -1,5 +1,6 @@
 package com.kyro.order.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.kyro.enums.OrderStatus;
 import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
@@ -19,7 +20,9 @@ public class OrderDTO {
   private Integer totalDiscountedPrice;
   private int discount;
   private int totalItems;
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime orderDate;
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime deliveryDate;
   private Integer originalPrice;
   private AddressDTO shippingAddress;

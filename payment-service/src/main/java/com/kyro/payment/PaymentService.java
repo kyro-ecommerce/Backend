@@ -61,7 +61,8 @@ public class PaymentService {
       String vnp_OrderInfo = "Thanh toan don hang #" + orderId;
       String vnp_OrderType = "other";
       String vnp_IpAddr = getIpAddress();
-      long amount = order.getTotalDiscountedPrice() * 100L;
+      int totalAmount = order.getTotalDiscountedPrice() != null ? order.getTotalDiscountedPrice() : 0;
+      long amount = (long) totalAmount * 100L;
 
       Map<String, String> vnp_Params = new HashMap<>();
       vnp_Params.put("vnp_Version", "2.1.0");
@@ -86,14 +87,19 @@ public class PaymentService {
       vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
       vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
 
-      // Create PaymentDetail record
-      PaymentDetail paymentDetail = new PaymentDetail();
+      // Find existing PaymentDetail or create a new record to avoid unique order_id constraint violation
+      PaymentDetail paymentDetail =
+          paymentRepository.findByOrderId(orderId).orElseGet(PaymentDetail::new);
+
       paymentDetail.setOrderId(orderId);
       paymentDetail.setPaymentMethod(PaymentMethod.VNPAY);
       paymentDetail.setPaymentStatus(PaymentStatus.PENDING);
-      paymentDetail.setTotalAmount(order.getTotalDiscountedPrice());
+      paymentDetail.setTotalAmount(totalAmount);
       paymentDetail.setTransactionId(vnp_TxnRef);
-      paymentDetail.setCreatedAt(LocalDateTime.now());
+      if (paymentDetail.getCreatedAt() == null) {
+        paymentDetail.setCreatedAt(LocalDateTime.now());
+      }
+      paymentDetail.setUpdatedAt(LocalDateTime.now());
 
       List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
       Collections.sort(fieldNames);
@@ -186,13 +192,23 @@ public class PaymentService {
   }
 
   private String getIpAddress() {
-    HttpServletRequest request =
-        ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-    String ipAddress = request.getHeader("X-FORWARDED-FOR");
-    if (ipAddress == null || ipAddress.isEmpty()) {
-      ipAddress = request.getRemoteAddr();
+    try {
+      HttpServletRequest request =
+          ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+      String ipAddress = request.getHeader("X-FORWARDED-FOR");
+      if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+        ipAddress = request.getRemoteAddr();
+      }
+      if (ipAddress != null && ipAddress.contains(",")) {
+        ipAddress = ipAddress.split(",")[0].trim();
+      }
+      if (ipAddress == null || ipAddress.isEmpty() || "0:0:0:0:0:0:0:1".equals(ipAddress) || "::1".equals(ipAddress)) {
+        ipAddress = "127.0.0.1";
+      }
+      return ipAddress;
+    } catch (Exception e) {
+      return "127.0.0.1";
     }
-    return ipAddress;
   }
 
   private String hmacSHA512(String key, String data) {

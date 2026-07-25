@@ -131,7 +131,7 @@ public class UserController {
 
   @PostMapping("/addresses")
   @Transactional
-  public ResponseEntity<Map<String, String>> addUserAddress(
+  public ResponseEntity<AddressDTO> addUserAddress(
       @RequestHeader("Authorization") String jwt, @RequestBody AddAddressRequest req) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || authentication.getName() == null) {
@@ -143,8 +143,8 @@ public class UserController {
       throw new DomainException(HttpStatus.NOT_FOUND, "User not found for email: " + email);
     }
 
-    userService.addUserAddress(user, req);
-    return ResponseEntity.ok(Map.of("message", "Address added successfully"));
+    AddressDTO createdAddress = userService.addUserAddress(user, req);
+    return ResponseEntity.ok(createdAddress);
   }
 
   @PostMapping("/change-role")

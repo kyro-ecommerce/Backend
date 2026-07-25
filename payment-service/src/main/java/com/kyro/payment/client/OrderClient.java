@@ -1,6 +1,9 @@
 package com.kyro.payment.client;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +21,9 @@ public interface OrderClient {
   void updatePaymentStatus(@PathVariable("id") Long orderId, @RequestParam("status") String status);
 
   @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @JsonIgnoreProperties(ignoreUnknown = true)
   class OrderResponse {
     private Long id;
     private Integer totalDiscountedPrice;
@@ -25,3 +31,4 @@ public interface OrderClient {
     private String paymentMethod;
   }
 }
+
