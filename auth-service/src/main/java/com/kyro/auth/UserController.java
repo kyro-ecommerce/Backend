@@ -154,8 +154,8 @@ public class UserController {
     User user = userService.findUserByJwt(jwt);
 
     String targetRole = request.getRole().toUpperCase();
-    if (!targetRole.equals("CUSTOMER") && !targetRole.equals("SELLER")) {
-      throw new IllegalArgumentException("Invalid role. Only CUSTOMER or SELLER are supported");
+    if (!targetRole.equals("CUSTOMER")) {
+      throw new IllegalArgumentException("Invalid role. Only CUSTOMER is supported");
     }
 
     if (user.getRole().getName().name().equals(targetRole)) {
