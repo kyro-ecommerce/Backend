@@ -147,6 +147,35 @@ public class UserController {
     return ResponseEntity.ok(createdAddress);
   }
 
+  @PutMapping("/addresses/{addressId}")
+  @Transactional
+  public ResponseEntity<AddressDTO> updateAddress(
+      @PathVariable("addressId") Long addressId,
+      @RequestHeader("Authorization") String jwt,
+      @RequestBody AddAddressRequest req) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || authentication.getName() == null) {
+      throw new DomainException(HttpStatus.UNAUTHORIZED, "Authentication failed");
+    }
+    String email = authentication.getName();
+    AddressDTO updatedAddress = userService.updateAddress(addressId, req, email);
+    return ResponseEntity.ok(updatedAddress);
+  }
+
+  @DeleteMapping("/addresses/{addressId}")
+  @Transactional
+  public ResponseEntity<Map<String, String>> deleteAddress(
+      @PathVariable("addressId") Long addressId,
+      @RequestHeader("Authorization") String jwt) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || authentication.getName() == null) {
+      throw new DomainException(HttpStatus.UNAUTHORIZED, "Authentication failed");
+    }
+    String email = authentication.getName();
+    userService.deleteAddress(addressId, email);
+    return ResponseEntity.ok(Map.of("message", "Address deleted successfully"));
+  }
+
   @PostMapping("/change-role")
   public ResponseEntity<BasicUserDTO> changeUserRole(
       @RequestHeader("Authorization") String jwt, @RequestBody ChangeRoleRequest request) {

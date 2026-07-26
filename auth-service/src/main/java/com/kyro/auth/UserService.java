@@ -187,6 +187,56 @@ public class UserService {
   }
 
   @Transactional
+  public AddressDTO updateAddress(Long addressId, AddAddressRequest request, String email) {
+    User user = userRepository.findByEmail(email);
+    if (user == null) {
+      throw new EntityNotFoundException("User not found: " + email);
+    }
+    Address address = addressRepository.findById(addressId)
+        .orElseThrow(() -> new EntityNotFoundException("Address not found with ID: " + addressId));
+
+    if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
+      address.setFullName(request.getFullName().trim());
+    }
+    if (request.getProvince() != null && !request.getProvince().trim().isEmpty()) {
+      address.setProvince(request.getProvince().trim());
+    }
+    if (request.getDistrict() != null && !request.getDistrict().trim().isEmpty()) {
+      address.setDistrict(request.getDistrict().trim());
+    }
+    if (request.getWard() != null && !request.getWard().trim().isEmpty()) {
+      address.setWard(request.getWard().trim());
+    }
+    if (request.getStreet() != null && !request.getStreet().trim().isEmpty()) {
+      address.setStreet(request.getStreet().trim());
+    }
+    if (request.getNote() != null) {
+      address.setNote(request.getNote());
+    }
+    if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty()) {
+      address.setPhoneNumber(request.getPhoneNumber().trim());
+    }
+
+    Address updated = addressRepository.save(address);
+    return new AddressDTO(updated);
+  }
+
+  @Transactional
+  public void deleteAddress(Long addressId, String email) {
+    User user = userRepository.findByEmail(email);
+    if (user == null) {
+      throw new EntityNotFoundException("User not found: " + email);
+    }
+    Address address = addressRepository.findById(addressId)
+        .orElseThrow(() -> new EntityNotFoundException("Address not found with ID: " + addressId));
+
+    if (user.getAddress() != null) {
+      user.getAddress().removeIf(a -> a.getId() != null && a.getId().equals(addressId));
+    }
+    addressRepository.delete(address);
+  }
+
+  @Transactional
   public BasicUserDTO changeUserRole(Long userId, String roleName) {
     User user =
         userRepository

@@ -68,8 +68,8 @@ services:
 
   auth-service:
     build:
-      context: ./auth-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: auth-service/Dockerfile
     container_name: kyro-auth-service
     ports:
       - "8081:8081"
