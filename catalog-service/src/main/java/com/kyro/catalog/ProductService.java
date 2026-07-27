@@ -191,6 +191,7 @@ public class ProductService {
     return productRepository.findProductsByTopAndSecondCategoryNames(topCategory, secondCategory);
   }
 
+  @Transactional(readOnly = true)
   public Page<ProductDTO> getProductsWithFilter(
       Pageable pageable, FilterProduct filter, String status) {
 

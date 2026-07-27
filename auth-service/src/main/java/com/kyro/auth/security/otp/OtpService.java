@@ -157,11 +157,19 @@ public class OtpService {
     }
   }
 
-  @Getter
-  @AllArgsConstructor
   private static class OtpData {
     private final String otp;
     private final LocalDateTime expirationTime;
     private final LocalDateTime generationTime;
+
+    public OtpData(String otp, LocalDateTime expirationTime, LocalDateTime generationTime) {
+      this.otp = otp;
+      this.expirationTime = expirationTime;
+      this.generationTime = generationTime;
+    }
+
+    public String getOtp() { return otp; }
+    public LocalDateTime getExpirationTime() { return expirationTime; }
+    public LocalDateTime getGenerationTime() { return generationTime; }
   }
 }

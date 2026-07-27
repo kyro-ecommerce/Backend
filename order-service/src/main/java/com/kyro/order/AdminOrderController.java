@@ -65,6 +65,18 @@ public class AdminOrderController {
     return ResponseEntity.ok(Map.of("message", "Hủy đơn hàng thành công"));
   }
 
+  @PutMapping("/{orderId}/status")
+  public ResponseEntity<Map<String, String>> updateOrderStatus(
+      @PathVariable Long orderId, @RequestBody Map<String, String> body) {
+    String statusStr = body.get("status");
+    if (statusStr == null || statusStr.trim().isEmpty()) {
+      return ResponseEntity.badRequest().body(Map.of("message", "Trạng thái không hợp lệ"));
+    }
+    OrderStatus status = OrderStatus.valueOf(statusStr.trim().toUpperCase());
+    orderService.updateOrderStatus(orderId, status);
+    return ResponseEntity.ok(Map.of("message", "Cập nhật trạng thái đơn hàng thành công"));
+  }
+
   @DeleteMapping("/{orderId}")
   public ResponseEntity<Map<String, String>> deleteOrder(@PathVariable Long orderId) {
     orderService.deleteOrder(orderId);

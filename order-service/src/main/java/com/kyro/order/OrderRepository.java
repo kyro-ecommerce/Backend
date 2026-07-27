@@ -43,12 +43,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
   @Query(
       "SELECT o FROM Order o WHERE "
-          + "(:search IS NULL OR "
+          + "(:search IS NULL OR :search = '' OR "
           + "LOWER(o.userEmail) LIKE LOWER(CONCAT('%', :search, '%')) OR "
           + "CAST(o.id AS string) LIKE CONCAT('%', :search, '%')) "
           + "AND (:status IS NULL OR o.orderStatus = :status) "
-          + "AND (:startDate IS NULL OR o.orderDate >= :startDate) "
-          + "AND (:endDate IS NULL OR o.orderDate <= :endDate)")
+          + "AND (CAST(:startDate AS timestamp) IS NULL OR o.orderDate >= :startDate) "
+          + "AND (CAST(:endDate AS timestamp) IS NULL OR o.orderDate <= :endDate)")
   Page<Order> findAdminOrdersWithFilters(
       @Param("search") String search,
       @Param("status") OrderStatus status,
@@ -58,8 +58,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
   @Query(
       "SELECT COUNT(o) FROM Order o WHERE "
-          + "(:startDate IS NULL OR o.orderDate >= :startDate) "
-          + "AND (:endDate IS NULL OR o.orderDate <= :endDate) "
+          + "(CAST(:startDate AS timestamp) IS NULL OR o.orderDate >= :startDate) "
+          + "AND (CAST(:endDate AS timestamp) IS NULL OR o.orderDate <= :endDate) "
           + "AND (:status IS NULL OR o.orderStatus = :status)")
   Long countOrdersByStatusAndDateRange(
       @Param("status") OrderStatus status,
@@ -68,8 +68,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
   @Query(
       "SELECT SUM(o.totalDiscountedPrice) FROM Order o WHERE "
-          + "(:startDate IS NULL OR o.orderDate >= :startDate) "
-          + "AND (:endDate IS NULL OR o.orderDate <= :endDate) "
+          + "(CAST(:startDate AS timestamp) IS NULL OR o.orderDate >= :startDate) "
+          + "AND (CAST(:endDate AS timestamp) IS NULL OR o.orderDate <= :endDate) "
           + "AND o.orderStatus = 'DELIVERED'")
   Double sumRevenueByDateRange(
       @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);

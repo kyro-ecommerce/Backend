@@ -30,8 +30,8 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class OAuth2UserService extends DefaultOAuth2UserService {
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(OAuth2UserService.class);
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
   private final PasswordEncoder passwordEncoder;

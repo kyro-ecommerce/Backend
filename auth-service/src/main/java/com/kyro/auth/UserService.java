@@ -250,10 +250,6 @@ public class UserService {
       throw new IllegalArgumentException("Role not valid: " + roleName);
     }
 
-    if (userRole == UserRole.ADMIN) {
-      throw new IllegalArgumentException("Can't change to role ADMIN");
-    }
-
     Role role =
         roleRepository
             .findByName(userRole)

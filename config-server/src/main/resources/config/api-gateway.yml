@@ -29,7 +29,7 @@ spring:
         - id: auth-service
           uri: lb://auth-service
           predicates:
-            - Path=/api/v1/auth/**, /api/v1/users/**, /oauth2/**, /login/oauth2/code/**
+            - Path=/api/v1/auth/**, /api/v1/users/**, /api/v1/admin/users/**, /oauth2/**, /login/oauth2/code/**
           filters:
             - StripPrefix=0
 
@@ -64,6 +64,15 @@ spring:
           uri: lb://catalog-service
           predicates:
             - Path=/api/v1/admin/products/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
+
+        # Route to Auth Service Admin Users (Authenticated)
+        - id: auth-service-admin
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/admin/users/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter

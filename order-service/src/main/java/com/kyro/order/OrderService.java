@@ -8,6 +8,9 @@ import com.kyro.order.client.CatalogClient;
 import com.kyro.order.client.UserClient;
 import com.kyro.order.dto.OrderDTO;
 import com.kyro.order.dto.OrderDetailDTO;
+import com.kyro.payment.PaymentDetailRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -30,10 +33,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
   private final OrderRepository orderRepository;
+  private final OrderItemRepository orderItemRepository;
+  private final PaymentDetailRepository paymentDetailRepository;
   private final CatalogClient catalogClient;
   private final CartClient cartClient;
   private final UserClient userClient;
   private final RabbitTemplate rabbitTemplate;
+
+  @PersistenceContext
+  private EntityManager entityManager;
 
   public OrderDTO convertToDto(Order order) {
     return new OrderDTO(order);
@@ -252,6 +260,27 @@ public class OrderService {
     return orderRepository.save(order);
   }
 
+  @Transactional
+  public Order updateOrderStatus(Long orderId, OrderStatus newStatus) {
+    Order order = findOrderById(orderId);
+    if (order.getOrderStatus() == newStatus) {
+      return order;
+    }
+    if (newStatus == OrderStatus.CANCELLED) {
+      return cancelOrder(orderId);
+    } else if (newStatus == OrderStatus.DELIVERED) {
+      order.setOrderStatus(OrderStatus.DELIVERED);
+      order.setPaymentStatus(PaymentStatus.COMPLETED);
+      order.setDeliveryDate(LocalDateTime.now());
+      log.info("Order ID {} marked as DELIVERED by admin.", orderId);
+      return orderRepository.save(order);
+    } else {
+      order.setOrderStatus(newStatus);
+      log.info("Order ID {} status changed to {} by admin.", orderId, newStatus);
+      return orderRepository.save(order);
+    }
+  }
+
   @Transactional(readOnly = true)
   public List<Order> getAllOrders() {
     return orderRepository.findAll();
@@ -259,9 +288,38 @@ public class OrderService {
 
   @Transactional
   public void deleteOrder(Long orderId) {
-    Order order = findOrderById(orderId);
-    orderRepository.delete(order);
-    log.info("Order ID {} deleted.", orderId);
+    // Verify order exists first
+    findOrderById(orderId);
+
+    // Get address ID before deleting order row (needed to clean up orphan address)
+    Long addressId = (Long) entityManager
+        .createNativeQuery("SELECT order_address FROM orders WHERE id = :orderId")
+        .setParameter("orderId", orderId)
+        .getSingleResult();
+
+    // 1. Delete payment details (FK → orders)
+    entityManager.createNativeQuery("DELETE FROM payment_details WHERE order_id = :orderId")
+        .setParameter("orderId", orderId)
+        .executeUpdate();
+
+    // 2. Delete order items (FK → orders)
+    entityManager.createNativeQuery("DELETE FROM order_item WHERE order_id = :orderId")
+        .setParameter("orderId", orderId)
+        .executeUpdate();
+
+    // 3. Delete the order row itself (FK → order_address)
+    entityManager.createNativeQuery("DELETE FROM orders WHERE id = :orderId")
+        .setParameter("orderId", orderId)
+        .executeUpdate();
+
+    // 4. Delete orphan address (if any)
+    if (addressId != null) {
+      entityManager.createNativeQuery("DELETE FROM order_address WHERE id = :addressId")
+          .setParameter("addressId", addressId)
+          .executeUpdate();
+    }
+
+    log.info("Order ID {} deleted successfully.", orderId);
   }
 
   @Transactional(readOnly = true)
@@ -308,6 +366,7 @@ public class OrderService {
     return orders.stream().map(OrderDetailDTO::new).collect(Collectors.toList());
   }
 
+  @Transactional(readOnly = true)
   public Page<OrderDetailDTO> getAllOrdersWithFilters(
       String search,
       OrderStatus status,

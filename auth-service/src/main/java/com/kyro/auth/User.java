@@ -100,4 +100,58 @@ public class User {
     this.active = false;
     this.createdAt = LocalDateTime.now();
   }
+
+  public Long getId() { return id; }
+  public void setId(Long id) { this.id = id; }
+
+  public boolean isActive() { return active; }
+  public void setActive(boolean active) { this.active = active; }
+
+  public String getFirstName() { return firstName; }
+  public void setFirstName(String firstName) { this.firstName = firstName; }
+
+  public String getLastName() { return lastName; }
+  public void setLastName(String lastName) { this.lastName = lastName; }
+
+  public String getEmail() { return email; }
+  public void setEmail(String email) { this.email = email; }
+
+  public String getPassword() { return password; }
+  public void setPassword(String password) { this.password = password; }
+
+  public String getPhone() { return phone; }
+  public void setPhone(String phone) { this.phone = phone; }
+
+  public List<Address> getAddress() { return address; }
+  public void setAddress(List<Address> address) { this.address = address; }
+
+  public LocalDateTime getCreatedAt() { return createdAt; }
+  public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+  public Role getRole() { return role; }
+  public void setRole(Role role) { this.role = role; }
+
+  public boolean isBanned() { return banned; }
+  public void setBanned(boolean banned) { this.banned = banned; }
+
+  public String getOauthProvider() { return oauthProvider; }
+  public void setOauthProvider(String oauthProvider) { this.oauthProvider = oauthProvider; }
+
+  public String getOauthProviderId() { return oauthProviderId; }
+  public void setOauthProviderId(String oauthProviderId) { this.oauthProviderId = oauthProviderId; }
+
+  public String getImageUrl() { return imageUrl; }
+  public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+  public String getWebsite() { return website; }
+  public void setWebsite(String website) { this.website = website; }
+
+  public String getBusinessType() { return businessType; }
+  public void setBusinessType(String businessType) { this.businessType = businessType; }
+
+  public String getShopDescription() { return shopDescription; }
+  public void setShopDescription(String shopDescription) { this.shopDescription = shopDescription; }
+
+  public String getShopName() { return shopName; }
+  public void setShopName(String shopName) { this.shopName = shopName; }
 }

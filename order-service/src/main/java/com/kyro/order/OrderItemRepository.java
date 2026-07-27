@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
   List<OrderItem> findByProductId(Long productId);
 
+  @Modifying
+  @Query(value = "DELETE FROM order_item WHERE order_id = :id", nativeQuery = true)
   void deleteByOrderId(Long id);
 
   @Modifying

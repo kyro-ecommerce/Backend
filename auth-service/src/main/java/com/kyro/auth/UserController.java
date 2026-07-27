@@ -22,8 +22,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("${api.prefix}/users")
-@Slf4j
 public class UserController {
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserController.class);
   private final UserService userService;
   private final UserRepository userRepository;
 

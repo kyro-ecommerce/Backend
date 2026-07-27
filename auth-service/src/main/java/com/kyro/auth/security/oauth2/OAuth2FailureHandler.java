@@ -14,12 +14,12 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationFa
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler {
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(OAuth2FailureHandler.class);
 
-  @Value("${app.oauth2.failureRedirectUri}")
+  @Value("${app.oauth2.failureRedirectUri:http://localhost:5173/oauth2/callback}")
   private String defaultFailureRedirectUri;
 
   @Override

@@ -39,6 +39,9 @@ public class AppUserDetails implements UserDetails, OAuth2User {
     this.attributes = attributes;
   }
 
+  public Long getId() { return id; }
+  public String getEmail() { return email; }
+
   public static AppUserDetails buildUserDetails(User user) {
     List<GrantedAuthority> authorities =
         List.of(new SimpleGrantedAuthority(user.getRole().getName().name()));

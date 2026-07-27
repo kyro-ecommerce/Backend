@@ -25,10 +25,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
   private final JwtUtils jwtUtils;
   private final CookieUtils cookieUtils;
 
-  @Value("${app.oauth2.redirectUri}")
+  @Value("${app.oauth2.redirectUri:http://localhost:5173/oauth2/callback}")
   private String defaultRedirectUri;
 
-  @Value("${app.oauth2.failureRedirectUri}")
+  @Value("${app.oauth2.failureRedirectUri:http://localhost:5173/oauth2/callback}")
   private String defaultFailureRedirectUri;
 
   @Value("${auth.token.refreshExpirationInMils}")

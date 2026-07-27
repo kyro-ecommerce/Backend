@@ -26,4 +26,22 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   @Query("SELECT COUNT(u) FROM User u JOIN u.role r WHERE r.name = :roleName")
   long countByRoleName(@Param("roleName") UserRole roleName);
+
+  @Query(
+      value = "SELECT u FROM User u LEFT JOIN FETCH u.role r WHERE "
+          + "(:role IS NULL OR r.name = :role) AND "
+          + "(:search IS NULL OR :search = '' OR "
+          + "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR "
+          + "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR "
+          + "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))",
+      countQuery = "SELECT COUNT(u) FROM User u JOIN u.role r WHERE "
+          + "(:role IS NULL OR r.name = :role) AND "
+          + "(:search IS NULL OR :search = '' OR "
+          + "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR "
+          + "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR "
+          + "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
+  org.springframework.data.domain.Page<User> findAdminUsersWithFilters(
+      @Param("search") String search,
+      @Param("role") UserRole role,
+      Pageable pageable);
 }
