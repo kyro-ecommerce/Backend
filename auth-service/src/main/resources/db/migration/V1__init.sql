@@ -48,26 +48,25 @@ ALTER TABLE address ADD CONSTRAINT FK_address_user FOREIGN KEY (user_id) REFEREN
 -- 3. Seed data
 INSERT INTO role (id, name) OVERRIDING SYSTEM VALUE VALUES 
 (1,'ADMIN'),
-(2,'SELLER'),
-(3,'CUSTOMER');
+(2,'CUSTOMER');
 
 INSERT INTO users (id, active, is_banned, business_type, created_at, email, first_name, image_url, last_name, oauth_provider, oauth_provider_id, password, phone, shop_description, shop_name, website, role_id) OVERRIDING SYSTEM VALUE VALUES 
-(1,true,false,NULL,'2025-06-03 12:22:34.963615','sangshin0987@gmail.com','Sang',NULL,'Nguyen',NULL,NULL,'$2a$10$iMZr3d5gkZzSMbpCET5GrOGrAjZgJvQWFv/BqtvbBTqIlQrT7gFQG',NULL,NULL,NULL,NULL,1),
-(2,true,false,NULL,'2025-06-03 12:22:35.063939','customer1@example.com','Customer',NULL,'One',NULL,NULL,'$2a$10$YFsxtNrTFco1iaYBDQbf6eWLazZtwVaQXJsMsL.NUATXCRgwJHv52','0911111111',NULL,NULL,NULL,3),
-(3,true,false,NULL,'2025-06-03 12:22:35.156950','seller0@example.com','Seller ',NULL,'Two',NULL,NULL,'$2a$10$Az94WX5Eqp4tsOh8IPLH7OJPOOe2UO6IbJZjUEvMKZlUmDOUi7y86','0922222222','Nạp ','Sang ',NULL,2),
-(4,true,false,NULL,'2025-06-03 12:22:35.235213','seller1@example.com','Seller',NULL,'Alpha',NULL,NULL,'$2a$10$hHR9KzhhR4OBZ6P2sVxTNuAmVMy2UmsXtyVum5SNIe1rgAM9Bz6NG','0987654321','Chuyên đồ điện tử gia dụng','Alpha Store',NULL,2),
-(5,true,false,NULL,'2025-06-03 12:22:35.315256','seller2@example.com','Seller',NULL,'Beta',NULL,NULL,'$2a$10$mw.U2hgPovF6IM4MHt.wwer28d8yASa1F1PDqpxsoeNsjtS4zMXOW','0987654322','Nhà sách trực tuyến Beta','Beta Books',NULL,2),
-(6,true,false,NULL,'2025-06-03 12:22:35.394107','seller3@example.com','Seller',NULL,'Gamma',NULL,NULL,'$2a$10$SIoU2jWnlbSbrJqqfXDJ8Olww8TqFgou.27464/efKpqTHSrBGP7a','0987654323','Thời trang Gamma cho mọi nhà','Gamma Fashion',NULL,2),
-(7,true,false,NULL,'2025-06-03 12:22:35.471975','seller4@example.com','Seller',NULL,'Delta',NULL,NULL,'$2a$10$dTDllgun8.fo9xO.RObQGeUYtSGYZPcKITvEZjjaEXil1Dth/vh.6','0987654324','Phụ kiện công nghệ Delta','Delta Gadgets',NULL,2),
-(8,true,false,NULL,'2025-06-03 12:28:40.478519','tansang06092004@gmail.com','sang','https://avatars.githubusercontent.com/u/111638547?v=4','','github','111638547','$2a$10$7F1OrWiuorRKXVQ48.7Sle/PBmDyxPJGwGJCG2jdstIvTBvP1yjle','56456262545',NULL,NULL,NULL,3),
-(9,true,false,NULL,'2025-06-03 14:17:44.326548','customer2@example.com','Customer',NULL,'Two',NULL,NULL,'$2a$10$fcZ7/DxA1xAbsVofpM8fROUmVXZ.y2e/D1i.BKbsORpPSf9viZlh6','0922222222',NULL,NULL,NULL,3),
-(15,true,false,NULL,'2025-06-13 19:09:47.608917','admin@gmail.com','Sang',NULL,'Nguyen',NULL,NULL,'$2a$10$I9T6sDcVyQw0R/.LT.giJuUQd5F23bhRj43Vzrp.ST1qCtnBmBasa',NULL,NULL,NULL,NULL,1);
+(1,true,false,NULL,'2025-06-03 12:22:34.963615','admin@gmail.com','Admin',NULL,'User',NULL,NULL,'$2a$10$XImHvDQ3vUx2nibLZQaWQOuI9GxOPMhTL1RUio9ppxlVGf6TLkxea',NULL,NULL,NULL,NULL,1),
+(2,true,false,NULL,'2025-06-03 12:22:35.063939','customer1@example.com','Customer',NULL,'One',NULL,NULL,'$2a$10$XImHvDQ3vUx2nibLZQaWQOuI9GxOPMhTL1RUio9ppxlVGf6TLkxea','0911111111',NULL,NULL,NULL,2),
+(3,true,false,NULL,'2025-06-03 12:22:35.156950','customer2@example.com','Customer',NULL,'Two',NULL,NULL,'$2a$10$XImHvDQ3vUx2nibLZQaWQOuI9GxOPMhTL1RUio9ppxlVGf6TLkxea','0922222222',NULL,NULL,NULL,2),
+(4,true,false,NULL,'2025-06-03 12:22:35.235213','customer3@example.com','Customer',NULL,'Three',NULL,NULL,'$2a$10$XImHvDQ3vUx2nibLZQaWQOuI9GxOPMhTL1RUio9ppxlVGf6TLkxea','0987654321',NULL,NULL,NULL,2),
+(5,true,false,NULL,'2025-06-03 12:22:35.315256','customer4@example.com','Customer',NULL,'Four',NULL,NULL,'$2a$10$XImHvDQ3vUx2nibLZQaWQOuI9GxOPMhTL1RUio9ppxlVGf6TLkxea','0987654322',NULL,NULL,NULL,2),
+(6,true,false,NULL,'2025-06-03 12:22:35.394107','customer5@example.com','Customer',NULL,'Five',NULL,NULL,'$2a$10$XImHvDQ3vUx2nibLZQaWQOuI9GxOPMhTL1RUio9ppxlVGf6TLkxea','0987654323',NULL,NULL,NULL,2),
+(7,true,false,NULL,'2025-06-03 12:22:35.471975','customer6@example.com','Customer',NULL,'Six',NULL,NULL,'$2a$10$XImHvDQ3vUx2nibLZQaWQOuI9GxOPMhTL1RUio9ppxlVGf6TLkxea','0987654324',NULL,NULL,NULL,2),
+(8,true,false,NULL,'2025-06-03 12:28:40.478519','customer@gmail.com','Customer',NULL,'User',NULL,NULL,'$2a$10$XImHvDQ3vUx2nibLZQaWQOuI9GxOPMhTL1RUio9ppxlVGf6TLkxea','0976543210',NULL,NULL,NULL,2),
+(9,true,false,NULL,'2025-06-03 14:17:44.326548','customer7@example.com','Customer',NULL,'Seven',NULL,NULL,'$2a$10$XImHvDQ3vUx2nibLZQaWQOuI9GxOPMhTL1RUio9ppxlVGf6TLkxea','0922222222',NULL,NULL,NULL,2),
+(15,true,false,NULL,'2025-06-13 19:09:47.608917','admin2@gmail.com','Admin',NULL,'System',NULL,NULL,'$2a$10$XImHvDQ3vUx2nibLZQaWQOuI9GxOPMhTL1RUio9ppxlVGf6TLkxea',NULL,NULL,NULL,NULL,1);
 
 INSERT INTO address (id, district, full_name, note, phone_number, province, street, ward, user_id) OVERRIDING SYSTEM VALUE VALUES 
-(1,'Thành phố Bắc Giang','Sang ne ','','0379641598','Tỉnh Bắc Giang','0x570d81A459Ad17B9B297Fc1592Efda6B55A715e3','Phường Tân Tiến',8),
-(2,'Huyện Châu Thành','Sang ne ','','+1 6562294949','Tỉnh Tiền Giang','0x570d81A459Ad17B9B297Fc1592Efda6B55A715e3','Xã Kim Sơn',8),
-(3,'Thị xã Nghĩa Lộ','Tan Sang','','0379641598','Tỉnh Yên Bái','0x570d81A459Ad17B9B297Fc1592Efda6B55A715e3','Xã Thanh Lương',8),
-(4,'Huyện Phú Lương','Sang ne ','','0379641598','Tỉnh Thái Nguyên','0x570d81A459Ad17B9B297Fc1592Efda6B55A715e3','Xã Tức Tranh',8);
+(1,'Thành phố Bắc Giang','Customer User','','0379641598','Tỉnh Bắc Giang','0x570d81A459Ad17B9B297Fc1592Efda6B55A715e3','Phường Tân Tiến',8),
+(2,'Huyện Châu Thành','Customer User','','+1 6562294949','Tỉnh Tiền Giang','0x570d81A459Ad17B9B297Fc1592Efda6B55A715e3','Xã Kim Sơn',8),
+(3,'Thị xã Nghĩa Lộ','Customer User','','0379641598','Tỉnh Yên Bái','0x570d81A459Ad17B9B297Fc1592Efda6B55A715e3','Xã Thanh Lương',8),
+(4,'Huyện Phú Lương','Customer User','','0379641598','Tỉnh Thái Nguyên','0x570d81A459Ad17B9B297Fc1592Efda6B55A715e3','Xã Tức Tranh',8);
 
 -- 4. Adjust identity sequences
 SELECT setval(pg_get_serial_sequence('role', 'id'), coalesce(max(id), 1)) FROM role;
