@@ -46,7 +46,7 @@ spring:
         - id: catalog-service-public
           uri: lb://catalog-service
           predicates:
-            - Path=/api/v1/products/**, /api/v1/categories/**
+            - Path=/api/v1/products/**, /api/v1/categories/**, /api/v1/reviews/product/**, /api/v1/review/product/**
           filters:
             - StripPrefix=0
 
@@ -54,7 +54,7 @@ spring:
         - id: catalog-service-reviews
           uri: lb://catalog-service
           predicates:
-            - Path=/api/v1/reviews/**
+            - Path=/api/v1/reviews/**, /api/v1/review/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter
