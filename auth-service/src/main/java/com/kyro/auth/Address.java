@@ -58,7 +58,7 @@ public class Address {
 
   @NotBlank(message = "Mobile number is required")
   @Size(max = 15, message = "Mobile number must be less than 15 characters")
-  @Column(name = "phoneNumber")
+  @Column(name = "phone_number")
   private String phoneNumber;
 
   public Long getId() { return id; }
