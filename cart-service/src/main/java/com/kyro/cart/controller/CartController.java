@@ -4,16 +4,18 @@ import com.kyro.cart.dto.CartDTO;
 import com.kyro.cart.dto.CartItemDTO;
 import com.kyro.cart.service.CartService;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("${api.prefix}/cart")
 public class CartController {
 
   private final CartService cartService;
+
+  public CartController(CartService cartService) {
+    this.cartService = cartService;
+  }
 
   @GetMapping
   public ResponseEntity<CartDTO> getCart(@RequestHeader("X-User-Id") String userId) {
