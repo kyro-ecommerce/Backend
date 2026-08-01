@@ -13,6 +13,12 @@ services:
     volumes:
       - kyro_postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-postgres} -d ${DATABASE_DB:-postgres}"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
     restart: always
 
   redis:
@@ -20,6 +26,12 @@ services:
     container_name: kyro-redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+      start_period: 3s
     restart: always
 
   rabbitmq:
@@ -28,6 +40,12 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     restart: always
 
   eureka-server:
@@ -37,6 +55,12 @@ services:
     container_name: kyro-eureka-server
     ports:
       - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8761/actuator/health || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
     restart: always
 
   config-server:
@@ -47,9 +71,16 @@ services:
     ports:
       - "8888:8888"
     depends_on:
-      - eureka-server
+      eureka-server:
+        condition: service_healthy
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8888/actuator/health || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
     restart: always
 
   api-gateway:
@@ -60,10 +91,19 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - config-server
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
     environment:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
     restart: always
 
   auth-service:
@@ -74,9 +114,12 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - config-server
-      - postgres
-      - rabbitmq
+      config-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -92,6 +135,12 @@ services:
       OAUTH2_GITHUB_CLIENT_SECRET: ${OAUTH2_GITHUB_CLIENT_SECRET:-mock-github-client-secret}
       OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI:-http://localhost:5173/oauth2/redirect}
       OAUTH2_FAILURE_REDIRECT_URI: ${OAUTH2_FAILURE_REDIRECT_URI:-http://localhost:5173/login?error=true}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
     restart: always
 
   catalog-service:
@@ -102,14 +151,25 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - config-server
-      - postgres
+      config-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       DATABASE_URL: jdbc:postgresql://kyro-postgres:5432/kyro_catalog
       DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
+      RABBITMQ_HOST: kyro-rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
     restart: always
 
   cart-service:
@@ -120,12 +180,20 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      - config-server
-      - redis
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       REDIS_HOST: kyro-redis
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
     restart: always
 
   notification-service:
@@ -136,12 +204,20 @@ services:
     ports:
       - "8084:8084"
     depends_on:
-      - config-server
-      - rabbitmq
+      config-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       RABBITMQ_HOST: kyro-rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
     restart: always
 
   order-service:
@@ -152,9 +228,12 @@ services:
     ports:
       - "8085:8085"
     depends_on:
-      - config-server
-      - postgres
-      - rabbitmq
+      config-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
@@ -162,6 +241,12 @@ services:
       DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
       RABBITMQ_HOST: kyro-rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8085/actuator/health || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
     restart: always
 
   payment-service:
@@ -172,18 +257,29 @@ services:
     ports:
       - "8086:8086"
     depends_on:
-      - config-server
-      - postgres
+      config-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       DATABASE_URL: jdbc:postgresql://kyro-postgres:5432/kyro_payment
       DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
+      RABBITMQ_HOST: kyro-rabbitmq
       VNPAY_TMN_CODE: ${VNPAY_TMN_CODE}
       VNPAY_HASH_SECRET: ${VNPAY_HASH_SECRET}
       VNPAY_PAY_URL: ${VNPAY_PAY_URL}
       VNPAY_RETURN_URL: ${VNPAY_RETURN_URL}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8086/actuator/health || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
     restart: always
 
   ai-service:
@@ -194,8 +290,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql+psycopg://${DATABASE_USERNAME:-postgres}:${DATABASE_PASSWORD:-postgres_password}@kyro-postgres:5432/postgres
       RABBITMQ_URL: amqp://guest:guest@kyro-rabbitmq:5672/
@@ -205,6 +303,12 @@ services:
       RABBITMQ_PASSWORD: guest
       GEMINI_API_KEY: ${GEMINI_API_KEY:-""}
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/docs || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     restart: always
 
   dozzle:
@@ -219,4 +323,5 @@ services:
 
 volumes:
   kyro_postgres_data:
+
 

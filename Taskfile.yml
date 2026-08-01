@@ -34,12 +34,12 @@ tasks:
     desc: "Build and Run ALL microservices inside Docker"
     cmds:
       - task: build
-      - docker compose up --build -d
+      - docker compose up --build -d --wait
 
   run:
     desc: "Run all Spring Cloud Microservices inside Docker (requires build)"
     cmds:
-      - docker compose up -d
+      - docker compose up --build -d --wait
 
 
   stop:
@@ -70,7 +70,7 @@ tasks:
   infra:
     desc: "Start Core Infrastructure & Gateway (Postgres, Redis, RabbitMQ, Eureka, Config, Gateway)"
     cmds:
-      - docker compose up -d postgres redis rabbitmq eureka-server config-server api-gateway
+      - docker compose up -d --wait postgres redis rabbitmq eureka-server config-server api-gateway
 
   dev:auth:
     desc: "Run auth-service locally with Hot-Reload (Fast Dev Mode)"
@@ -105,7 +105,7 @@ tasks:
   db:up:
     desc: "Start local Postgres, Redis, and RabbitMQ using Docker Compose"
     cmds:
-      - docker compose up -d postgres redis rabbitmq
+      - docker compose up -d --wait postgres redis rabbitmq
 
   db:down:
     desc: "Stop local Postgres, Redis, and RabbitMQ"
@@ -116,6 +116,11 @@ tasks:
     desc: "Stop local Postgres database and remove volumes"
     cmds:
       - docker compose down -v
+
+  status:
+    desc: "Display health status of all docker containers"
+    cmds:
+      - docker compose ps
 
   db:logs:
     desc: "View local database logs"
