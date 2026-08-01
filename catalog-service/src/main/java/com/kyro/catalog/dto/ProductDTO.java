@@ -1,5 +1,6 @@
 package com.kyro.catalog.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.kyro.catalog.Category;
 import com.kyro.catalog.Product;
 import java.time.LocalDateTime;
@@ -35,6 +36,8 @@ public class ProductDTO {
   private String secondLevelCategory;
   private Long quantitySold;
   private Integer discountPercent;
+
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime createdAt;
 
   // Constructor to map from Product entity

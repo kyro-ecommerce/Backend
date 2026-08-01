@@ -382,6 +382,24 @@ public class OrderService {
   }
 
   @Transactional(readOnly = true)
+  public List<Map<String, Object>> getDailyRevenue(LocalDate start, LocalDate end) {
+    LocalDateTime startDateTime = start != null ? start.atStartOfDay() : null;
+    LocalDateTime endDateTime = end != null ? end.atTime(23, 59, 59) : null;
+
+    List<Object[]> rows = orderRepository.findDailyRevenueByDateRange(startDateTime, endDateTime);
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Object[] row : rows) {
+      String dateStr = row[0] != null ? row[0].toString() : "";
+      Number revenueNum = (Number) row[1];
+      result.add(
+          Map.of(
+              "name", dateStr,
+              "revenue", revenueNum != null ? revenueNum.doubleValue() : 0.0));
+    }
+    return result;
+  }
+
+  @Transactional(readOnly = true)
   public List<OrderDetailDTO> getAllOrdersByJF() {
     // Find all orders sorting by date descending
     List<Order> orders = orderRepository.findAllByOrderByOrderDateDesc();

@@ -1,5 +1,6 @@
 package com.kyro.order.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.kyro.order.OrderItem;
 import java.time.LocalDateTime;
 
@@ -14,6 +15,8 @@ public class OrderItemDTO {
   private int price;
   private Integer discountedPrice;
   private Integer discountPercent;
+
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime deliveryDate;
 
   public OrderItemDTO() {}
