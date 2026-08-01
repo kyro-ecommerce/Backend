@@ -2,19 +2,21 @@ package com.kyro.catalog;
 
 import com.kyro.catalog.dto.ProductDTO;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("${api.prefix}/products")
 @Transactional(readOnly = true)
 public class ProductController {
 
   private final ProductService productService;
+
+  public ProductController(ProductService productService) {
+    this.productService = productService;
+  }
 
   @GetMapping({"", "/"})
   public ResponseEntity<List<ProductDTO>> findProductsByFilter(
@@ -64,7 +66,8 @@ public class ProductController {
   }
 
   @GetMapping("/internal/{productId}")
-  public ResponseEntity<com.kyro.catalog.dto.ProductInternalResponse> getProductByIdInternal(@PathVariable Long productId) {
+  public ResponseEntity<com.kyro.catalog.dto.ProductInternalResponse> getProductByIdInternal(
+      @PathVariable Long productId) {
     Product product = productService.findProductById(productId);
     return ResponseEntity.ok(new com.kyro.catalog.dto.ProductInternalResponse(product));
   }

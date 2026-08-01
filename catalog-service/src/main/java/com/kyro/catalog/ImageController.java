@@ -4,19 +4,24 @@ import com.kyro.catalog.dto.ImageDTO;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("${api.prefix}/images")
-@RequiredArgsConstructor
-@Slf4j
 public class ImageController {
+  private static final Logger log = LoggerFactory.getLogger(ImageController.class);
+
   private final ImageService imageService;
   private final ProductService productService;
+
+  public ImageController(ImageService imageService, ProductService productService) {
+    this.imageService = imageService;
+    this.productService = productService;
+  }
 
   @PostMapping("/upload/{productId}")
   public ResponseEntity<Map<String, Object>> uploadImage(

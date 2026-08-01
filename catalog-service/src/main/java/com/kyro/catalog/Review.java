@@ -6,22 +6,32 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-/**
- * Entity representing a product review. Stores user details as denormalized fields to prevent
- * inter-service calls.
- */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "review")
 public class Review {
+
+  public Review() {}
+
+  public Review(
+      Long id,
+      Integer rating,
+      String content,
+      Product product,
+      Long userId,
+      String userFirstName,
+      String userLastName,
+      LocalDateTime createdAt) {
+    this.id = id;
+    this.rating = rating;
+    this.content = content;
+    this.product = product;
+    this.userId = userId;
+    this.userFirstName = userFirstName;
+    this.userLastName = userLastName;
+    this.createdAt = createdAt;
+  }
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
@@ -52,4 +62,68 @@ public class Review {
 
   @Column(name = "created_at")
   private LocalDateTime createdAt;
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public Integer getRating() {
+    return rating;
+  }
+
+  public void setRating(Integer rating) {
+    this.rating = rating;
+  }
+
+  public String getContent() {
+    return content;
+  }
+
+  public void setContent(String content) {
+    this.content = content;
+  }
+
+  public Product getProduct() {
+    return product;
+  }
+
+  public void setProduct(Product product) {
+    this.product = product;
+  }
+
+  public Long getUserId() {
+    return userId;
+  }
+
+  public void setUserId(Long userId) {
+    this.userId = userId;
+  }
+
+  public String getUserFirstName() {
+    return userFirstName;
+  }
+
+  public void setUserFirstName(String userFirstName) {
+    this.userFirstName = userFirstName;
+  }
+
+  public String getUserLastName() {
+    return userLastName;
+  }
+
+  public void setUserLastName(String userLastName) {
+    this.userLastName = userLastName;
+  }
+
+  public LocalDateTime getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(LocalDateTime createdAt) {
+    this.createdAt = createdAt;
+  }
 }

@@ -5,31 +5,35 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
 /**
  * Publishes product lifecycle events to RabbitMQ for consumption by the AI Service.
  *
- * <p>Exchange: {@code product.events} (topic)
- * <br>Routing keys: {@code product.created}, {@code product.updated}, {@code product.deleted}
+ * <p>Exchange: {@code product.events} (topic) <br>
+ * Routing keys: {@code product.created}, {@code product.updated}, {@code product.deleted}
  *
- * <p>The AI Service listens on queue {@code ai.product.events} bound to the above routing keys,
- * and uses the events to keep its vector search index in sync.
+ * <p>The AI Service listens on queue {@code ai.product.events} bound to the above routing keys, and
+ * uses the events to keep its vector search index in sync.
  */
 @Component
-@RequiredArgsConstructor
-@Slf4j
 public class ProductEventPublisher {
+
+  private static final Logger log = LoggerFactory.getLogger(ProductEventPublisher.class);
+
+  private final RabbitTemplate rabbitTemplate;
+
+  public ProductEventPublisher(RabbitTemplate rabbitTemplate) {
+    this.rabbitTemplate = rabbitTemplate;
+  }
 
   public static final String PRODUCT_EXCHANGE = "product.events";
   public static final String ROUTING_KEY_CREATED = "product.created";
   public static final String ROUTING_KEY_UPDATED = "product.updated";
   public static final String ROUTING_KEY_DELETED = "product.deleted";
-
-  private final RabbitTemplate rabbitTemplate;
 
   /** Publishes a PRODUCT_CREATED event after a new product is persisted. */
   public void publishProductCreated(Product product) {
@@ -44,8 +48,8 @@ public class ProductEventPublisher {
   }
 
   /**
-   * Publishes a PRODUCT_DELETED event when a product is removed.
-   * Sends a minimal payload containing only the product_id so the AI Service can deactivate it.
+   * Publishes a PRODUCT_DELETED event when a product is removed. Sends a minimal payload containing
+   * only the product_id so the AI Service can deactivate it.
    */
   public void publishProductDeleted(Long productId) {
     Map<String, Object> data = new HashMap<>();
@@ -68,6 +72,7 @@ public class ProductEventPublisher {
 
   /**
    * Builds the full ProductEvent payload that matches the AI Service's {@code ProductEvent} schema:
+   *
    * <pre>
    * {
    *   event_id:    String (UUID)
@@ -84,12 +89,13 @@ public class ProductEventPublisher {
   private Map<String, Object> buildEventPayload(Product product, String eventType) {
     // --- data block ---
     Map<String, Object> data = new HashMap<>();
-    data.put("product_id", product.getId());        // AI AliasChoices: "id"
+    data.put("product_id", product.getId()); // AI AliasChoices: "id"
     data.put("title", product.getTitle());
     data.put("brand", product.getBrand());
     data.put("original_price", product.getPrice()); // AI AliasChoices: "price"
     data.put("discounted_price", product.getDiscountedPrice());
-    data.put("discount_percent", product.getDiscountPersent()); // AI AliasChoices: "discount_persent"
+    data.put(
+        "discount_percent", product.getDiscountPersent()); // AI AliasChoices: "discount_persent"
     data.put("average_rating", product.getAverageRating());
     data.put("num_ratings", product.getNumRatings());
     data.put("is_active", true);

@@ -10,7 +10,6 @@ import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,13 +19,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class ProductService {
   private final ProductRepository productRepository;
   private final CategoryRepository categoryRepository;
   private final ReviewRepository reviewRepository;
   private final ImageService imageService;
   private final ProductEventPublisher productEventPublisher;
+
+  public ProductService(
+      ProductRepository productRepository,
+      CategoryRepository categoryRepository,
+      ReviewRepository reviewRepository,
+      ImageService imageService,
+      ProductEventPublisher productEventPublisher) {
+    this.productRepository = productRepository;
+    this.categoryRepository = categoryRepository;
+    this.reviewRepository = reviewRepository;
+    this.imageService = imageService;
+    this.productEventPublisher = productEventPublisher;
+  }
 
   @Transactional
   public Product createProduct(CreateProductRequest req) {

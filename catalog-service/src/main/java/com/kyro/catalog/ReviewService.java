@@ -5,17 +5,24 @@ import com.kyro.catalog.dto.ReviewRequest;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /** Service class for managing product reviews. */
 @Service
-@RequiredArgsConstructor
 public class ReviewService {
 
   private final ReviewRepository reviewRepository;
   private final ProductRepository productRepository;
   private final OrderClient orderClient;
+
+  public ReviewService(
+      ReviewRepository reviewRepository,
+      ProductRepository productRepository,
+      OrderClient orderClient) {
+    this.reviewRepository = reviewRepository;
+    this.productRepository = productRepository;
+    this.orderClient = orderClient;
+  }
 
   /**
    * Creates a new review for a product.
