@@ -11,13 +11,27 @@ tasks:
     cmds:
       - task --list
 
+  bootstrap:
+    desc: "First-time setup: copy .env, install dependencies, start core DBs & build"
+    cmds:
+      - '{{if eq OS "windows"}}if not exist .env copy .env.example .env{{else}}test -f .env || cp .env.example .env{{end}}'
+      - task: install
+      - task: db:up
+      - task: build
+
   install:
     desc: "Install / download dependencies"
     cmds:
       - "{{.MVNW_CMD}} dependency:go-offline"
 
   dev:
-    desc: "Build and Run all Spring Cloud Microservices inside Docker"
+    desc: "Start local dev environment: build & launch infrastructure (Postgres, Redis, RabbitMQ, Eureka, Gateway)"
+    cmds:
+      - task: build
+      - task: infra
+
+  dev:all:
+    desc: "Build and Run ALL microservices inside Docker"
     cmds:
       - task: build
       - docker compose up --build -d
