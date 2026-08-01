@@ -1,7 +1,6 @@
 package com.kyro.order.client;
 
 import java.util.List;
-import lombok.Data;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,27 +26,17 @@ public interface CatalogClient {
       @RequestParam("sizeName") String sizeName,
       @RequestParam("quantity") int quantity);
 
-  @Data
-  class ProductResponse {
-    private Long id;
-    private String title;
-    private int price;
-    private int discountPersent;
-    private int discountedPrice;
-    private String color;
-    private List<ImageResponse> images;
-    private List<SizeResponse> sizes;
-  }
+  record ProductResponse(
+      Long id,
+      String title,
+      int price,
+      int discountPersent,
+      int discountedPrice,
+      String color,
+      List<ImageResponse> images,
+      List<SizeResponse> sizes) {}
 
-  @Data
-  class ImageResponse {
-    private Long id;
-    private String downloadUrl;
-  }
+  record ImageResponse(Long id, String downloadUrl) {}
 
-  @Data
-  class SizeResponse {
-    private String name;
-    private Integer quantity;
-  }
+  record SizeResponse(String name, Integer quantity) {}
 }

@@ -15,8 +15,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,9 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
  * microservices and RabbitMQ.
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class OrderService {
+  private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
   private final OrderRepository orderRepository;
   private final OrderItemRepository orderItemRepository;
@@ -40,8 +39,24 @@ public class OrderService {
   private final UserClient userClient;
   private final RabbitTemplate rabbitTemplate;
 
-  @PersistenceContext
-  private EntityManager entityManager;
+  public OrderService(
+      OrderRepository orderRepository,
+      OrderItemRepository orderItemRepository,
+      PaymentDetailRepository paymentDetailRepository,
+      CatalogClient catalogClient,
+      CartClient cartClient,
+      UserClient userClient,
+      RabbitTemplate rabbitTemplate) {
+    this.orderRepository = orderRepository;
+    this.orderItemRepository = orderItemRepository;
+    this.paymentDetailRepository = paymentDetailRepository;
+    this.catalogClient = catalogClient;
+    this.cartClient = cartClient;
+    this.userClient = userClient;
+    this.rabbitTemplate = rabbitTemplate;
+  }
+
+  @PersistenceContext private EntityManager entityManager;
 
   public OrderDTO convertToDto(Order order) {
     return new OrderDTO(order);
@@ -71,7 +86,8 @@ public class OrderService {
   }
 
   @Transactional
-  public List<Order> placeOrder(Long addressId, Long userId, String userEmail, PaymentMethod paymentMethod) {
+  public List<Order> placeOrder(
+      Long addressId, Long userId, String userEmail, PaymentMethod paymentMethod) {
     if (userId == null) {
       log.error("User ID is null when placing order.");
       throw new IllegalArgumentException("Thông tin người dùng không hợp lệ.");
@@ -83,7 +99,7 @@ public class OrderService {
 
     // Fetch Cart from cart-service via FeignClient
     CartClient.CartResponse cart = cartClient.getCart(userId);
-    if (cart == null || cart.getItems() == null || cart.getItems().isEmpty()) {
+    if (cart == null || cart.items() == null || cart.items().isEmpty()) {
       log.warn("Attempted to place order with an empty cart for user ID: {}", userId);
       throw new RuntimeException(
           "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi đặt hàng.");
@@ -97,13 +113,13 @@ public class OrderService {
     }
 
     Address shippingAddress = new Address();
-    shippingAddress.setFullName(addrResp.getFullName());
-    shippingAddress.setProvince(addrResp.getProvince());
-    shippingAddress.setDistrict(addrResp.getDistrict());
-    shippingAddress.setWard(addrResp.getWard());
-    shippingAddress.setStreet(addrResp.getStreet());
-    shippingAddress.setNote(addrResp.getNote());
-    shippingAddress.setPhoneNumber(addrResp.getPhoneNumber());
+    shippingAddress.setFullName(addrResp.fullName());
+    shippingAddress.setProvince(addrResp.province());
+    shippingAddress.setDistrict(addrResp.district());
+    shippingAddress.setWard(addrResp.ward());
+    shippingAddress.setStreet(addrResp.street());
+    shippingAddress.setNote(addrResp.note());
+    shippingAddress.setPhoneNumber(addrResp.phoneNumber());
 
     List<Order> createdOrders = new ArrayList<>();
 
@@ -112,10 +128,10 @@ public class OrderService {
     int totalDiscountedPrice = 0;
     int totalItemsCount = 0;
 
-    for (CartClient.CartItemResponse item : cart.getItems()) {
-      totalOriginalPrice += item.getPrice() * item.getQuantity();
-      totalDiscountedPrice += item.getDiscountedPrice() * item.getQuantity();
-      totalItemsCount += item.getQuantity();
+    for (CartClient.CartItemResponse item : cart.items()) {
+      totalOriginalPrice += item.price() * item.quantity();
+      totalDiscountedPrice += item.discountedPrice() * item.quantity();
+      totalItemsCount += item.quantity();
     }
     int totalDiscount = totalOriginalPrice - totalDiscountedPrice;
 
@@ -138,33 +154,33 @@ public class OrderService {
     log.info("Saved intermediate order ID: {}", savedOrderIntermediate.getId());
 
     List<OrderItem> orderItems = new ArrayList<>();
-    for (CartClient.CartItemResponse cartItem : cart.getItems()) {
+    for (CartClient.CartItemResponse cartItem : cart.items()) {
       // Verify stock by calling catalog-service via FeignClient
-      CatalogClient.ProductResponse product = catalogClient.getProductById(cartItem.getProductId());
+      CatalogClient.ProductResponse product = catalogClient.getProductById(cartItem.productId());
       if (product == null) {
-        throw new RuntimeException("Sản phẩm ID " + cartItem.getProductId() + " không tồn tại.");
+        throw new RuntimeException("Sản phẩm ID " + cartItem.productId() + " không tồn tại.");
       }
 
-      String sizeName = cartItem.getSize();
-      int orderedQuantity = cartItem.getQuantity();
+      String sizeName = cartItem.size();
+      int orderedQuantity = cartItem.quantity();
 
       OrderItem orderItem = new OrderItem();
       orderItem.setOrder(savedOrderIntermediate);
-      orderItem.setProductId(cartItem.getProductId());
-      orderItem.setProductName(product.getTitle());
-      if (product.getImages() != null && !product.getImages().isEmpty()) {
-        orderItem.setProductImageUrl(product.getImages().get(0).getDownloadUrl());
+      orderItem.setProductId(cartItem.productId());
+      orderItem.setProductName(product.title());
+      if (product.images() != null && !product.images().isEmpty()) {
+        orderItem.setProductImageUrl(product.images().get(0).downloadUrl());
       }
       orderItem.setQuantity(orderedQuantity);
-      orderItem.setPrice(cartItem.getPrice());
+      orderItem.setPrice(cartItem.price());
       orderItem.setSize(sizeName);
-      orderItem.setDiscountPercent(cartItem.getDiscountPercent());
-      orderItem.setDiscountedPrice(cartItem.getDiscountedPrice());
+      orderItem.setDiscountPercent(cartItem.discountPercent());
+      orderItem.setDiscountedPrice(cartItem.discountedPrice());
       orderItem.setDeliveryDate(LocalDateTime.now().plusDays(7));
       orderItems.add(orderItem);
 
       // Deduct stock via FeignClient
-      catalogClient.decreaseStock(cartItem.getProductId(), sizeName, orderedQuantity);
+      catalogClient.decreaseStock(cartItem.productId(), sizeName, orderedQuantity);
     }
 
     savedOrderIntermediate.setOrderItems(orderItems);
@@ -292,29 +308,35 @@ public class OrderService {
     findOrderById(orderId);
 
     // Get address ID before deleting order row (needed to clean up orphan address)
-    Long addressId = (Long) entityManager
-        .createNativeQuery("SELECT order_address FROM orders WHERE id = :orderId")
-        .setParameter("orderId", orderId)
-        .getSingleResult();
+    Long addressId =
+        (Long)
+            entityManager
+                .createNativeQuery("SELECT order_address FROM orders WHERE id = :orderId")
+                .setParameter("orderId", orderId)
+                .getSingleResult();
 
     // 1. Delete payment details (FK → orders)
-    entityManager.createNativeQuery("DELETE FROM payment_details WHERE order_id = :orderId")
+    entityManager
+        .createNativeQuery("DELETE FROM payment_details WHERE order_id = :orderId")
         .setParameter("orderId", orderId)
         .executeUpdate();
 
     // 2. Delete order items (FK → orders)
-    entityManager.createNativeQuery("DELETE FROM order_item WHERE order_id = :orderId")
+    entityManager
+        .createNativeQuery("DELETE FROM order_item WHERE order_id = :orderId")
         .setParameter("orderId", orderId)
         .executeUpdate();
 
     // 3. Delete the order row itself (FK → order_address)
-    entityManager.createNativeQuery("DELETE FROM orders WHERE id = :orderId")
+    entityManager
+        .createNativeQuery("DELETE FROM orders WHERE id = :orderId")
         .setParameter("orderId", orderId)
         .executeUpdate();
 
     // 4. Delete orphan address (if any)
     if (addressId != null) {
-      entityManager.createNativeQuery("DELETE FROM order_address WHERE id = :addressId")
+      entityManager
+          .createNativeQuery("DELETE FROM order_address WHERE id = :addressId")
           .setParameter("addressId", addressId)
           .executeUpdate();
     }

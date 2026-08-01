@@ -1,7 +1,6 @@
 package com.kyro.order.client;
 
 import java.util.List;
-import lombok.Data;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,24 +16,17 @@ public interface CartClient {
   @DeleteMapping("/api/v1/cart")
   void clearCart(@RequestHeader("X-User-Id") Long userId);
 
-  @Data
-  class CartResponse {
-    private String userId;
-    private List<CartItemResponse> items;
-    private int totalPrice;
-    private int totalDiscountedPrice;
-  }
+  record CartResponse(
+      String userId, List<CartItemResponse> items, int totalPrice, int totalDiscountedPrice) {}
 
-  @Data
-  class CartItemResponse {
-    private String id;
-    private Long productId;
-    private String productName;
-    private String productImageUrl;
-    private int quantity;
-    private int price;
-    private String size;
-    private Integer discountPercent;
-    private Integer discountedPrice;
-  }
+  record CartItemResponse(
+      String id,
+      Long productId,
+      String productName,
+      String productImageUrl,
+      int quantity,
+      int price,
+      String size,
+      Integer discountPercent,
+      Integer discountedPrice) {}
 }

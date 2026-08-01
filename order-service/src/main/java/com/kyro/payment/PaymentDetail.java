@@ -6,20 +6,12 @@ import com.kyro.enums.PaymentStatus;
 import com.kyro.order.Order;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "payment_details")
-@Data
 public class PaymentDetail {
+
+  public PaymentDetail() {}
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -72,4 +64,100 @@ public class PaymentDetail {
 
   @Column(name = "vnp_SecureHash")
   private String vnp_SecureHash; // Integrity check hash from VNPay
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public Order getOrder() {
+    return order;
+  }
+
+  public void setOrder(Order order) {
+    this.order = order;
+  }
+
+  public PaymentMethod getPaymentMethod() {
+    return paymentMethod;
+  }
+
+  public void setPaymentMethod(PaymentMethod paymentMethod) {
+    this.paymentMethod = paymentMethod;
+  }
+
+  public PaymentStatus getPaymentStatus() {
+    return paymentStatus;
+  }
+
+  public void setPaymentStatus(PaymentStatus paymentStatus) {
+    this.paymentStatus = paymentStatus;
+  }
+
+  public LocalDateTime getPaymentDate() {
+    return paymentDate;
+  }
+
+  public void setPaymentDate(LocalDateTime paymentDate) {
+    this.paymentDate = paymentDate;
+  }
+
+  public String getTransactionId() {
+    return transactionId;
+  }
+
+  public void setTransactionId(String transactionId) {
+    this.transactionId = transactionId;
+  }
+
+  public int getTotalAmount() {
+    return totalAmount;
+  }
+
+  public void setTotalAmount(int totalAmount) {
+    this.totalAmount = totalAmount;
+  }
+
+  public String getPaymentLog() {
+    return paymentLog;
+  }
+
+  public void setPaymentLog(String paymentLog) {
+    this.paymentLog = paymentLog;
+  }
+
+  public LocalDateTime getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(LocalDateTime createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public LocalDateTime getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(LocalDateTime updatedAt) {
+    this.updatedAt = updatedAt;
+  }
+
+  public String getVnp_ResponseCode() {
+    return vnp_ResponseCode;
+  }
+
+  public void setVnp_ResponseCode(String vnp_ResponseCode) {
+    this.vnp_ResponseCode = vnp_ResponseCode;
+  }
+
+  public String getVnp_SecureHash() {
+    return vnp_SecureHash;
+  }
+
+  public void setVnp_SecureHash(String vnp_SecureHash) {
+    this.vnp_SecureHash = vnp_SecureHash;
+  }
 }
