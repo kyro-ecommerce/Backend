@@ -6,6 +6,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
@@ -14,8 +17,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
 public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler {
-  private static final org.slf4j.Logger log =
-      org.slf4j.LoggerFactory.getLogger(OAuth2FailureHandler.class);
+  private static final Logger log =
+      LoggerFactory.getLogger(OAuth2FailureHandler.class);
 
   @Value("${app.oauth2.failureRedirectUri:http://localhost:5173/oauth2/callback}")
   private String defaultFailureRedirectUri;

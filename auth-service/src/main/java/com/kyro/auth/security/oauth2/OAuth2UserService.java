@@ -6,19 +6,21 @@ import com.kyro.auth.User;
 import com.kyro.auth.UserRepository;
 import com.kyro.auth.security.userdetails.AppUserDetails;
 import com.kyro.enums.UserRole;
-import java.util.List; // Add import
+import java.util.List;
 import java.util.Map;
-import java.util.Optional; // Add import
+import java.util.Optional;
 import java.util.UUID;
-import org.springframework.core.ParameterizedTypeReference; // Add import
-import org.springframework.http.HttpEntity; // Add import
-import org.springframework.http.HttpHeaders; // Add import
-import org.springframework.http.HttpMethod; // Add import
-import org.springframework.http.ResponseEntity; // Add import
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
-import org.springframework.security.oauth2.core.OAuth2AccessToken; // Add import
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -28,8 +30,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 public class OAuth2UserService extends DefaultOAuth2UserService {
-  private static final org.slf4j.Logger log =
-      org.slf4j.LoggerFactory.getLogger(OAuth2UserService.class);
+  private static final Logger log = LoggerFactory.getLogger(OAuth2UserService.class);
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
   private final PasswordEncoder passwordEncoder;

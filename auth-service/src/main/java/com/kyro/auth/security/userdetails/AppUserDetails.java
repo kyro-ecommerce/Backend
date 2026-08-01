@@ -3,11 +3,11 @@ package com.kyro.auth.security.userdetails;
 import com.kyro.auth.User;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map; // ** Add import **
+import java.util.Map;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.oauth2.core.user.OAuth2User; // ** Add import **
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 public class AppUserDetails implements UserDetails, OAuth2User {
 
