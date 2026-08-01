@@ -1,5 +1,6 @@
 package com.kyro.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 
 public class BasicUserDTO {
@@ -10,6 +11,8 @@ public class BasicUserDTO {
   private String mobile;
   private boolean active;
   private String role;
+
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime createdAt;
   private String imageUrl;
   private String oauthProvider;

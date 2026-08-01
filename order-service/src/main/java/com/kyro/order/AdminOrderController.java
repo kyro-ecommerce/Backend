@@ -3,6 +3,7 @@ package com.kyro.order;
 import com.kyro.enums.OrderStatus;
 import com.kyro.order.dto.OrderDetailDTO;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -91,10 +92,23 @@ public class AdminOrderController {
       @RequestParam(required = false) String endDate) {
 
     LocalDate start =
-        startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusMonths(1);
-    LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
+        (startDate != null && !startDate.isBlank()) ? LocalDate.parse(startDate) : null;
+    LocalDate end = (endDate != null && !endDate.isBlank()) ? LocalDate.parse(endDate) : null;
 
     Map<String, Object> stats = orderService.getOrderStatistics(start, end);
     return ResponseEntity.ok(stats);
+  }
+
+  @GetMapping("/daily-revenue")
+  public ResponseEntity<List<Map<String, Object>>> getDailyRevenue(
+      @RequestParam(required = false) String startDate,
+      @RequestParam(required = false) String endDate) {
+
+    LocalDate start =
+        (startDate != null && !startDate.isBlank()) ? LocalDate.parse(startDate) : null;
+    LocalDate end = (endDate != null && !endDate.isBlank()) ? LocalDate.parse(endDate) : null;
+
+    List<Map<String, Object>> dailyRevenue = orderService.getDailyRevenue(start, end);
+    return ResponseEntity.ok(dailyRevenue);
   }
 }

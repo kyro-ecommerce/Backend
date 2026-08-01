@@ -73,4 +73,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
           + "AND o.orderStatus = 'DELIVERED'")
   Double sumRevenueByDateRange(
       @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+  @Query(
+      "SELECT CAST(FUNCTION('DATE', o.orderDate) AS string), SUM(o.totalDiscountedPrice) FROM Order o WHERE "
+          + "(CAST(:startDate AS timestamp) IS NULL OR o.orderDate >= :startDate) "
+          + "AND (CAST(:endDate AS timestamp) IS NULL OR o.orderDate <= :endDate) "
+          + "GROUP BY FUNCTION('DATE', o.orderDate) ORDER BY FUNCTION('DATE', o.orderDate) ASC")
+  List<Object[]> findDailyRevenueByDateRange(
+      @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 }
