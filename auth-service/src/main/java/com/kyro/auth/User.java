@@ -6,17 +6,13 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.NaturalId;
 
-@Getter
-@Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "users")
 public class User {
+
+  public User() {}
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -101,57 +97,147 @@ public class User {
     this.createdAt = LocalDateTime.now();
   }
 
-  public Long getId() { return id; }
-  public void setId(Long id) { this.id = id; }
+  public Long getId() {
+    return id;
+  }
 
-  public boolean isActive() { return active; }
-  public void setActive(boolean active) { this.active = active; }
+  public void setId(Long id) {
+    this.id = id;
+  }
 
-  public String getFirstName() { return firstName; }
-  public void setFirstName(String firstName) { this.firstName = firstName; }
+  public boolean isActive() {
+    return active;
+  }
 
-  public String getLastName() { return lastName; }
-  public void setLastName(String lastName) { this.lastName = lastName; }
+  public void setActive(boolean active) {
+    this.active = active;
+  }
 
-  public String getEmail() { return email; }
-  public void setEmail(String email) { this.email = email; }
+  public String getFirstName() {
+    return firstName;
+  }
 
-  public String getPassword() { return password; }
-  public void setPassword(String password) { this.password = password; }
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
 
-  public String getPhone() { return phone; }
-  public void setPhone(String phone) { this.phone = phone; }
+  public String getLastName() {
+    return lastName;
+  }
 
-  public List<Address> getAddress() { return address; }
-  public void setAddress(List<Address> address) { this.address = address; }
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
 
-  public LocalDateTime getCreatedAt() { return createdAt; }
-  public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+  public String getEmail() {
+    return email;
+  }
 
-  public Role getRole() { return role; }
-  public void setRole(Role role) { this.role = role; }
+  public void setEmail(String email) {
+    this.email = email;
+  }
 
-  public boolean isBanned() { return banned; }
-  public void setBanned(boolean banned) { this.banned = banned; }
+  public String getPassword() {
+    return password;
+  }
 
-  public String getOauthProvider() { return oauthProvider; }
-  public void setOauthProvider(String oauthProvider) { this.oauthProvider = oauthProvider; }
+  public void setPassword(String password) {
+    this.password = password;
+  }
 
-  public String getOauthProviderId() { return oauthProviderId; }
-  public void setOauthProviderId(String oauthProviderId) { this.oauthProviderId = oauthProviderId; }
+  public String getPhone() {
+    return phone;
+  }
 
-  public String getImageUrl() { return imageUrl; }
-  public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+  public void setPhone(String phone) {
+    this.phone = phone;
+  }
 
-  public String getWebsite() { return website; }
-  public void setWebsite(String website) { this.website = website; }
+  public List<Address> getAddress() {
+    return address;
+  }
 
-  public String getBusinessType() { return businessType; }
-  public void setBusinessType(String businessType) { this.businessType = businessType; }
+  public void setAddress(List<Address> address) {
+    this.address = address;
+  }
 
-  public String getShopDescription() { return shopDescription; }
-  public void setShopDescription(String shopDescription) { this.shopDescription = shopDescription; }
+  public LocalDateTime getCreatedAt() {
+    return createdAt;
+  }
 
-  public String getShopName() { return shopName; }
-  public void setShopName(String shopName) { this.shopName = shopName; }
+  public void setCreatedAt(LocalDateTime createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Role getRole() {
+    return role;
+  }
+
+  public void setRole(Role role) {
+    this.role = role;
+  }
+
+  public boolean isBanned() {
+    return banned;
+  }
+
+  public void setBanned(boolean banned) {
+    this.banned = banned;
+  }
+
+  public String getOauthProvider() {
+    return oauthProvider;
+  }
+
+  public void setOauthProvider(String oauthProvider) {
+    this.oauthProvider = oauthProvider;
+  }
+
+  public String getOauthProviderId() {
+    return oauthProviderId;
+  }
+
+  public void setOauthProviderId(String oauthProviderId) {
+    this.oauthProviderId = oauthProviderId;
+  }
+
+  public String getImageUrl() {
+    return imageUrl;
+  }
+
+  public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
+  }
+
+  public String getWebsite() {
+    return website;
+  }
+
+  public void setWebsite(String website) {
+    this.website = website;
+  }
+
+  public String getBusinessType() {
+    return businessType;
+  }
+
+  public void setBusinessType(String businessType) {
+    this.businessType = businessType;
+  }
+
+  public String getShopDescription() {
+    return shopDescription;
+  }
+
+  public void setShopDescription(String shopDescription) {
+    this.shopDescription = shopDescription;
+  }
+
+  public String getShopName() {
+    return shopName;
+  }
+
+  public void setShopName(String shopName) {
+    this.shopName = shopName;
+  }
 }

@@ -10,8 +10,6 @@ import java.util.List; // Add import
 import java.util.Map;
 import java.util.Optional; // Add import
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference; // Add import
 import org.springframework.http.HttpEntity; // Add import
 import org.springframework.http.HttpHeaders; // Add import
@@ -29,13 +27,24 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 @Service
-@RequiredArgsConstructor
 public class OAuth2UserService extends DefaultOAuth2UserService {
-  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(OAuth2UserService.class);
+  private static final org.slf4j.Logger log =
+      org.slf4j.LoggerFactory.getLogger(OAuth2UserService.class);
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
   private final PasswordEncoder passwordEncoder;
   private final RestTemplate restTemplate;
+
+  public OAuth2UserService(
+      UserRepository userRepository,
+      RoleRepository roleRepository,
+      PasswordEncoder passwordEncoder,
+      RestTemplate restTemplate) {
+    this.userRepository = userRepository;
+    this.roleRepository = roleRepository;
+    this.passwordEncoder = passwordEncoder;
+    this.restTemplate = restTemplate;
+  }
 
   private static final String OAUTH2_PROCESSING_ERROR_CODE = "oauth2_processing_error";
   private static final String EMAIL_NOT_FOUND_ERROR_CODE = "email_not_found";

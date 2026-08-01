@@ -13,8 +13,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,10 +25,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
-@Slf4j
 @RequestMapping("${api.prefix}/auth")
 public class AuthController {
+
+  private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+
   private final JwtUtils jwtUtils;
   private final CookieUtils cookieUtils;
   private final AppUserDetailsService userDetailsService;
@@ -36,6 +37,23 @@ public class AuthController {
   private final UserService userService;
   private final UserRepository userRepository;
   private final OtpService otpService;
+
+  public AuthController(
+      JwtUtils jwtUtils,
+      CookieUtils cookieUtils,
+      AppUserDetailsService userDetailsService,
+      AuthenticationManager authenticationManager,
+      UserService userService,
+      UserRepository userRepository,
+      OtpService otpService) {
+    this.jwtUtils = jwtUtils;
+    this.cookieUtils = cookieUtils;
+    this.userDetailsService = userDetailsService;
+    this.authenticationManager = authenticationManager;
+    this.userService = userService;
+    this.userRepository = userRepository;
+    this.otpService = otpService;
+  }
 
   @Value("${auth.token.refreshExpirationInMils}")
   private Long refreshTokenExpirationTime;

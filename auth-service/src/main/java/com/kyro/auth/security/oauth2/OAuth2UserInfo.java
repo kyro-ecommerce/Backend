@@ -1,15 +1,19 @@
 package com.kyro.auth.security.oauth2;
 
 import java.util.Map;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
 public abstract class OAuth2UserInfo {
   protected Map<String, Object> attributes;
 
   public OAuth2UserInfo(Map<String, Object> attributes) {
+    this.attributes = attributes;
+  }
+
+  public Map<String, Object> getAttributes() {
+    return attributes;
+  }
+
+  public void setAttributes(Map<String, Object> attributes) {
     this.attributes = attributes;
   }
 

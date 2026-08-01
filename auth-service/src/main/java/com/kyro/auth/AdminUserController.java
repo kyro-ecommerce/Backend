@@ -2,12 +2,8 @@ package com.kyro.auth;
 
 import com.kyro.auth.dto.BasicUserDTO;
 import com.kyro.enums.UserRole;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -15,13 +11,17 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("${api.prefix:/api/v1}/admin/users")
 @Transactional
 public class AdminUserController {
 
   private final UserRepository userRepository;
   private final UserService userService;
+
+  public AdminUserController(UserRepository userRepository, UserService userService) {
+    this.userRepository = userRepository;
+    this.userService = userService;
+  }
 
   @GetMapping("/all")
   @Transactional(readOnly = true)
@@ -41,7 +41,8 @@ public class AdminUserController {
       }
     }
 
-    Page<User> usersPage = userRepository.findAdminUsersWithFilters(cleanSearch, userRoleEnum, pageable);
+    Page<User> usersPage =
+        userRepository.findAdminUsersWithFilters(cleanSearch, userRoleEnum, pageable);
     Page<BasicUserDTO> dtoList = usersPage.map(userService::convertToBasicDto);
 
     return ResponseEntity.ok(dtoList);
@@ -93,7 +94,8 @@ public class AdminUserController {
     User user = userService.getUserById(userId);
     user.setBanned(banned);
     userRepository.save(user);
-    return ResponseEntity.ok(Map.of("message", banned ? "Khóa tài khoản thành công" : "Mở khóa tài khoản thành công"));
+    return ResponseEntity.ok(
+        Map.of("message", banned ? "Khóa tài khoản thành công" : "Mở khóa tài khoản thành công"));
   }
 
   @DeleteMapping("/{userId}")

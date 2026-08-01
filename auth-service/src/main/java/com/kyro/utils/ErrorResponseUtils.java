@@ -4,14 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kyro.dto.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class ErrorResponseUtils {
   private final ObjectMapper objectMapper; // To serialize object to JSON.
+
+  public ErrorResponseUtils(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
 
   public void sendAuthenticationError(HttpServletResponse response, String message)
       throws IOException {

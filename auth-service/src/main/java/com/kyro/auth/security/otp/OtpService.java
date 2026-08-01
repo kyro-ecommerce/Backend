@@ -8,22 +8,25 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /** Service for generating, validating, and publishing OTP requests to RabbitMQ. */
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class OtpService {
+
+  private static final Logger log = LoggerFactory.getLogger(OtpService.class);
 
   private final RabbitTemplate rabbitTemplate;
   private final UserRepository userRepository;
+
+  public OtpService(RabbitTemplate rabbitTemplate, UserRepository userRepository) {
+    this.rabbitTemplate = rabbitTemplate;
+    this.userRepository = userRepository;
+  }
 
   @Value("${app.otp.expiration-minutes:10}")
   private int otpExpirationMinutes;
@@ -168,8 +171,16 @@ public class OtpService {
       this.generationTime = generationTime;
     }
 
-    public String getOtp() { return otp; }
-    public LocalDateTime getExpirationTime() { return expirationTime; }
-    public LocalDateTime getGenerationTime() { return generationTime; }
+    public String getOtp() {
+      return otp;
+    }
+
+    public LocalDateTime getExpirationTime() {
+      return expirationTime;
+    }
+
+    public LocalDateTime getGenerationTime() {
+      return generationTime;
+    }
   }
 }
