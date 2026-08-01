@@ -4,18 +4,23 @@ import com.kyro.catalog.dto.ImageDTO;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class ImageService {
+  private static final Logger log = LoggerFactory.getLogger(ImageService.class);
+
   private final ImageRepository imageRepository;
   private final CloudinaryService cloudinaryService;
+
+  public ImageService(ImageRepository imageRepository, CloudinaryService cloudinaryService) {
+    this.imageRepository = imageRepository;
+    this.cloudinaryService = cloudinaryService;
+  }
 
   public Image uploadImageForProduct(MultipartFile file, Product product) throws IOException {
     try {

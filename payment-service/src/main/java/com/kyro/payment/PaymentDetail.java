@@ -4,19 +4,11 @@ import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * Entity representing payment details for transactions. Decoupled from Order entity by storing
  * plain orderId.
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "payment_details")
 public class PaymentDetail {
@@ -54,6 +46,41 @@ public class PaymentDetail {
   @Column(name = "updated_at")
   private LocalDateTime updatedAt;
 
+  @Column(name = "vnp_ResponseCode")
+  private String vnp_ResponseCode;
+
+  @Column(name = "vnp_SecureHash")
+  private String vnp_SecureHash;
+
+  public PaymentDetail() {}
+
+  public PaymentDetail(
+      Long id,
+      Long orderId,
+      PaymentMethod paymentMethod,
+      PaymentStatus paymentStatus,
+      LocalDateTime paymentDate,
+      String transactionId,
+      int totalAmount,
+      String paymentLog,
+      LocalDateTime createdAt,
+      LocalDateTime updatedAt,
+      String vnp_ResponseCode,
+      String vnp_SecureHash) {
+    this.id = id;
+    this.orderId = orderId;
+    this.paymentMethod = paymentMethod;
+    this.paymentStatus = paymentStatus;
+    this.paymentDate = paymentDate;
+    this.transactionId = transactionId;
+    this.totalAmount = totalAmount;
+    this.paymentLog = paymentLog;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+    this.vnp_ResponseCode = vnp_ResponseCode;
+    this.vnp_SecureHash = vnp_SecureHash;
+  }
+
   @PrePersist
   protected void onCreate() {
     this.createdAt = LocalDateTime.now();
@@ -65,9 +92,99 @@ public class PaymentDetail {
     this.updatedAt = LocalDateTime.now();
   }
 
-  @Column(name = "vnp_ResponseCode")
-  private String vnp_ResponseCode;
+  public Long getId() {
+    return id;
+  }
 
-  @Column(name = "vnp_SecureHash")
-  private String vnp_SecureHash;
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public Long getOrderId() {
+    return orderId;
+  }
+
+  public void setOrderId(Long orderId) {
+    this.orderId = orderId;
+  }
+
+  public PaymentMethod getPaymentMethod() {
+    return paymentMethod;
+  }
+
+  public void setPaymentMethod(PaymentMethod paymentMethod) {
+    this.paymentMethod = paymentMethod;
+  }
+
+  public PaymentStatus getPaymentStatus() {
+    return paymentStatus;
+  }
+
+  public void setPaymentStatus(PaymentStatus paymentStatus) {
+    this.paymentStatus = paymentStatus;
+  }
+
+  public LocalDateTime getPaymentDate() {
+    return paymentDate;
+  }
+
+  public void setPaymentDate(LocalDateTime paymentDate) {
+    this.paymentDate = paymentDate;
+  }
+
+  public String getTransactionId() {
+    return transactionId;
+  }
+
+  public void setTransactionId(String transactionId) {
+    this.transactionId = transactionId;
+  }
+
+  public int getTotalAmount() {
+    return totalAmount;
+  }
+
+  public void setTotalAmount(int totalAmount) {
+    this.totalAmount = totalAmount;
+  }
+
+  public String getPaymentLog() {
+    return paymentLog;
+  }
+
+  public void setPaymentLog(String paymentLog) {
+    this.paymentLog = paymentLog;
+  }
+
+  public LocalDateTime getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(LocalDateTime createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public LocalDateTime getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(LocalDateTime updatedAt) {
+    this.updatedAt = updatedAt;
+  }
+
+  public String getVnp_ResponseCode() {
+    return vnp_ResponseCode;
+  }
+
+  public void setVnp_ResponseCode(String vnp_ResponseCode) {
+    this.vnp_ResponseCode = vnp_ResponseCode;
+  }
+
+  public String getVnp_SecureHash() {
+    return vnp_SecureHash;
+  }
+
+  public void setVnp_SecureHash(String vnp_SecureHash) {
+    this.vnp_SecureHash = vnp_SecureHash;
+  }
 }

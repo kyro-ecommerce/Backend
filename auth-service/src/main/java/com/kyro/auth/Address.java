@@ -4,18 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "address")
 public class Address {
+
+  public Address() {}
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -61,22 +55,75 @@ public class Address {
   @Column(name = "phone_number")
   private String phoneNumber;
 
-  public Long getId() { return id; }
-  public void setId(Long id) { this.id = id; }
-  public String getFullName() { return fullName; }
-  public void setFullName(String fullName) { this.fullName = fullName; }
-  public String getProvince() { return province; }
-  public void setProvince(String province) { this.province = province; }
-  public String getDistrict() { return district; }
-  public void setDistrict(String district) { this.district = district; }
-  public String getWard() { return ward; }
-  public void setWard(String ward) { this.ward = ward; }
-  public String getStreet() { return street; }
-  public void setStreet(String street) { this.street = street; }
-  public String getNote() { return note; }
-  public void setNote(String note) { this.note = note; }
-  public User getUser() { return user; }
-  public void setUser(User user) { this.user = user; }
-  public String getPhoneNumber() { return phoneNumber; }
-  public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public String getFullName() {
+    return fullName;
+  }
+
+  public void setFullName(String fullName) {
+    this.fullName = fullName;
+  }
+
+  public String getProvince() {
+    return province;
+  }
+
+  public void setProvince(String province) {
+    this.province = province;
+  }
+
+  public String getDistrict() {
+    return district;
+  }
+
+  public void setDistrict(String district) {
+    this.district = district;
+  }
+
+  public String getWard() {
+    return ward;
+  }
+
+  public void setWard(String ward) {
+    this.ward = ward;
+  }
+
+  public String getStreet() {
+    return street;
+  }
+
+  public void setStreet(String street) {
+    this.street = street;
+  }
+
+  public String getNote() {
+    return note;
+  }
+
+  public void setNote(String note) {
+    this.note = note;
+  }
+
+  public User getUser() {
+    return user;
+  }
+
+  public void setUser(User user) {
+    this.user = user;
+  }
+
+  public String getPhoneNumber() {
+    return phoneNumber;
+  }
+
+  public void setPhoneNumber(String phoneNumber) {
+    this.phoneNumber = phoneNumber;
+  }
 }

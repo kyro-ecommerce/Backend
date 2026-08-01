@@ -6,15 +6,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@NoArgsConstructor
 @Entity
 public class Category {
+
+  public Category() {}
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -79,5 +75,61 @@ public class Category {
   public void removeSubCategory(Category subCategory) {
     subCategories.remove(subCategory);
     subCategory.setParentCategory(null);
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public Category getParentCategory() {
+    return parentCategory;
+  }
+
+  public void setParentCategory(Category parentCategory) {
+    this.parentCategory = parentCategory;
+  }
+
+  public List<Category> getSubCategories() {
+    return subCategories;
+  }
+
+  public void setSubCategories(List<Category> subCategories) {
+    this.subCategories = subCategories;
+  }
+
+  public boolean isParent() {
+    return isParent;
+  }
+
+  public void setParent(boolean isParent) {
+    this.isParent = isParent;
+  }
+
+  public List<Product> getProducts() {
+    return products;
+  }
+
+  public void setProducts(List<Product> products) {
+    this.products = products;
+  }
+
+  public int getLevel() {
+    return level;
+  }
+
+  public void setLevel(int level) {
+    this.level = level;
   }
 }

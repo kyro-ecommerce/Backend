@@ -8,27 +8,28 @@ import com.kyro.order.Order;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /** Data Transfer Object representing order details. */
-@Data
-@NoArgsConstructor
 public class OrderDTO {
   private Long id;
   private OrderStatus orderStatus;
   private Integer totalDiscountedPrice;
   private int discount;
   private int totalItems;
+
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime orderDate;
+
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime deliveryDate;
+
   private Integer originalPrice;
   private AddressDTO shippingAddress;
   private PaymentStatus paymentStatus;
   private List<OrderItemDTO> orderItems;
   private PaymentMethod paymentMethod;
+
+  public OrderDTO() {}
 
   public OrderDTO(Order order) {
     this.id = order.getId();
@@ -55,5 +56,101 @@ public class OrderDTO {
                 }
               });
     }
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public OrderStatus getOrderStatus() {
+    return orderStatus;
+  }
+
+  public void setOrderStatus(OrderStatus orderStatus) {
+    this.orderStatus = orderStatus;
+  }
+
+  public Integer getTotalDiscountedPrice() {
+    return totalDiscountedPrice;
+  }
+
+  public void setTotalDiscountedPrice(Integer totalDiscountedPrice) {
+    this.totalDiscountedPrice = totalDiscountedPrice;
+  }
+
+  public int getDiscount() {
+    return discount;
+  }
+
+  public void setDiscount(int discount) {
+    this.discount = discount;
+  }
+
+  public int getTotalItems() {
+    return totalItems;
+  }
+
+  public void setTotalItems(int totalItems) {
+    this.totalItems = totalItems;
+  }
+
+  public LocalDateTime getOrderDate() {
+    return orderDate;
+  }
+
+  public void setOrderDate(LocalDateTime orderDate) {
+    this.orderDate = orderDate;
+  }
+
+  public LocalDateTime getDeliveryDate() {
+    return deliveryDate;
+  }
+
+  public void setDeliveryDate(LocalDateTime deliveryDate) {
+    this.deliveryDate = deliveryDate;
+  }
+
+  public Integer getOriginalPrice() {
+    return originalPrice;
+  }
+
+  public void setOriginalPrice(Integer originalPrice) {
+    this.originalPrice = originalPrice;
+  }
+
+  public AddressDTO getShippingAddress() {
+    return shippingAddress;
+  }
+
+  public void setShippingAddress(AddressDTO shippingAddress) {
+    this.shippingAddress = shippingAddress;
+  }
+
+  public PaymentStatus getPaymentStatus() {
+    return paymentStatus;
+  }
+
+  public void setPaymentStatus(PaymentStatus paymentStatus) {
+    this.paymentStatus = paymentStatus;
+  }
+
+  public List<OrderItemDTO> getOrderItems() {
+    return orderItems;
+  }
+
+  public void setOrderItems(List<OrderItemDTO> orderItems) {
+    this.orderItems = orderItems;
+  }
+
+  public PaymentMethod getPaymentMethod() {
+    return paymentMethod;
+  }
+
+  public void setPaymentMethod(PaymentMethod paymentMethod) {
+    this.paymentMethod = paymentMethod;
   }
 }

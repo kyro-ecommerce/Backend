@@ -16,13 +16,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class UserService {
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
@@ -30,6 +28,21 @@ public class UserService {
   private final OtpService otpService;
   private final AddressRepository addressRepository;
   private final JwtUtils jwtUtils;
+
+  public UserService(
+      UserRepository userRepository,
+      RoleRepository roleRepository,
+      PasswordEncoder passwordEncoder,
+      OtpService otpService,
+      AddressRepository addressRepository,
+      JwtUtils jwtUtils) {
+    this.userRepository = userRepository;
+    this.roleRepository = roleRepository;
+    this.passwordEncoder = passwordEncoder;
+    this.otpService = otpService;
+    this.addressRepository = addressRepository;
+    this.jwtUtils = jwtUtils;
+  }
 
   public User createUser(CreateUserRequest request) {
     return Optional.of(request)
@@ -192,8 +205,11 @@ public class UserService {
     if (user == null) {
       throw new EntityNotFoundException("User not found: " + email);
     }
-    Address address = addressRepository.findById(addressId)
-        .orElseThrow(() -> new EntityNotFoundException("Address not found with ID: " + addressId));
+    Address address =
+        addressRepository
+            .findById(addressId)
+            .orElseThrow(
+                () -> new EntityNotFoundException("Address not found with ID: " + addressId));
 
     if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
       address.setFullName(request.getFullName().trim());
@@ -227,8 +243,11 @@ public class UserService {
     if (user == null) {
       throw new EntityNotFoundException("User not found: " + email);
     }
-    Address address = addressRepository.findById(addressId)
-        .orElseThrow(() -> new EntityNotFoundException("Address not found with ID: " + addressId));
+    Address address =
+        addressRepository
+            .findById(addressId)
+            .orElseThrow(
+                () -> new EntityNotFoundException("Address not found with ID: " + addressId));
 
     if (user.getAddress() != null) {
       user.getAddress().removeIf(a -> a.getId() != null && a.getId().equals(addressId));

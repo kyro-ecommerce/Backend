@@ -4,17 +4,22 @@ import com.cloudinary.Cloudinary;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class CloudinaryService {
 
+  private static final Logger log = LoggerFactory.getLogger(CloudinaryService.class);
+
   private final Cloudinary cloudinary;
+
+  public CloudinaryService(Cloudinary cloudinary) {
+    this.cloudinary = cloudinary;
+  }
+
   private static final String DEFAULT_FOLDER = "tech_shop";
 
   public Map<String, Object> uploadImage(MultipartFile file) throws IOException {

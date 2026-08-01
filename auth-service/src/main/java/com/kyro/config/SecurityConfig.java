@@ -7,8 +7,6 @@ import com.kyro.auth.security.oauth2.OAuth2SuccessHandler;
 import com.kyro.auth.security.userdetails.AppUserDetailsService;
 import com.kyro.utils.ErrorResponseUtils;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,8 +27,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
-@Slf4j
 public class SecurityConfig {
   @Value("${api.prefix}")
   private String API;
@@ -43,6 +39,25 @@ public class SecurityConfig {
   private final OAuth2FailureHandler oAuth2FailureHandler;
   private final ErrorResponseUtils errorResponseUtils;
   private final PasswordEncoder passwordEncoder;
+
+  public SecurityConfig(
+      AppUserDetailsService userDetailsService,
+      JwtEntryPoint authEntryPoint,
+      AuthTokenFilter authTokenFilter,
+      OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService,
+      OAuth2SuccessHandler oAuth2SuccessHandler,
+      OAuth2FailureHandler oAuth2FailureHandler,
+      ErrorResponseUtils errorResponseUtils,
+      PasswordEncoder passwordEncoder) {
+    this.userDetailsService = userDetailsService;
+    this.authEntryPoint = authEntryPoint;
+    this.authTokenFilter = authTokenFilter;
+    this.oAuth2UserService = oAuth2UserService;
+    this.oAuth2SuccessHandler = oAuth2SuccessHandler;
+    this.oAuth2FailureHandler = oAuth2FailureHandler;
+    this.errorResponseUtils = errorResponseUtils;
+    this.passwordEncoder = passwordEncoder;
+  }
 
   // CloudflareFilter and RateLimitFilter removed
 

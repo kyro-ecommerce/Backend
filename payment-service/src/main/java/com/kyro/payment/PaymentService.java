@@ -13,8 +13,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,9 +26,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * clients.
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class PaymentService {
+
+  private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
   @Value("${vnpay.tmnCode}")
   private String vnp_TmnCode;
@@ -44,6 +44,11 @@ public class PaymentService {
 
   private final OrderClient orderClient;
   private final PaymentRepository paymentRepository;
+
+  public PaymentService(OrderClient orderClient, PaymentRepository paymentRepository) {
+    this.orderClient = orderClient;
+    this.paymentRepository = paymentRepository;
+  }
 
   @Transactional
   public String createPayment(Long orderId) {
@@ -61,7 +66,7 @@ public class PaymentService {
       String vnp_OrderInfo = "Thanh toan don hang #" + orderId;
       String vnp_OrderType = "other";
       String vnp_IpAddr = getIpAddress();
-      int totalAmount = order.getTotalDiscountedPrice() != null ? order.getTotalDiscountedPrice() : 0;
+      int totalAmount = order.totalDiscountedPrice() != null ? order.totalDiscountedPrice() : 0;
       long amount = (long) totalAmount * 100L;
 
       Map<String, String> vnp_Params = new HashMap<>();
@@ -87,7 +92,8 @@ public class PaymentService {
       vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
       vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
 
-      // Find existing PaymentDetail or create a new record to avoid unique order_id constraint violation
+      // Find existing PaymentDetail or create a new record to avoid unique order_id constraint
+      // violation
       PaymentDetail paymentDetail =
           paymentRepository.findByOrderId(orderId).orElseGet(PaymentDetail::new);
 
@@ -202,7 +208,10 @@ public class PaymentService {
       if (ipAddress != null && ipAddress.contains(",")) {
         ipAddress = ipAddress.split(",")[0].trim();
       }
-      if (ipAddress == null || ipAddress.isEmpty() || "0:0:0:0:0:0:0:1".equals(ipAddress) || "::1".equals(ipAddress)) {
+      if (ipAddress == null
+          || ipAddress.isEmpty()
+          || "0:0:0:0:0:0:0:1".equals(ipAddress)
+          || "::1".equals(ipAddress)) {
         ipAddress = "127.0.0.1";
       }
       return ipAddress;

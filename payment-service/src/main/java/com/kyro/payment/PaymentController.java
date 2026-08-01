@@ -4,8 +4,8 @@ import com.kyro.exceptions.DomainException;
 import com.kyro.payment.client.OrderClient;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,19 +15,27 @@ import org.springframework.web.bind.annotation.*;
  * authenticated user state from gateway-injected headers.
  */
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("${api.prefix}/payment")
-@Slf4j
 public class PaymentController {
+
+  private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
 
   private final PaymentService paymentService;
   private final OrderClient orderClient;
   private final PaymentRepository paymentRepository;
 
+  public PaymentController(
+      PaymentService paymentService, OrderClient orderClient, PaymentRepository paymentRepository) {
+    this.paymentService = paymentService;
+    this.orderClient = orderClient;
+    this.paymentRepository = paymentRepository;
+  }
+
   /** Creates a VNPay checkout URL for an order. */
   @PostMapping("/create/{orderId}")
   public ResponseEntity<Map<String, Object>> createPayment(
-      @RequestHeader(value = "X-User-Id", required = false) Long userId, @PathVariable Long orderId) {
+      @RequestHeader(value = "X-User-Id", required = false) Long userId,
+      @PathVariable Long orderId) {
 
     OrderClient.OrderResponse order = null;
     try {

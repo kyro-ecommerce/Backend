@@ -7,7 +7,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
@@ -19,12 +18,20 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
-@RequiredArgsConstructor
 public class AuthTokenFilter extends OncePerRequestFilter {
   private static final Logger log = LoggerFactory.getLogger(AuthTokenFilter.class);
   private final JwtUtils jwtUtils;
   private final AppUserDetailsService userDetailsService;
   private final ErrorResponseUtils errorResponseUtils;
+
+  public AuthTokenFilter(
+      JwtUtils jwtUtils,
+      AppUserDetailsService userDetailsService,
+      ErrorResponseUtils errorResponseUtils) {
+    this.jwtUtils = jwtUtils;
+    this.userDetailsService = userDetailsService;
+    this.errorResponseUtils = errorResponseUtils;
+  }
 
   @Override
   protected void doFilterInternal(

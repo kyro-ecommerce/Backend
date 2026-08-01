@@ -8,22 +8,15 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.DynamicInsert;
 
-/** Entity representing an order in the system. */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @DynamicInsert
 @Table(name = "orders")
 public class Order {
+
+  public Order() {}
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -75,4 +68,124 @@ public class Order {
   @Column(name = "payment_status")
   @Enumerated(EnumType.STRING)
   private PaymentStatus paymentStatus;
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public Long getUserId() {
+    return userId;
+  }
+
+  public void setUserId(Long userId) {
+    this.userId = userId;
+  }
+
+  public String getUserEmail() {
+    return userEmail;
+  }
+
+  public void setUserEmail(String userEmail) {
+    this.userEmail = userEmail;
+  }
+
+  public LocalDateTime getOrderDate() {
+    return orderDate;
+  }
+
+  public void setOrderDate(LocalDateTime orderDate) {
+    this.orderDate = orderDate;
+  }
+
+  public int getOriginalPrice() {
+    return originalPrice;
+  }
+
+  public void setOriginalPrice(int originalPrice) {
+    this.originalPrice = originalPrice;
+  }
+
+  public OrderStatus getOrderStatus() {
+    return orderStatus;
+  }
+
+  public void setOrderStatus(OrderStatus orderStatus) {
+    this.orderStatus = orderStatus;
+  }
+
+  public Collection<OrderItem> getOrderItems() {
+    return orderItems;
+  }
+
+  public void setOrderItems(Collection<OrderItem> orderItems) {
+    this.orderItems = orderItems;
+  }
+
+  public PaymentDetail getPaymentDetails() {
+    return paymentDetails;
+  }
+
+  public void setPaymentDetails(PaymentDetail paymentDetails) {
+    this.paymentDetails = paymentDetails;
+  }
+
+  public Address getShippingAddress() {
+    return shippingAddress;
+  }
+
+  public void setShippingAddress(Address shippingAddress) {
+    this.shippingAddress = shippingAddress;
+  }
+
+  public LocalDateTime getDeliveryDate() {
+    return deliveryDate;
+  }
+
+  public void setDeliveryDate(LocalDateTime deliveryDate) {
+    this.deliveryDate = deliveryDate;
+  }
+
+  public Integer getTotalDiscountedPrice() {
+    return totalDiscountedPrice;
+  }
+
+  public void setTotalDiscountedPrice(Integer totalDiscountedPrice) {
+    this.totalDiscountedPrice = totalDiscountedPrice;
+  }
+
+  public int getDiscount() {
+    return discount;
+  }
+
+  public void setDiscount(int discount) {
+    this.discount = discount;
+  }
+
+  public int getTotalItems() {
+    return totalItems;
+  }
+
+  public void setTotalItems(int totalItems) {
+    this.totalItems = totalItems;
+  }
+
+  public PaymentMethod getPaymentMethod() {
+    return paymentMethod;
+  }
+
+  public void setPaymentMethod(PaymentMethod paymentMethod) {
+    this.paymentMethod = paymentMethod;
+  }
+
+  public PaymentStatus getPaymentStatus() {
+    return paymentStatus;
+  }
+
+  public void setPaymentStatus(PaymentStatus paymentStatus) {
+    this.paymentStatus = paymentStatus;
+  }
 }

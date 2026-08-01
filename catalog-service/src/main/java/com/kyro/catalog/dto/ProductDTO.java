@@ -7,12 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.*;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
 public class ProductDTO {
   private Long id;
   private String title;
@@ -118,5 +113,223 @@ public class ProductDTO {
       this.topLevelCategory = null;
       this.secondLevelCategory = null;
     }
+  }
+
+  public ProductDTO() {}
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public String getTitle() {
+    return title;
+  }
+
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  public int getPrice() {
+    return price;
+  }
+
+  public void setPrice(int price) {
+    this.price = price;
+  }
+
+  public int getDiscountedPrice() {
+    return discountedPrice;
+  }
+
+  public void setDiscountedPrice(int discountedPrice) {
+    this.discountedPrice = discountedPrice;
+  }
+
+  public int getQuantity() {
+    return quantity;
+  }
+
+  public void setQuantity(int quantity) {
+    this.quantity = quantity;
+  }
+
+  public String getBrand() {
+    return brand;
+  }
+
+  public void setBrand(String brand) {
+    this.brand = brand;
+  }
+
+  public String getColor() {
+    return color;
+  }
+
+  public void setColor(String color) {
+    this.color = color;
+  }
+
+  public String getWeight() {
+    return weight;
+  }
+
+  public void setWeight(String weight) {
+    this.weight = weight;
+  }
+
+  public String getDimension() {
+    return dimension;
+  }
+
+  public void setDimension(String dimension) {
+    this.dimension = dimension;
+  }
+
+  public String getBatteryTtype() {
+    return batteryTtype;
+  }
+
+  public void setBatteryTtype(String batteryTtype) {
+    this.batteryTtype = batteryTtype;
+  }
+
+  public String getBatteryCapacity() {
+    return batteryCapacity;
+  }
+
+  public void setBatteryCapacity(String batteryCapacity) {
+    this.batteryCapacity = batteryCapacity;
+  }
+
+  public String getRamCapacity() {
+    return ramCapacity;
+  }
+
+  public void setRamCapacity(String ramCapacity) {
+    this.ramCapacity = ramCapacity;
+  }
+
+  public String getRomCapacity() {
+    return romCapacity;
+  }
+
+  public void setRomCapacity(String romCapacity) {
+    this.romCapacity = romCapacity;
+  }
+
+  public String getScreenSize() {
+    return screenSize;
+  }
+
+  public void setScreenSize(String screenSize) {
+    this.screenSize = screenSize;
+  }
+
+  public String getDetailedReview() {
+    return detailedReview;
+  }
+
+  public void setDetailedReview(String detailedReview) {
+    this.detailedReview = detailedReview;
+  }
+
+  public String getPowerfulPerformance() {
+    return powerfulPerformance;
+  }
+
+  public void setPowerfulPerformance(String powerfulPerformance) {
+    this.powerfulPerformance = powerfulPerformance;
+  }
+
+  public String getConnectionPort() {
+    return connectionPort;
+  }
+
+  public void setConnectionPort(String connectionPort) {
+    this.connectionPort = connectionPort;
+  }
+
+  public List<ProductSizeDTO> getSizes() {
+    return sizes;
+  }
+
+  public void setSizes(List<ProductSizeDTO> sizes) {
+    this.sizes = sizes;
+  }
+
+  public List<ImageDTO> getImageUrls() {
+    return imageUrls;
+  }
+
+  public void setImageUrls(List<ImageDTO> imageUrls) {
+    this.imageUrls = imageUrls;
+  }
+
+  public double getAverageRating() {
+    return averageRating;
+  }
+
+  public void setAverageRating(double averageRating) {
+    this.averageRating = averageRating;
+  }
+
+  public int getNumRatings() {
+    return numRatings;
+  }
+
+  public void setNumRatings(int numRatings) {
+    this.numRatings = numRatings;
+  }
+
+  public String getTopLevelCategory() {
+    return topLevelCategory;
+  }
+
+  public void setTopLevelCategory(String topLevelCategory) {
+    this.topLevelCategory = topLevelCategory;
+  }
+
+  public String getSecondLevelCategory() {
+    return secondLevelCategory;
+  }
+
+  public void setSecondLevelCategory(String secondLevelCategory) {
+    this.secondLevelCategory = secondLevelCategory;
+  }
+
+  public Long getQuantitySold() {
+    return quantitySold;
+  }
+
+  public void setQuantitySold(Long quantitySold) {
+    this.quantitySold = quantitySold;
+  }
+
+  public Integer getDiscountPercent() {
+    return discountPercent;
+  }
+
+  public void setDiscountPercent(Integer discountPercent) {
+    this.discountPercent = discountPercent;
+  }
+
+  public LocalDateTime getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(LocalDateTime createdAt) {
+    this.createdAt = createdAt;
   }
 }

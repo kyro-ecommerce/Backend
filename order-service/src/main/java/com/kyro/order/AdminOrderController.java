@@ -4,7 +4,6 @@ import com.kyro.enums.OrderStatus;
 import com.kyro.order.dto.OrderDetailDTO;
 import java.time.LocalDate;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -13,12 +12,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("${api.prefix}/admin/orders")
 @Transactional
 public class AdminOrderController {
 
   private final OrderService orderService;
+
+  public AdminOrderController(OrderService orderService) {
+    this.orderService = orderService;
+  }
 
   @GetMapping("/all")
   public ResponseEntity<Page<OrderDetailDTO>> getAllOrders(

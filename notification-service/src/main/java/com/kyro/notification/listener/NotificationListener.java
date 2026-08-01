@@ -3,18 +3,22 @@ package com.kyro.notification.listener;
 import com.kyro.notification.config.RabbitMQConfig;
 import com.kyro.notification.service.EmailService;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 /** Listener to consume notification events from RabbitMQ queues. */
 @Component
-@RequiredArgsConstructor
-@Slf4j
 public class NotificationListener {
 
+  private static final Logger log = LoggerFactory.getLogger(NotificationListener.class);
+
   private final EmailService emailService;
+
+  public NotificationListener(EmailService emailService) {
+    this.emailService = emailService;
+  }
 
   /**
    * Consumes OTP send request.

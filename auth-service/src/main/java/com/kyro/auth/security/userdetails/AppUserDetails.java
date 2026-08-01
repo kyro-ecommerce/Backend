@@ -3,17 +3,12 @@ package com.kyro.auth.security.userdetails;
 import com.kyro.auth.User;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map; // ** Add import **
-import lombok.Getter;
-// Omit @Setter for immutability
-// import lombok.Setter;
-// import lombok.NoArgsConstructor; // Unnecessary with explicit constructor
+import java.util.Map;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.oauth2.core.user.OAuth2User; // ** Add import **
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
-@Getter
 public class AppUserDetails implements UserDetails, OAuth2User {
 
   private final Long id;
@@ -39,8 +34,13 @@ public class AppUserDetails implements UserDetails, OAuth2User {
     this.attributes = attributes;
   }
 
-  public Long getId() { return id; }
-  public String getEmail() { return email; }
+  public Long getId() {
+    return id;
+  }
+
+  public String getEmail() {
+    return email;
+  }
 
   public static AppUserDetails buildUserDetails(User user) {
     List<GrantedAuthority> authorities =

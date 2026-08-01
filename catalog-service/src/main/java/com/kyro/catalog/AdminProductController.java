@@ -4,7 +4,6 @@ import com.kyro.catalog.dto.CreateProductRequest;
 import com.kyro.catalog.dto.ProductDTO;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,11 +13,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("${api.prefix}/admin/products")
 public class AdminProductController {
 
   private final ProductService productService;
+
+  public AdminProductController(ProductService productService) {
+    this.productService = productService;
+  }
 
   @PostMapping("/create")
   public ResponseEntity<Product> createProduct(@RequestBody CreateProductRequest request) {

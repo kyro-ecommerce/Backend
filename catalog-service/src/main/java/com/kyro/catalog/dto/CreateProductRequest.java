@@ -5,9 +5,7 @@ import com.kyro.catalog.ProductSize;
 import jakarta.validation.constraints.*;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
 
-@Data
 public class CreateProductRequest {
   @NotBlank(message = "Title is required")
   @Size(max = 100, message = "Title must be less than 100 characters")
@@ -68,4 +66,182 @@ public class CreateProductRequest {
 
   @NotBlank(message = "Second level category is required")
   private String secondLevelCategory;
+
+  public CreateProductRequest() {}
+
+  public String getTitle() {
+    return title;
+  }
+
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  public int getPrice() {
+    return price;
+  }
+
+  public void setPrice(int price) {
+    this.price = price;
+  }
+
+  public int getDiscountPersent() {
+    return discountPersent;
+  }
+
+  public void setDiscountPersent(int discountPersent) {
+    this.discountPersent = discountPersent;
+  }
+
+  public int getDiscountedPrice() {
+    return discountedPrice;
+  }
+
+  public void setDiscountedPrice(int discountedPrice) {
+    this.discountedPrice = discountedPrice;
+  }
+
+  public int getQuantity() {
+    return quantity;
+  }
+
+  public void setQuantity(int quantity) {
+    this.quantity = quantity;
+  }
+
+  public String getBrand() {
+    return brand;
+  }
+
+  public void setBrand(String brand) {
+    this.brand = brand;
+  }
+
+  public String getColor() {
+    return color;
+  }
+
+  public void setColor(String color) {
+    this.color = color;
+  }
+
+  public String getWeight() {
+    return weight;
+  }
+
+  public void setWeight(String weight) {
+    this.weight = weight;
+  }
+
+  public String getDimension() {
+    return dimension;
+  }
+
+  public void setDimension(String dimension) {
+    this.dimension = dimension;
+  }
+
+  public String getBatteryType() {
+    return batteryType;
+  }
+
+  public void setBatteryType(String batteryType) {
+    this.batteryType = batteryType;
+  }
+
+  public String getBatteryCapacity() {
+    return batteryCapacity;
+  }
+
+  public void setBatteryCapacity(String batteryCapacity) {
+    this.batteryCapacity = batteryCapacity;
+  }
+
+  public String getRamCapacity() {
+    return ramCapacity;
+  }
+
+  public void setRamCapacity(String ramCapacity) {
+    this.ramCapacity = ramCapacity;
+  }
+
+  public String getRomCapacity() {
+    return romCapacity;
+  }
+
+  public void setRomCapacity(String romCapacity) {
+    this.romCapacity = romCapacity;
+  }
+
+  public String getScreenSize() {
+    return screenSize;
+  }
+
+  public void setScreenSize(String screenSize) {
+    this.screenSize = screenSize;
+  }
+
+  public String getDetailedReview() {
+    return detailedReview;
+  }
+
+  public void setDetailedReview(String detailedReview) {
+    this.detailedReview = detailedReview;
+  }
+
+  public String getPowerfulPerformance() {
+    return powerfulPerformance;
+  }
+
+  public void setPowerfulPerformance(String powerfulPerformance) {
+    this.powerfulPerformance = powerfulPerformance;
+  }
+
+  public String getConnectionPort() {
+    return connectionPort;
+  }
+
+  public void setConnectionPort(String connectionPort) {
+    this.connectionPort = connectionPort;
+  }
+
+  public List<ProductSize> getSizes() {
+    return sizes;
+  }
+
+  public void setSizes(List<ProductSize> sizes) {
+    this.sizes = sizes;
+  }
+
+  public List<Image> getImageUrls() {
+    return imageUrls;
+  }
+
+  public void setImageUrls(List<Image> imageUrls) {
+    this.imageUrls = imageUrls;
+  }
+
+  public String getTopLevelCategory() {
+    return topLevelCategory;
+  }
+
+  public void setTopLevelCategory(String topLevelCategory) {
+    this.topLevelCategory = topLevelCategory;
+  }
+
+  public String getSecondLevelCategory() {
+    return secondLevelCategory;
+  }
+
+  public void setSecondLevelCategory(String secondLevelCategory) {
+    this.secondLevelCategory = secondLevelCategory;
+  }
 }

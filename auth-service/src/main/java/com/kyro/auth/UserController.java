@@ -10,8 +10,6 @@ import com.kyro.exceptions.DomainException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,12 +18,17 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("${api.prefix}/users")
 public class UserController {
-  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserController.class);
+  private static final org.slf4j.Logger log =
+      org.slf4j.LoggerFactory.getLogger(UserController.class);
   private final UserService userService;
   private final UserRepository userRepository;
+
+  public UserController(UserService userService, UserRepository userRepository) {
+    this.userService = userService;
+    this.userRepository = userRepository;
+  }
 
   @PutMapping("/update")
   public ResponseEntity<Map<String, String>> updateUser(
@@ -165,8 +168,7 @@ public class UserController {
   @DeleteMapping("/addresses/{addressId}")
   @Transactional
   public ResponseEntity<Map<String, String>> deleteAddress(
-      @PathVariable("addressId") Long addressId,
-      @RequestHeader("Authorization") String jwt) {
+      @PathVariable("addressId") Long addressId, @RequestHeader("Authorization") String jwt) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || authentication.getName() == null) {
       throw new DomainException(HttpStatus.UNAUTHORIZED, "Authentication failed");

@@ -6,17 +6,20 @@ import com.kyro.cart.dto.CartItemDTO;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class CartService {
 
   private final RedisTemplate<String, Object> redisTemplate;
   private final CatalogClient catalogClient;
-  
+
+  public CartService(RedisTemplate<String, Object> redisTemplate, CatalogClient catalogClient) {
+    this.redisTemplate = redisTemplate;
+    this.catalogClient = catalogClient;
+  }
+
   private static final String CART_KEY_PREFIX = "cart:";
   private static final long CART_TTL_DAYS = 30; // Cart expires in 30 days of inactivity
 
@@ -54,19 +57,21 @@ public class CartService {
     }
 
     // Populate item details
-    item.setProductName(product.getTitle());
-    item.setPrice(product.getPrice());
-    item.setDiscountPercent(product.getDiscountPersent());
-    item.setDiscountedPrice(product.getDiscountedPrice());
-    if (product.getImages() != null && !product.getImages().isEmpty()) {
-      item.setProductImageUrl(product.getImages().get(0).getDownloadUrl());
+    item.setProductName(product.title());
+    item.setPrice(product.price());
+    item.setDiscountPercent(product.discountPersent());
+    item.setDiscountedPrice(product.discountedPrice());
+    if (product.images() != null && !product.images().isEmpty()) {
+      item.setProductImageUrl(product.images().get(0).downloadUrl());
     }
 
     // Search for existing item with the same productId AND size
     Optional<CartItemDTO> existingItem =
         cart.getItems().stream()
-            .filter(i -> i.getProductId().equals(item.getProductId()) && 
-                         Objects.equals(i.getSize(), item.getSize()))
+            .filter(
+                i ->
+                    i.getProductId().equals(item.getProductId())
+                        && Objects.equals(i.getSize(), item.getSize()))
             .findFirst();
 
     if (existingItem.isPresent()) {

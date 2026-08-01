@@ -3,9 +3,7 @@ package com.kyro.catalog.dto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
 
-@Data
 public class ReviewRequest {
   private Long productId;
 
@@ -16,4 +14,30 @@ public class ReviewRequest {
 
   @Max(value = 500, message = "Content must be less than 500 characters")
   private String content;
+
+  public ReviewRequest() {}
+
+  public Long getProductId() {
+    return productId;
+  }
+
+  public void setProductId(Long productId) {
+    this.productId = productId;
+  }
+
+  public Integer getRating() {
+    return rating;
+  }
+
+  public void setRating(Integer rating) {
+    this.rating = rating;
+  }
+
+  public String getContent() {
+    return content;
+  }
+
+  public void setContent(String content) {
+    this.content = content;
+  }
 }

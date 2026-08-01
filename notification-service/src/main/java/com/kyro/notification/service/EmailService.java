@@ -2,8 +2,8 @@ package com.kyro.notification.service;
 
 import jakarta.mail.internet.MimeMessage;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -13,12 +13,17 @@ import org.thymeleaf.context.Context;
 
 /** Service for constructing and sending HTML emails asynchronously. */
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class EmailService {
+
+  private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
   private final JavaMailSender mailSender;
   private final TemplateEngine templateEngine;
+
+  public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine) {
+    this.mailSender = mailSender;
+    this.templateEngine = templateEngine;
+  }
 
   @Value("${app.company.logo.url:https://kyro.com/logo.png}")
   private String companyLogoUrl;

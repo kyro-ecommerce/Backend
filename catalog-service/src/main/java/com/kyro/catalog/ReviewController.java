@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,12 +15,18 @@ import org.springframework.web.bind.annotation.*;
 /** Controller for product review operations. */
 @RestController
 @RequestMapping("${api.prefix}/reviews")
-@RequiredArgsConstructor
 public class ReviewController {
 
   private final ReviewService reviewService;
   private final UserClient userClient;
   private final ProductService productService;
+
+  public ReviewController(
+      ReviewService reviewService, UserClient userClient, ProductService productService) {
+    this.reviewService = reviewService;
+    this.userClient = userClient;
+    this.productService = productService;
+  }
 
   /**
    * Creates a new review for a product. Reads userId from request headers injected by gateway, and
@@ -37,7 +42,7 @@ public class ReviewController {
     }
 
     Review res =
-        reviewService.createReview(userId, user.getFirstName(), user.getLastName(), reviewRequest);
+        reviewService.createReview(userId, user.firstName(), user.lastName(), reviewRequest);
     if (res == null) {
       throw new DomainException(HttpStatus.BAD_REQUEST, "Failed to create review");
     }

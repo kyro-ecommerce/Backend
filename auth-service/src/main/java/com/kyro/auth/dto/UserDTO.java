@@ -5,13 +5,7 @@ import com.kyro.auth.User;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class UserDTO {
   private Long id;
   private String firstName;
@@ -27,6 +21,39 @@ public class UserDTO {
   private String oauthProvider;
   private long orderCount;
   private BigDecimal totalSpent;
+
+  public UserDTO() {}
+
+  public UserDTO(
+      Long id,
+      String firstName,
+      String lastName,
+      String email,
+      String role,
+      String mobile,
+      boolean active,
+      boolean banned,
+      List<Address> addresses,
+      LocalDateTime createdAt,
+      String imageUrl,
+      String oauthProvider,
+      long orderCount,
+      BigDecimal totalSpent) {
+    this.id = id;
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.email = email;
+    this.role = role;
+    this.mobile = mobile;
+    this.active = active;
+    this.banned = banned;
+    this.addresses = addresses;
+    this.createdAt = createdAt;
+    this.imageUrl = imageUrl;
+    this.oauthProvider = oauthProvider;
+    this.orderCount = orderCount;
+    this.totalSpent = totalSpent;
+  }
 
   // constructor to map all fields from User entity
   public UserDTO(User user) {
@@ -46,32 +73,115 @@ public class UserDTO {
     this.totalSpent = java.math.BigDecimal.ZERO;
   }
 
-  public Long getId() { return id; }
-  public void setId(Long id) { this.id = id; }
-  public String getFirstName() { return firstName; }
-  public void setFirstName(String firstName) { this.firstName = firstName; }
-  public String getLastName() { return lastName; }
-  public void setLastName(String lastName) { this.lastName = lastName; }
-  public String getEmail() { return email; }
-  public void setEmail(String email) { this.email = email; }
-  public String getRole() { return role; }
-  public void setRole(String role) { this.role = role; }
-  public String getMobile() { return mobile; }
-  public void setMobile(String mobile) { this.mobile = mobile; }
-  public boolean isActive() { return active; }
-  public void setActive(boolean active) { this.active = active; }
-  public boolean isBanned() { return banned; }
-  public void setBanned(boolean banned) { this.banned = banned; }
-  public List<Address> getAddresses() { return addresses; }
-  public void setAddresses(List<Address> addresses) { this.addresses = addresses; }
-  public LocalDateTime getCreatedAt() { return createdAt; }
-  public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-  public String getImageUrl() { return imageUrl; }
-  public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-  public String getOauthProvider() { return oauthProvider; }
-  public void setOauthProvider(String oauthProvider) { this.oauthProvider = oauthProvider; }
-  public long getOrderCount() { return orderCount; }
-  public void setOrderCount(long orderCount) { this.orderCount = orderCount; }
-  public BigDecimal getTotalSpent() { return totalSpent; }
-  public void setTotalSpent(BigDecimal totalSpent) { this.totalSpent = totalSpent; }
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
+
+  public String getRole() {
+    return role;
+  }
+
+  public void setRole(String role) {
+    this.role = role;
+  }
+
+  public String getMobile() {
+    return mobile;
+  }
+
+  public void setMobile(String mobile) {
+    this.mobile = mobile;
+  }
+
+  public boolean isActive() {
+    return active;
+  }
+
+  public void setActive(boolean active) {
+    this.active = active;
+  }
+
+  public boolean isBanned() {
+    return banned;
+  }
+
+  public void setBanned(boolean banned) {
+    this.banned = banned;
+  }
+
+  public List<Address> getAddresses() {
+    return addresses;
+  }
+
+  public void setAddresses(List<Address> addresses) {
+    this.addresses = addresses;
+  }
+
+  public LocalDateTime getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(LocalDateTime createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public String getImageUrl() {
+    return imageUrl;
+  }
+
+  public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
+  }
+
+  public String getOauthProvider() {
+    return oauthProvider;
+  }
+
+  public void setOauthProvider(String oauthProvider) {
+    this.oauthProvider = oauthProvider;
+  }
+
+  public long getOrderCount() {
+    return orderCount;
+  }
+
+  public void setOrderCount(long orderCount) {
+    this.orderCount = orderCount;
+  }
+
+  public BigDecimal getTotalSpent() {
+    return totalSpent;
+  }
+
+  public void setTotalSpent(BigDecimal totalSpent) {
+    this.totalSpent = totalSpent;
+  }
 }
