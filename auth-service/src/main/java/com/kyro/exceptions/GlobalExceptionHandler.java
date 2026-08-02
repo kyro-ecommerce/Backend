@@ -31,20 +31,19 @@ public class GlobalExceptionHandler {
   // 1. Handles general unhandled exceptions (500 Internal Server Error)
   @ExceptionHandler(Exception.class)
   public ProblemDetail handleUnexpectedException(Exception exception) {
-    LOGGER.error("Unhandled API exception", exception);
+    LOGGER.error("Unhandled API exception in auth-service", exception);
 
     ProblemDetail problem =
         ProblemDetail.forStatusAndDetail(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            "An unexpected error occurred" // Hide real system error details from clients
-            );
+            HttpStatus.INTERNAL_SERVER_ERROR, GlobalErrorCode.INTERNAL_ERROR.getDefaultMessage());
     problem.setTitle("Internal Server Error");
     problem.setType(URI.create("urn:problem-type:internal-server-error"));
-    problem.setProperty("code", "INTERNAL_ERROR");
+    problem.setProperty("code", GlobalErrorCode.INTERNAL_ERROR.getCode());
+    problem.setProperty("message", GlobalErrorCode.INTERNAL_ERROR.getDefaultMessage());
     return problem;
   }
 
-  // 2. Handles custom AppException hierarchy (includes DomainException, ValidationException)
+  // 2. Handles custom AppException hierarchy
   @ExceptionHandler(AppException.class)
   public ProblemDetail handleAppException(AppException ex) {
     return buildResponse(ex);
@@ -67,15 +66,14 @@ public class GlobalExceptionHandler {
   // 4. Handles JPA EntityNotFoundException
   @ExceptionHandler(EntityNotFoundException.class)
   public ProblemDetail handleEntityNotFoundException(EntityNotFoundException ex) {
-    return buildResponse(
-        new AppException(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", ex.getMessage()));
+    return buildResponse(new AppException(GlobalErrorCode.RESOURCE_NOT_FOUND, ex.getMessage()));
   }
 
   // 5. Handles JPA EntityExistsException
   @ExceptionHandler(EntityExistsException.class)
   public ProblemDetail handleEntityExistsException(EntityExistsException ex) {
     return buildResponse(
-        new AppException(HttpStatus.CONFLICT, "RESOURCE_ALREADY_EXISTS", ex.getMessage()));
+        new AppException(GlobalErrorCode.RESOURCE_ALREADY_EXISTS, ex.getMessage()));
   }
 
   // 6. Handles Database Constraint Violations
@@ -85,25 +83,19 @@ public class GlobalExceptionHandler {
     if (ex.getMostSpecificCause() != null) {
       detailMessage += ": " + ex.getMostSpecificCause().getMessage();
     }
-    return buildResponse(new AppException(HttpStatus.CONFLICT, "DATABASE_ERROR", detailMessage));
+    return buildResponse(new AppException(GlobalErrorCode.DATABASE_ERROR, detailMessage));
   }
 
   // 7. Handles Bad Credentials Exception
   @ExceptionHandler(BadCredentialsException.class)
   public ProblemDetail handleBadCredentialsException(BadCredentialsException ex) {
-    return buildResponse(
-        new AppException(
-            HttpStatus.UNAUTHORIZED, "BAD_CREDENTIALS", "Invalid username or password"));
+    return buildResponse(new AppException(GlobalErrorCode.BAD_CREDENTIALS));
   }
 
   // 8. Handles Account Disabled Exception
   @ExceptionHandler(DisabledException.class)
   public ProblemDetail handleDisabledException(DisabledException ex) {
-    return buildResponse(
-        new AppException(
-            HttpStatus.FORBIDDEN,
-            "ACCOUNT_DISABLED",
-            "Account is disabled. Please verify your email."));
+    return buildResponse(new AppException(GlobalErrorCode.ACCOUNT_DISABLED));
   }
 
   // 9. Handles Constraint Violation Exception
@@ -116,8 +108,7 @@ public class GlobalExceptionHandler {
   // 10. Handles Illegal Argument Exception
   @ExceptionHandler(IllegalArgumentException.class)
   public ProblemDetail handleIllegalArgumentException(IllegalArgumentException ex) {
-    return buildResponse(
-        new AppException(HttpStatus.BAD_REQUEST, "INVALID_ARGUMENT", ex.getMessage()));
+    return buildResponse(new AppException(GlobalErrorCode.INVALID_ARGUMENT, ex.getMessage()));
   }
 
   // Helper to build a standard ProblemDetail response
@@ -127,6 +118,8 @@ public class GlobalExceptionHandler {
     problem.setTitle(toTitleCase(ex.getErrorCode()));
     problem.setDetail(ex.getMessage());
     problem.setProperty("code", ex.getErrorCode());
+    problem.setProperty(
+        "message", ex.getMessage()); // Ensures 100% backward compatibility with Frontend
 
     if (ex instanceof ValidationException ve && !ve.getViolations().isEmpty()) {
       problem.setProperty("errors", ve.getViolations());
@@ -138,9 +131,15 @@ public class GlobalExceptionHandler {
 
   private void logException(AppException ex) {
     if (ex.getStatus().is5xxServerError()) {
-      LOGGER.error("Internal error {}: {}", ex.getErrorCode(), ex.getMessage(), ex);
+      LOGGER.error(
+          "Internal server error [{}] {}: {}",
+          ex.getStatus().value(),
+          ex.getErrorCode(),
+          ex.getMessage(),
+          ex);
     } else {
-      LOGGER.warn("Business error {}: {}", ex.getErrorCode(), ex.getMessage());
+      LOGGER.warn(
+          "Business error [{}] {}: {}", ex.getStatus().value(), ex.getErrorCode(), ex.getMessage());
     }
   }
 

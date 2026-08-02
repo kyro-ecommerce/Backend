@@ -25,6 +25,14 @@ spring:
         format_sql: true
         globally_quoted_identifiers: false
 
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  level:
+    com.kyro: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN
+
 auth:
   token:
     jwtSecret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
