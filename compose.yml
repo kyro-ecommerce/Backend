@@ -50,8 +50,8 @@ services:
 
   eureka-server:
     build:
-      context: ./eureka-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: eureka-server/Dockerfile
     container_name: kyro-eureka-server
     ports:
       - "8761:8761"
@@ -65,8 +65,8 @@ services:
 
   config-server:
     build:
-      context: ./config-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: config-server/Dockerfile
     container_name: kyro-config-server
     ports:
       - "8888:8888"
@@ -85,8 +85,8 @@ services:
 
   api-gateway:
     build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api-gateway/Dockerfile
     container_name: kyro-api-gateway
     ports:
       - "8080:8080"
@@ -145,8 +145,8 @@ services:
 
   catalog-service:
     build:
-      context: ./catalog-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: catalog-service/Dockerfile
     container_name: kyro-catalog-service
     ports:
       - "8082:8082"
@@ -174,8 +174,8 @@ services:
 
   cart-service:
     build:
-      context: ./cart-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: cart-service/Dockerfile
     container_name: kyro-cart-service
     ports:
       - "8083:8083"
@@ -198,8 +198,8 @@ services:
 
   notification-service:
     build:
-      context: ./notification-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: notification-service/Dockerfile
     container_name: kyro-notification-service
     ports:
       - "8084:8084"
@@ -222,8 +222,8 @@ services:
 
   order-service:
     build:
-      context: ./order-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: order-service/Dockerfile
     container_name: kyro-order-service
     ports:
       - "8085:8085"
@@ -251,8 +251,8 @@ services:
 
   payment-service:
     build:
-      context: ./payment-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: payment-service/Dockerfile
     container_name: kyro-payment-service
     ports:
       - "8086:8086"
