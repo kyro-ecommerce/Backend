@@ -8,7 +8,6 @@ import com.kyro.order.client.CatalogClient;
 import com.kyro.order.client.UserClient;
 import com.kyro.order.dto.OrderDTO;
 import com.kyro.order.dto.OrderDetailDTO;
-import com.kyro.payment.PaymentDetailRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -31,8 +30,6 @@ public class OrderService {
   private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
   private final OrderRepository orderRepository;
-  private final OrderItemRepository orderItemRepository;
-  private final PaymentDetailRepository paymentDetailRepository;
   private final CatalogClient catalogClient;
   private final CartClient cartClient;
   private final UserClient userClient;
@@ -40,15 +37,11 @@ public class OrderService {
 
   public OrderService(
       OrderRepository orderRepository,
-      OrderItemRepository orderItemRepository,
-      PaymentDetailRepository paymentDetailRepository,
       CatalogClient catalogClient,
       CartClient cartClient,
       UserClient userClient,
       RabbitTemplate rabbitTemplate) {
     this.orderRepository = orderRepository;
-    this.orderItemRepository = orderItemRepository;
-    this.paymentDetailRepository = paymentDetailRepository;
     this.catalogClient = catalogClient;
     this.cartClient = cartClient;
     this.userClient = userClient;
@@ -151,69 +144,55 @@ public class OrderService {
     log.info("Saved intermediate order ID: {}", savedOrderIntermediate.getId());
 
     List<OrderItem> orderItems = new ArrayList<>();
-    List<CartClient.CartItemResponse> deductedItems = new ArrayList<>();
-    try {
-      for (CartClient.CartItemResponse cartItem : cart.items()) {
-        // Verify stock by calling catalog-service via FeignClient
-        CatalogClient.ProductResponse product = catalogClient.getProductById(cartItem.productId());
-        if (product == null) {
-          throw new RuntimeException("Sản phẩm ID " + cartItem.productId() + " không tồn tại.");
-        }
+    List<com.kyro.order.event.OrderCreatedEvent.OrderItemEvent> eventItems = new ArrayList<>();
 
-        String sizeName = cartItem.size();
-        int orderedQuantity = cartItem.quantity();
+    for (CartClient.CartItemResponse cartItem : cart.items()) {
+      CatalogClient.ProductResponse product = catalogClient.getProductById(cartItem.productId());
+      String productTitle = product != null ? product.title() : cartItem.productName();
+      String imageUrl = (product != null && product.images() != null && !product.images().isEmpty())
+          ? product.images().get(0).downloadUrl()
+          : cartItem.productImageUrl();
 
-        OrderItem orderItem = new OrderItem();
-        orderItem.setOrder(savedOrderIntermediate);
-        orderItem.setProductId(cartItem.productId());
-        orderItem.setProductName(product.title());
-        if (product.images() != null && !product.images().isEmpty()) {
-          orderItem.setProductImageUrl(product.images().get(0).downloadUrl());
-        }
-        orderItem.setQuantity(orderedQuantity);
-        orderItem.setPrice(cartItem.price());
-        orderItem.setSize(sizeName);
-        orderItem.setDiscountPercent(cartItem.discountPercent());
-        orderItem.setDiscountedPrice(cartItem.discountedPrice());
-        orderItem.setDeliveryDate(LocalDateTime.now().plusDays(7));
-        orderItems.add(orderItem);
+      OrderItem orderItem = new OrderItem();
+      orderItem.setOrder(savedOrderIntermediate);
+      orderItem.setProductId(cartItem.productId());
+      orderItem.setProductName(productTitle);
+      orderItem.setProductImageUrl(imageUrl);
+      orderItem.setQuantity(cartItem.quantity());
+      orderItem.setPrice(cartItem.price());
+      orderItem.setSize(cartItem.size());
+      orderItem.setDiscountPercent(cartItem.discountPercent());
+      orderItem.setDiscountedPrice(cartItem.discountedPrice());
+      orderItem.setDeliveryDate(LocalDateTime.now().plusDays(7));
+      orderItems.add(orderItem);
 
-        // Deduct stock via FeignClient
-        catalogClient.decreaseStock(cartItem.productId(), sizeName, orderedQuantity);
-        deductedItems.add(cartItem);
-      }
-
-      savedOrderIntermediate.setOrderItems(orderItems);
-      Order finalSavedOrder = orderRepository.save(savedOrderIntermediate);
-      createdOrders.add(finalSavedOrder);
-      log.info("Successfully created and saved final order ID: {}", finalSavedOrder.getId());
-
-      // Clear Cart in cart-service
-      cartClient.clearCart(userId);
-      log.info("Cart cleared for user ID: {} as order was created.", userId);
-
-      // Publish Order Email Notification request to RabbitMQ
-      sendOrderConfirmationEmail(userEmail, finalSavedOrder);
-
-      return createdOrders;
-    } catch (Exception e) {
-      log.error(
-          "Error occurred while placing order for user {}. Rolling back deducted stock.",
-          userId,
-          e);
-      for (CartClient.CartItemResponse item : deductedItems) {
-        try {
-          catalogClient.increaseStock(item.productId(), item.size(), item.quantity());
-          log.info("Restored stock for Product ID {}, Size {}", item.productId(), item.size());
-        } catch (Exception ex) {
-          log.error(
-              "Failed to restore stock for Product ID {} during rollback compensation.",
-              item.productId(),
-              ex);
-        }
-      }
-      throw e;
+      eventItems.add(
+          new com.kyro.order.event.OrderCreatedEvent.OrderItemEvent(
+              cartItem.productId(), cartItem.size(), cartItem.quantity(), cartItem.price()));
     }
+
+    savedOrderIntermediate.setOrderItems(orderItems);
+    Order finalSavedOrder = orderRepository.save(savedOrderIntermediate);
+    createdOrders.add(finalSavedOrder);
+    log.info("Successfully created order ID: {} with status PENDING", finalSavedOrder.getId());
+
+    // Publish OrderCreatedEvent to RabbitMQ for Async Stock Deduct & Cart Clear (Saga Pattern)
+    try {
+      com.kyro.order.event.OrderCreatedEvent orderCreatedEvent =
+          new com.kyro.order.event.OrderCreatedEvent(
+              finalSavedOrder.getId(), userId, userEmail, eventItems);
+
+      rabbitTemplate.convertAndSend(
+          com.kyro.order.config.RabbitMQConfig.ORDER_EXCHANGE,
+          com.kyro.order.config.RabbitMQConfig.ORDER_CREATED_ROUTING_KEY,
+          orderCreatedEvent);
+
+      log.info("Published OrderCreatedEvent for Order ID #{} to RabbitMQ", finalSavedOrder.getId());
+    } catch (Exception e) {
+      log.error("Failed to publish OrderCreatedEvent for Order ID #{}: {}", finalSavedOrder.getId(), e.getMessage(), e);
+    }
+
+    return createdOrders;
   }
 
   @Transactional
