@@ -14,6 +14,7 @@ public class BasicUserDTO {
 
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime createdAt;
+
   private String imageUrl;
   private String oauthProvider;
 

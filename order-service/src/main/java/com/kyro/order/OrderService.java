@@ -197,13 +197,19 @@ public class OrderService {
 
       return createdOrders;
     } catch (Exception e) {
-      log.error("Error occurred while placing order for user {}. Rolling back deducted stock.", userId, e);
+      log.error(
+          "Error occurred while placing order for user {}. Rolling back deducted stock.",
+          userId,
+          e);
       for (CartClient.CartItemResponse item : deductedItems) {
         try {
           catalogClient.increaseStock(item.productId(), item.size(), item.quantity());
           log.info("Restored stock for Product ID {}, Size {}", item.productId(), item.size());
         } catch (Exception ex) {
-          log.error("Failed to restore stock for Product ID {} during rollback compensation.", item.productId(), ex);
+          log.error(
+              "Failed to restore stock for Product ID {} during rollback compensation.",
+              item.productId(),
+              ex);
         }
       }
       throw e;
@@ -369,9 +375,7 @@ public class OrderService {
       String dateStr = row[0] != null ? row[0].toString() : "";
       Number revenueNum = (Number) row[1];
       result.add(
-          Map.of(
-              "name", dateStr,
-              "revenue", revenueNum != null ? revenueNum.doubleValue() : 0.0));
+          Map.of("name", dateStr, "revenue", revenueNum != null ? revenueNum.doubleValue() : 0.0));
     }
     return result;
   }
