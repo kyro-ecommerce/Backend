@@ -9,9 +9,20 @@ api:
   prefix: /api/v1
 
 spring:
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
   threads:
     virtual:
       enabled: true
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 2000
+        readTimeout: 3000
   flyway:
     baseline-on-migrate: true
     baseline-version: 0
