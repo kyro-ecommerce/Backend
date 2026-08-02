@@ -32,14 +32,17 @@ public class CartController {
   public ResponseEntity<CartDTO> updateCartItem(
       @RequestHeader("X-User-Id") String userId,
       @RequestParam Long productId,
+      @RequestParam(required = false) String size,
       @RequestParam int quantity) {
-    return ResponseEntity.ok(cartService.updateCartItem(userId, productId, quantity));
+    return ResponseEntity.ok(cartService.updateCartItem(userId, productId, size, quantity));
   }
 
   @DeleteMapping("/remove/{productId}")
   public ResponseEntity<CartDTO> removeItemFromCart(
-      @RequestHeader("X-User-Id") String userId, @PathVariable Long productId) {
-    return ResponseEntity.ok(cartService.removeItemFromCart(userId, productId));
+      @RequestHeader("X-User-Id") String userId,
+      @PathVariable Long productId,
+      @RequestParam(required = false) String size) {
+    return ResponseEntity.ok(cartService.removeItemFromCart(userId, productId, size));
   }
 
   @DeleteMapping({"", "/clear"})

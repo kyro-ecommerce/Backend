@@ -84,20 +84,27 @@ public class CartService {
     return saveCart(cart);
   }
 
-  public CartDTO updateCartItem(String userId, Long productId, int quantity) {
+  public CartDTO updateCartItem(String userId, Long productId, String size, int quantity) {
     CartDTO cart = getCart(userId);
 
     cart.getItems().stream()
-        .filter(i -> i.getProductId().equals(productId))
+        .filter(
+            i ->
+                i.getProductId().equals(productId)
+                    && (size == null || Objects.equals(i.getSize(), size)))
         .findFirst()
         .ifPresent(item -> item.setQuantity(quantity));
 
     return saveCart(cart);
   }
 
-  public CartDTO removeItemFromCart(String userId, Long productId) {
+  public CartDTO removeItemFromCart(String userId, Long productId, String size) {
     CartDTO cart = getCart(userId);
-    cart.getItems().removeIf(item -> item.getProductId().equals(productId));
+    cart.getItems()
+        .removeIf(
+            item ->
+                item.getProductId().equals(productId)
+                    && (size == null || Objects.equals(item.getSize(), size)));
     return saveCart(cart);
   }
 

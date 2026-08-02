@@ -55,10 +55,16 @@ public class AuthenticationFilter
       String rolesStr =
           roles != null ? String.join(",", roles.stream().map(Object::toString).toList()) : "";
 
-      // Inject headers into the mutated request to forward downstream
+      // Strip any untrusted user headers sent by client and inject verified headers from JWT
       ServerHttpRequest mutatedRequest =
           request
               .mutate()
+              .headers(
+                  h -> {
+                    h.remove("X-User-Id");
+                    h.remove("X-User-Email");
+                    h.remove("X-User-Roles");
+                  })
               .header("X-User-Id", userId)
               .header("X-User-Email", email)
               .header("X-User-Roles", rolesStr)
