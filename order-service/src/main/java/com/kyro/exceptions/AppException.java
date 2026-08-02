@@ -24,6 +24,18 @@ public class AppException extends RuntimeException {
     this.errorCode = errorCode;
   }
 
+  public AppException(ErrorCode errorCode) {
+    super(errorCode.getDefaultMessage());
+    this.status = errorCode.getStatus();
+    this.errorCode = errorCode.getCode();
+  }
+
+  public AppException(ErrorCode errorCode, String detailMessage) {
+    super(detailMessage);
+    this.status = errorCode.getStatus();
+    this.errorCode = errorCode.getCode();
+  }
+
   public HttpStatus getStatus() {
     return status;
   }
