@@ -151,48 +151,63 @@ public class OrderService {
     log.info("Saved intermediate order ID: {}", savedOrderIntermediate.getId());
 
     List<OrderItem> orderItems = new ArrayList<>();
-    for (CartClient.CartItemResponse cartItem : cart.items()) {
-      // Verify stock by calling catalog-service via FeignClient
-      CatalogClient.ProductResponse product = catalogClient.getProductById(cartItem.productId());
-      if (product == null) {
-        throw new RuntimeException("Sản phẩm ID " + cartItem.productId() + " không tồn tại.");
+    List<CartClient.CartItemResponse> deductedItems = new ArrayList<>();
+    try {
+      for (CartClient.CartItemResponse cartItem : cart.items()) {
+        // Verify stock by calling catalog-service via FeignClient
+        CatalogClient.ProductResponse product = catalogClient.getProductById(cartItem.productId());
+        if (product == null) {
+          throw new RuntimeException("Sản phẩm ID " + cartItem.productId() + " không tồn tại.");
+        }
+
+        String sizeName = cartItem.size();
+        int orderedQuantity = cartItem.quantity();
+
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrder(savedOrderIntermediate);
+        orderItem.setProductId(cartItem.productId());
+        orderItem.setProductName(product.title());
+        if (product.images() != null && !product.images().isEmpty()) {
+          orderItem.setProductImageUrl(product.images().get(0).downloadUrl());
+        }
+        orderItem.setQuantity(orderedQuantity);
+        orderItem.setPrice(cartItem.price());
+        orderItem.setSize(sizeName);
+        orderItem.setDiscountPercent(cartItem.discountPercent());
+        orderItem.setDiscountedPrice(cartItem.discountedPrice());
+        orderItem.setDeliveryDate(LocalDateTime.now().plusDays(7));
+        orderItems.add(orderItem);
+
+        // Deduct stock via FeignClient
+        catalogClient.decreaseStock(cartItem.productId(), sizeName, orderedQuantity);
+        deductedItems.add(cartItem);
       }
 
-      String sizeName = cartItem.size();
-      int orderedQuantity = cartItem.quantity();
+      savedOrderIntermediate.setOrderItems(orderItems);
+      Order finalSavedOrder = orderRepository.save(savedOrderIntermediate);
+      createdOrders.add(finalSavedOrder);
+      log.info("Successfully created and saved final order ID: {}", finalSavedOrder.getId());
 
-      OrderItem orderItem = new OrderItem();
-      orderItem.setOrder(savedOrderIntermediate);
-      orderItem.setProductId(cartItem.productId());
-      orderItem.setProductName(product.title());
-      if (product.images() != null && !product.images().isEmpty()) {
-        orderItem.setProductImageUrl(product.images().get(0).downloadUrl());
+      // Clear Cart in cart-service
+      cartClient.clearCart(userId);
+      log.info("Cart cleared for user ID: {} as order was created.", userId);
+
+      // Publish Order Email Notification request to RabbitMQ
+      sendOrderConfirmationEmail(userEmail, finalSavedOrder);
+
+      return createdOrders;
+    } catch (Exception e) {
+      log.error("Error occurred while placing order for user {}. Rolling back deducted stock.", userId, e);
+      for (CartClient.CartItemResponse item : deductedItems) {
+        try {
+          catalogClient.increaseStock(item.productId(), item.size(), item.quantity());
+          log.info("Restored stock for Product ID {}, Size {}", item.productId(), item.size());
+        } catch (Exception ex) {
+          log.error("Failed to restore stock for Product ID {} during rollback compensation.", item.productId(), ex);
+        }
       }
-      orderItem.setQuantity(orderedQuantity);
-      orderItem.setPrice(cartItem.price());
-      orderItem.setSize(sizeName);
-      orderItem.setDiscountPercent(cartItem.discountPercent());
-      orderItem.setDiscountedPrice(cartItem.discountedPrice());
-      orderItem.setDeliveryDate(LocalDateTime.now().plusDays(7));
-      orderItems.add(orderItem);
-
-      // Deduct stock via FeignClient
-      catalogClient.decreaseStock(cartItem.productId(), sizeName, orderedQuantity);
+      throw e;
     }
-
-    savedOrderIntermediate.setOrderItems(orderItems);
-    Order finalSavedOrder = orderRepository.save(savedOrderIntermediate);
-    createdOrders.add(finalSavedOrder);
-    log.info("Successfully created and saved final order ID: {}", finalSavedOrder.getId());
-
-    // Clear Cart in cart-service
-    cartClient.clearCart(userId);
-    log.info("Cart cleared for user ID: {} as order was created.", userId);
-
-    // Publish Order Email Notification request to RabbitMQ
-    sendOrderConfirmationEmail(userEmail, finalSavedOrder);
-
-    return createdOrders;
   }
 
   @Transactional
