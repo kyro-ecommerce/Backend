@@ -2,11 +2,14 @@ package com.kyro.gateway.filter;
 
 import com.kyro.gateway.util.JwtUtils;
 import io.jsonwebtoken.Claims;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -74,10 +77,18 @@ public class AuthenticationFilter
     };
   }
 
-  private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus httpStatus) {
+  private Mono<Void> onError(ServerWebExchange exchange, String errMessage, HttpStatus httpStatus) {
     ServerHttpResponse response = exchange.getResponse();
     response.setStatusCode(httpStatus);
-    return response.setComplete();
+    response.getHeaders().setContentType(MediaType.APPLICATION_PROBLEM_JSON);
+
+    String jsonBody =
+        String.format(
+            "{\"type\":\"urn:problem-type:unauthorized\",\"title\":\"%s\",\"status\":%d,\"detail\":\"%s\",\"code\":\"UNAUTHORIZED\",\"message\":\"%s\"}",
+            httpStatus.getReasonPhrase(), httpStatus.value(), errMessage, errMessage);
+
+    DataBuffer buffer = response.bufferFactory().wrap(jsonBody.getBytes(StandardCharsets.UTF_8));
+    return response.writeWith(Mono.just(buffer));
   }
 
   public static class Config {

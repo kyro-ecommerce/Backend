@@ -1,6 +1,29 @@
+# Stage 1: Build stage
+FROM eclipse-temurin:21-jdk-jammy AS builder
+WORKDIR /build
+
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+COPY eureka-server/pom.xml eureka-server/
+COPY config-server/pom.xml config-server/
+COPY api-gateway/pom.xml api-gateway/
+COPY auth-service/pom.xml auth-service/
+COPY cart-service/pom.xml cart-service/
+COPY catalog-service/pom.xml catalog-service/
+COPY order-service/pom.xml order-service/
+COPY payment-service/pom.xml payment-service/
+COPY notification-service/pom.xml notification-service/
+
+RUN ./mvnw dependency:go-offline -B
+
+COPY . .
+RUN ./mvnw clean package -pl payment-service -am -DskipTests
+
+# Stage 2: Runtime stage
 FROM eclipse-temurin:21-jre-jammy
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY target/*.jar app.jar
+COPY --from=builder /build/payment-service/target/*.jar app.jar
 EXPOSE 8086
 ENTRYPOINT ["java", "-jar", "app.jar"]

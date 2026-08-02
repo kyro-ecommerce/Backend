@@ -7,141 +7,116 @@ vars:
 
 tasks:
   default:
-    desc: Lists available tasks
+    desc: "Danh sách tất cả các lệnh Taskfile khả dụng"
     cmds:
       - task --list
 
-  bootstrap:
-    desc: "First-time setup: copy .env, install dependencies, start core DBs & build"
-    cmds:
-      - '{{if eq OS "windows"}}if not exist .env copy .env.example .env{{else}}test -f .env || cp .env.example .env{{end}}'
-      - task: install
-      - task: db:up
-      - task: build
-
-  install:
-    desc: "Install / download dependencies"
-    cmds:
-      - "{{.MVNW_CMD}} dependency:go-offline"
-
-  dev:
-    desc: "Start local dev environment: build & launch infrastructure (Postgres, Redis, RabbitMQ, Eureka, Gateway)"
-    cmds:
-      - task: build
-      - task: infra
-
-  dev:all:
-    desc: "Build and Run ALL microservices inside Docker"
-    cmds:
-      - task: build
-      - docker compose up --build -d --wait
+  # =========================================================================
+  # 🚀 1. LỆNH CHÍNH (MAIN WORKFLOW - MULTI-STAGE DOCKER)
+  # =========================================================================
 
   run:
-    desc: "Run all Spring Cloud Microservices inside Docker (requires build)"
+    desc: "Chạy TOÀN BỘ hệ thống Microservices trong Docker (Multi-stage Build tự động)"
+    aliases: [up, dev]
     cmds:
       - docker compose up --build -d --wait
 
-
   stop:
-    desc: "Stop all running docker containers"
+    desc: "Dừng tất cả các Docker containers đang chạy"
+    aliases: [down]
     cmds:
       - docker compose down
 
-  build:
-    desc: "Build Backend Jar"
-    cmds:
-      - "{{.MVNW_CMD}} clean package -DskipTests"
-
-  test:
-    desc: "Run Backend Tests"
-    cmds:
-      - "{{.MVNW_CMD}} test"
-
-  check:
-    desc: "Compile test classes to verify compilation"
-    cmds:
-      - "{{.MVNW_CMD}} test-compile"
-
-  verify:
-    desc: "Full build: clean, build, and test everything"
-    cmds:
-      - "{{.MVNW_CMD}} clean verify"
-
-  infra:
-    desc: "Start Core Infrastructure & Gateway (Postgres, Redis, RabbitMQ, Eureka, Config, Gateway)"
-    cmds:
-      - docker compose up -d --wait postgres redis rabbitmq eureka-server config-server api-gateway
-
-  dev:auth:
-    desc: "Run auth-service locally with Hot-Reload (Fast Dev Mode)"
-    cmds:
-      - "{{.MVNW_CMD}} spring-boot:run -pl auth-service"
-
-  dev:catalog:
-    desc: "Run catalog-service locally with Hot-Reload (Fast Dev Mode)"
-    cmds:
-      - "{{.MVNW_CMD}} spring-boot:run -pl catalog-service"
-
-  dev:cart:
-    desc: "Run cart-service locally with Hot-Reload (Fast Dev Mode)"
-    cmds:
-      - "{{.MVNW_CMD}} spring-boot:run -pl cart-service"
-
-  dev:order:
-    desc: "Run order-service locally with Hot-Reload (Fast Dev Mode)"
-    cmds:
-      - "{{.MVNW_CMD}} spring-boot:run -pl order-service"
-
-  dev:payment:
-    desc: "Run payment-service locally with Hot-Reload (Fast Dev Mode)"
-    cmds:
-      - "{{.MVNW_CMD}} spring-boot:run -pl payment-service"
-
-  dev:notification:
-    desc: "Run notification-service locally with Hot-Reload (Fast Dev Mode)"
-    cmds:
-      - "{{.MVNW_CMD}} spring-boot:run -pl notification-service"
-
-  db:up:
-    desc: "Start local Postgres, Redis, and RabbitMQ using Docker Compose"
-    cmds:
-      - docker compose up -d --wait postgres redis rabbitmq
-
-  db:down:
-    desc: "Stop local Postgres, Redis, and RabbitMQ"
-    cmds:
-      - docker compose stop postgres redis rabbitmq
-
-  db:down-v:
-    desc: "Stop local Postgres database and remove volumes"
+  clean:
+    desc: "Dừng hệ thống và XÓA SẠCH Database Volumes / Cache"
+    aliases: [down-v, db:down-v]
     cmds:
       - docker compose down -v
 
   status:
-    desc: "Display health status of all docker containers"
+    desc: "Xem trạng thái sức khỏe của tất cả Docker containers"
     cmds:
       - docker compose ps
 
-  db:logs:
-    desc: "View local database logs"
+  logs:
+    desc: "Mở trang UI Dozzle xem log trực quan trên trình duyệt (http://localhost:9999)"
+    aliases: [logs:ui]
+    cmds:
+      - open http://localhost:9999 || start http://localhost:9999
+
+  logs:cli:
+    desc: "Xem log thời gian thực của Docker trên Terminal"
     cmds:
       - docker compose logs -f
 
-  logs:ui:
-    desc: "Open Dozzle Log UI in default browser"
+  # =========================================================================
+  # ⚡ 2. HẠ TẦNG & LOCAL FAST DEV MODE (Dành cho Dev từng Service)
+  # =========================================================================
+
+  infra:
+    desc: "Chỉ bật Hạ tầng (Postgres, Redis, RabbitMQ, Eureka, Config, Gateway) để code service bên ngoài"
     cmds:
-      - open http://localhost:9999
+      - docker compose up -d --wait postgres redis rabbitmq eureka-server config-server api-gateway
+
+  db:up:
+    desc: "Chỉ bật Database & Middleware cốt lõi (Postgres, Redis, RabbitMQ)"
+    cmds:
+      - docker compose up -d --wait postgres redis rabbitmq
+
+  dev:auth:
+    desc: "Chạy auth-service ở máy local kèm Hot-Reload (DevTools)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run -pl auth-service"
+
+  dev:catalog:
+    desc: "Chạy catalog-service ở máy local kèm Hot-Reload (DevTools)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run -pl catalog-service"
+
+  dev:cart:
+    desc: "Chạy cart-service ở máy local kèm Hot-Reload (DevTools)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run -pl cart-service"
+
+  dev:order:
+    desc: "Chạy order-service ở máy local kèm Hot-Reload (DevTools)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run -pl order-service"
+
+  dev:payment:
+    desc: "Chạy payment-service ở máy local kèm Hot-Reload (DevTools)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run -pl payment-service"
+
+  dev:notification:
+    desc: "Chạy notification-service ở máy local kèm Hot-Reload (DevTools)"
+    cmds:
+      - "{{.MVNW_CMD}} spring-boot:run -pl notification-service"
+
+  # =========================================================================
+  # 🛠️ 3. BUILD, FORMAT & TESTING UTILITIES
+  # =========================================================================
 
   format:
-    desc: "Format the Java codebase using Spotless (Google Java Format)"
+    desc: "Format lại mã nguồn Java theo chuẩn Google Style (Spotless)"
     env:
       MAVEN_OPTS: "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
     cmds:
       - "{{.MVNW_CMD}} spotless:apply"
 
   format:check:
-    desc: "Verify Java codebase formatting using Spotless (Google Java Format)"
+    desc: "Kiểm tra định dạng code Java xem đã chuẩn Spotless chưa"
     env:
       MAVEN_OPTS: "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
     cmds:
       - "{{.MVNW_CMD}} spotless:check"
+
+  build:
+    desc: "Build file Jar ở ngoài máy host (nếu không dùng Docker)"
+    cmds:
+      - "{{.MVNW_CMD}} clean package -DskipTests"
+
+  test:
+    desc: "Chạy Unit Tests"
+    cmds:
+      - "{{.MVNW_CMD}} test"

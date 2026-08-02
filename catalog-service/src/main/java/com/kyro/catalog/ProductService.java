@@ -252,9 +252,10 @@ public class ProductService {
 
     long inStockCount = allProducts.stream().filter(p -> p.getQuantity() > 0).count();
     long outOfStockCount = allProducts.size() - inStockCount;
-    long totalSoldItems = allProducts.stream()
-        .mapToLong(p -> p.getQuantitySold() != null ? p.getQuantitySold() : 0L)
-        .sum();
+    long totalSoldItems =
+        allProducts.stream()
+            .mapToLong(p -> p.getQuantitySold() != null ? p.getQuantitySold() : 0L)
+            .sum();
 
     stats.put("totalProducts", allProducts.size());
     stats.put("inStock", inStockCount);
@@ -540,7 +541,10 @@ public class ProductService {
     long sold = p.getQuantitySold() != null ? p.getQuantitySold() : 0L;
     productMap.put("quantity_sold", sold);
     productMap.put("quantitySold", sold);
-    String imgUrl = (p.getImages() != null && !p.getImages().isEmpty()) ? p.getImages().get(0).getDownloadUrl() : null;
+    String imgUrl =
+        (p.getImages() != null && !p.getImages().isEmpty())
+            ? p.getImages().get(0).getDownloadUrl()
+            : null;
     productMap.put("imageUrl", imgUrl);
     return productMap;
   }
