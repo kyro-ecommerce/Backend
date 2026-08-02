@@ -26,7 +26,9 @@ public class RabbitMQConfig {
 
   @Bean
   public Binding catalogOrderBinding() {
-    return BindingBuilder.bind(catalogOrderQueue()).to(orderExchange()).with(ORDER_CREATED_ROUTING_KEY);
+    return BindingBuilder.bind(catalogOrderQueue())
+        .to(orderExchange())
+        .with(ORDER_CREATED_ROUTING_KEY);
   }
 
   @Bean

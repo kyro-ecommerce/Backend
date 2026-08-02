@@ -64,7 +64,8 @@ public class OrderController {
     }
 
     if (addressId == null) {
-      throw new DomainException(HttpStatus.BAD_REQUEST, "Address ID is required to create an order.");
+      throw new DomainException(
+          HttpStatus.BAD_REQUEST, "Address ID is required to create an order.");
     }
 
     List<Order> orders = orderService.placeOrder(addressId, userId, userEmail, paymentMethod);

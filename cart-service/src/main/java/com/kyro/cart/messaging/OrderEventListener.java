@@ -22,11 +22,15 @@ public class OrderEventListener {
   @RabbitListener(queues = RabbitMQConfig.CART_CLEAR_QUEUE)
   public void handleStockReserved(Map<String, Object> event) {
     Long userId = event.get("userId") != null ? Long.valueOf(event.get("userId").toString()) : null;
-    Long orderId = event.get("orderId") != null ? Long.valueOf(event.get("orderId").toString()) : null;
+    Long orderId =
+        event.get("orderId") != null ? Long.valueOf(event.get("orderId").toString()) : null;
 
     if (userId != null) {
       cartService.clearCart(userId.toString());
-      log.info("Cleared cart for User ID #{} following stock reservation for Order ID #{}", userId, orderId);
+      log.info(
+          "Cleared cart for User ID #{} following stock reservation for Order ID #{}",
+          userId,
+          orderId);
     }
   }
 }
