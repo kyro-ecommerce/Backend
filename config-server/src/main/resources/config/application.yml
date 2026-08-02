@@ -9,6 +9,9 @@ api:
   prefix: /api/v1
 
 spring:
+  threads:
+    virtual:
+      enabled: true
   flyway:
     baseline-on-migrate: true
     baseline-version: 0
