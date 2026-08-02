@@ -9,8 +9,6 @@ import com.kyro.order.client.UserClient;
 import com.kyro.order.dto.OrderDTO;
 import com.kyro.order.dto.OrderDetailDTO;
 import com.kyro.payment.PaymentDetailRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -29,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class OrderService {
+
   private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
   private final OrderRepository orderRepository;
@@ -55,8 +54,6 @@ public class OrderService {
     this.userClient = userClient;
     this.rabbitTemplate = rabbitTemplate;
   }
-
-  @PersistenceContext private EntityManager entityManager;
 
   public OrderDTO convertToDto(Order order) {
     return new OrderDTO(order);
@@ -304,43 +301,8 @@ public class OrderService {
 
   @Transactional
   public void deleteOrder(Long orderId) {
-    // Verify order exists first
-    findOrderById(orderId);
-
-    // Get address ID before deleting order row (needed to clean up orphan address)
-    Long addressId =
-        (Long)
-            entityManager
-                .createNativeQuery("SELECT order_address FROM orders WHERE id = :orderId")
-                .setParameter("orderId", orderId)
-                .getSingleResult();
-
-    // 1. Delete payment details (FK → orders)
-    entityManager
-        .createNativeQuery("DELETE FROM payment_details WHERE order_id = :orderId")
-        .setParameter("orderId", orderId)
-        .executeUpdate();
-
-    // 2. Delete order items (FK → orders)
-    entityManager
-        .createNativeQuery("DELETE FROM order_item WHERE order_id = :orderId")
-        .setParameter("orderId", orderId)
-        .executeUpdate();
-
-    // 3. Delete the order row itself (FK → order_address)
-    entityManager
-        .createNativeQuery("DELETE FROM orders WHERE id = :orderId")
-        .setParameter("orderId", orderId)
-        .executeUpdate();
-
-    // 4. Delete orphan address (if any)
-    if (addressId != null) {
-      entityManager
-          .createNativeQuery("DELETE FROM order_address WHERE id = :addressId")
-          .setParameter("addressId", addressId)
-          .executeUpdate();
-    }
-
+    Order order = findOrderById(orderId);
+    orderRepository.delete(order);
     log.info("Order ID {} deleted successfully.", orderId);
   }
 
