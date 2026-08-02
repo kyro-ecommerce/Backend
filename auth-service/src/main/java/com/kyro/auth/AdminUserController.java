@@ -23,7 +23,7 @@ public class AdminUserController {
     this.userService = userService;
   }
 
-  @GetMapping("/all")
+  @GetMapping({"", "/all"})
   @Transactional(readOnly = true)
   public ResponseEntity<Page<BasicUserDTO>> getAllUsers(
       @RequestParam(defaultValue = "0") int page,

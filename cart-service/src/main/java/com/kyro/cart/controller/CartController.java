@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("${api.prefix}/cart")
+@RequestMapping({"${api.prefix}/carts", "${api.prefix}/cart"})
 public class CartController {
 
   private final CartService cartService;
@@ -22,13 +22,13 @@ public class CartController {
     return ResponseEntity.ok(cartService.getCart(userId));
   }
 
-  @PostMapping("/add")
+  @PostMapping({"/items", "/add"})
   public ResponseEntity<CartDTO> addItemToCart(
       @RequestHeader("X-User-Id") String userId, @RequestBody CartItemDTO item) {
     return ResponseEntity.ok(cartService.addItemToCart(userId, item));
   }
 
-  @PutMapping("/update")
+  @PutMapping({"/items", "/update"})
   public ResponseEntity<CartDTO> updateCartItem(
       @RequestHeader("X-User-Id") String userId,
       @RequestParam Long productId,
@@ -37,7 +37,7 @@ public class CartController {
     return ResponseEntity.ok(cartService.updateCartItem(userId, productId, size, quantity));
   }
 
-  @DeleteMapping("/remove/{productId}")
+  @DeleteMapping({"/items/{productId}", "/remove/{productId}"})
   public ResponseEntity<CartDTO> removeItemFromCart(
       @RequestHeader("X-User-Id") String userId,
       @PathVariable Long productId,
@@ -45,7 +45,7 @@ public class CartController {
     return ResponseEntity.ok(cartService.removeItemFromCart(userId, productId, size));
   }
 
-  @DeleteMapping({"", "/clear"})
+  @DeleteMapping({"", "/items", "/clear"})
   public ResponseEntity<Map<String, String>> clearCart(@RequestHeader("X-User-Id") String userId) {
     cartService.clearCart(userId);
     return ResponseEntity.ok(Map.of("message", "Cart cleared successfully"));

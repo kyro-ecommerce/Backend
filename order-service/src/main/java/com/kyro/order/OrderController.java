@@ -42,12 +42,30 @@ public class OrderController {
   }
 
   /** Places a new order from current cart items. */
-  @PostMapping("/create/{addressId}")
+  @PostMapping({"", "/create/{addressId}"})
   public ResponseEntity<Map<String, Object>> createOrder(
       @RequestHeader("X-User-Id") Long userId,
       @RequestHeader("X-User-Email") String userEmail,
-      @PathVariable("addressId") Long addressId,
-      @RequestParam(value = "paymentMethod", required = false) PaymentMethod paymentMethod) {
+      @PathVariable(value = "addressId", required = false) Long pathAddressId,
+      @RequestParam(value = "addressId", required = false) Long queryAddressId,
+      @RequestParam(value = "paymentMethod", required = false) PaymentMethod queryPaymentMethod,
+      @RequestBody(required = false) Map<String, Object> body) {
+
+    Long addressId = pathAddressId != null ? pathAddressId : queryAddressId;
+    PaymentMethod paymentMethod = queryPaymentMethod;
+
+    if (body != null) {
+      if (addressId == null && body.get("addressId") != null) {
+        addressId = Long.valueOf(body.get("addressId").toString());
+      }
+      if (paymentMethod == null && body.get("paymentMethod") != null) {
+        paymentMethod = PaymentMethod.valueOf(body.get("paymentMethod").toString().toUpperCase());
+      }
+    }
+
+    if (addressId == null) {
+      throw new DomainException(HttpStatus.BAD_REQUEST, "Address ID is required to create an order.");
+    }
 
     List<Order> orders = orderService.placeOrder(addressId, userId, userEmail, paymentMethod);
 
@@ -121,7 +139,7 @@ public class OrderController {
   }
 
   /** Cancels an order. */
-  @PutMapping("/cancel/{id}")
+  @PutMapping({"/cancel/{id}", "/{id}/cancel"})
   public ResponseEntity<OrderDTO> cancelOrder(
       @PathVariable("id") Long orderId, @RequestHeader("X-User-Id") Long userId) {
 
