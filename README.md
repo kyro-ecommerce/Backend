@@ -1,130 +1,195 @@
-# Kyro Microservices Backend
+# 🛒 Kyro E-Commerce Microservices Backend Platform
 
-Hệ thống Backend Microservices cho ứng dụng E-commerce Kyro được xây dựng trên nền tảng **Spring Boot**, **Spring Cloud** và điều phối container bằng **Docker Compose**.
+![Java 21](https://img.shields.io/badge/Java-21_LTS-orange?style=for-the-badge&logo=java)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.2-brightgreen?style=for-the-badge&logo=springboot)
+![Spring Cloud](https://img.shields.io/badge/Spring_Cloud-2023.0.3-blue?style=for-the-badge&logo=spring)
+![Docker](https://img.shields.io/badge/Docker_Compose-Supported-2496ED?style=for-the-badge&logo=docker)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_pgvector-4169E1?style=for-the-badge&logo=postgresql)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3-FF6600?style=for-the-badge&logo=rabbitmq)
+
+Hệ thống Backend Microservices cho nền tảng Thương mại Điện tử **Kyro**, được thiết kế theo kiến trúc hướng dịch vụ (Service-Oriented Architecture), hỗ trợ xác thực tập trung, thanh toán VNPay, lưu trữ Redis, gửi mail qua RabbitMQ, và tích hợp AI Recommendation.
 
 ---
 
-## ⚡ Hướng Dẫn Chạy Dự Án (Quick Start)
+## 📐 Báo Cáo Đánh Giá Kiến Trúc (Architecture & Clean Architecture Review)
 
-Dự án sử dụng **Docker Compose** và **Taskfile** (`task`) để tối giản hóa việc quản lý và vận hành toàn bộ hệ thống dịch vụ.
+> [!IMPORTANT]
+> **Dành cho kỹ sư & nhà phát triển**: Vui lòng tham khảo file tài liệu chuyên sâu [**MICROSERVICE_ARCHITECTURE_REVIEW.md**](MICROSERVICE_ARCHITECTURE_REVIEW.md) để xem phân tích cặn kẽ về:
+> - Phân tích mức độ tuân thủ **Clean Architecture / Hexagonal Architecture**.
+> - Đánh giá cơ hội tận dụng tính năng **Java 21 (Virtual Threads / Project Loom)**.
+> - Phân tích các **Anti-patterns (Lỗi giao dịch phân tán Dual Write)** và hướng xử lý **Saga Pattern**.
+> - **Lộ trình Refactoring từng bước (Step-by-Step Actionable Roadmap)**.
 
-### 📌 Yêu Cầu Hệ Thống (Prerequisites)
-* **Docker** & **Docker Compose** đã được cài đặt và đang chạy.
-* **Go Task** (Khuyến khích) để chạy các shortcut. Cài đặt nhanh:
-  * MacOS: `brew install go-task`
-  * Windows (via Scoop): `scoop install task`
-  * Hoặc bạn có thể chạy trực tiếp các lệnh docker/maven tương ứng.
+---
 
-### 🚀 Quy Trình Phát Triển Nhanh (Fast Local Dev Workflow)
+## 🏛️ 1. Kiến Trúc Hệ Thống (System Architecture Map)
+
+```mermaid
+graph TD
+    Client[Web Frontend / Mobile App] --> Gateway[API Gateway :8080]
+    
+    subgraph Infrastructure Services
+        Discovery[Eureka Service Discovery :8761]
+        Config[Config Server :8888]
+    end
+
+    Gateway --> Auth[Auth Service :8081]
+    Gateway --> Catalog[Catalog Service :8082]
+    Gateway --> Cart[Cart Service :8083]
+    Gateway --> Order[Order Service :8084]
+    Gateway --> Payment[Payment Service :8085]
+    Gateway --> AIService[Python AI Service :8000]
+
+    Auth --> AuthDB[(Postgres: postgres)]
+    Catalog --> CatalogDB[(Postgres: kyro_catalog)]
+    Order --> OrderDB[(Postgres: kyro_order)]
+    Payment --> PaymentDB[(Postgres: kyro_payment)]
+    Cart --> RedisDB[(Redis Cache :6379)]
+
+    Order -. Sync Feign .- Catalog
+    Order -. Sync Feign .- Cart
+    Order -. Sync Feign .- Auth
+    Payment -. Sync Feign .- Order
+
+    Auth -- Async Events --> RabbitMQ[RabbitMQ Message Broker :5672]
+    Order -- Async Events --> RabbitMQ
+    RabbitMQ --> Notification[Notification Service]
+```
+
+---
+
+## 🛠️ 2. Danh Sách Các Microservices
+
+Hệ thống bao gồm **10 Dịch Vụ** độc phối hợp hoạt động trong mạng nội bộ Docker:
+
+| Tên Dịch Vụ | Cổng (Port) | Vai Trò & Nhiệm Vụ Kỹ Thuật | Cơ Sở Dữ Liệu / Storage |
+| :--- | :---: | :--- | :--- |
+| **api-gateway** | `8080` | Lọc JWT Token (`AuthenticationFilter`), định tuyến HTTP, giải mã header (`X-User-Id`), cấu hình CORS tập trung. | *N/A* |
+| **auth-service** | `8081` | Quản lý tài khoản, mã hóa Password BCRYPT, OAuth2 (Google & GitHub), sinh mã OTP, quản lý địa chỉ. | PostgreSQL (`postgres`) |
+| **catalog-service** | `8082` | Quản lý danh mục sản phẩm, biến thể (Size/Stock), đánh giá (Reviews), upload ảnh Cloudinary. | PostgreSQL (`kyro_catalog`) |
+| **cart-service** | `8083` | Quản lý giỏ hàng tạm thời của người dùng với thời gian sống (TTL 30 ngày). | Redis (`kyro-redis:6379`) |
+| **order-service** | `8084` | Xử lý quy trình đặt hàng, tính toán chiết khấu, quản lý vòng đời đơn hàng (Pending -> Delivered). | PostgreSQL (`kyro_order`) |
+| **payment-service** | `8085` | Tích hợp cổng thanh toán trực tuyến **VNPay**, tạo URL thanh toán & xử lý IPN Callback. | PostgreSQL (`kyro_payment`) |
+| **notification-service**| *Internal* | Consumer bất đồng bộ lắng nghe RabbitMQ queues gửi Email OTP và Mail xác nhận đơn hàng qua SMTP. | *N/A* |
+| **ai-service** | `8000` | Dịch vụ Python FastAPI tích hợp Gemini AI và pgvector phục vụ tư vấn & gợi ý sản phẩm. | PostgreSQL (`pgvector`) |
+| **eureka-server** | `8761` | Service Registry đăng ký và phát hiện dịch vụ động cho Spring Cloud Feign Clients. | *In-Memory* |
+| **config-server** | `8888` | Quản lý cấu hình tập trung từ thư mục `resources/config` cho toàn bộ microservices Java. | *Local Repository* |
+
+---
+
+## ⚡ 3. Quy Trình Phát Triển Local (Fast Local Dev Workflow)
+
+Dự án sử dụng **Docker Compose** kết hợp với **Go Task** (`task`) nhằm cung cấp trải nghiệm phát triển (Developer Experience - DX) tối ưu nhất.
+
+### 📌 Yêu Cầu Cài Đặt (Prerequisites)
+- **Docker** & **Docker Compose** (V2+).
+- **Java 21 LTS** & **Maven 3.9+** (hoặc dùng wrapper `./mvnw`).
+- **Go Task** (Khuyến khích cài đặt để chạy nhanh các lệnh shortcut):
+  - macOS: `brew install go-task`
+  - Windows: `scoop install task` hoặc `choco install go-task`
+
+### 🚀 Cách Chạy Dự Án Nhanh (Hot-Reloading 1-2 giây)
 
 > [!TIP]
-> **Không nên chạy `task dev` khi bạn đang liên tục viết/sửa code hàng ngày!** `task dev` sẽ xóa target, rebuild 10 file JAR và build lại toàn bộ Docker containers (tốn 1-3 phút).
-> Để phát triển nhanh với **Hot Reloading (chỉ tốn 1-2 giây khi lưu file)**, hãy áp dụng quy trình chuẩn sau:
+> **Quy Trình Chuẩn Cho Lập Trình Viên**: Đừng chạy `task dev` khi bạn đang sửa code hàng ngày! `task dev` sẽ rebuild lại toàn bộ 10 file JAR và Docker images (tốn 2-3 phút).
+> Hãy áp dụng quy trình bên dưới để có tốc độ **Hot-Reload chỉ 1-2 giây khi bấm Save**:
 
-#### ⚡ Bước 1: Khởi động Hạ Tầng & API Gateway (Chạy 1 lần duy nhất)
-Bật các container hạ tầng cơ bản (DB, Redis, RabbitMQ, Discovery, Config, Gateway) ở background:
+#### ⚡ Bước 1: Khởi động Hạ tầng ngầm & API Gateway (Chạy 1 lần)
 ```bash
 task infra
 ```
-*(Các container này khởi động 1 lần và tiếp tục chạy ngầm, bạn không cần dừng hay rebuild lại).*
+*(Các container Database, Redis, RabbitMQ, Discovery, Config, Gateway sẽ khởi động và chạy ngầm).*
 
 #### ⚡ Bước 2: Chạy Service bạn đang viết code bằng Hot-Reload Mode
-Khi bạn đang viết/sửa code ở một microservice cụ thể (ví dụ `auth-service` hay `catalog-service`), hãy chạy trực tiếp service đó bằng lệnh `task dev:<service>`:
-
+Khi bạn đang code ở 1 service cụ thể (ví dụ `auth-service` hoặc `catalog-service`), hãy mở terminal và gõ:
 ```bash
-# Code & Hot-reload cho Auth Service
+# Sửa code & Hot-reload tức thì cho Auth Service
 task dev:auth
 
-# Hoặc code & Hot-reload cho Catalog Service
+# Hoặc cho Catalog Service
 task dev:catalog
 
-# Các service khác tương tự: task dev:cart, task dev:order, task dev:payment, task dev:notification
+# Hoặc Order Service
+task dev:order
+```
+🔥 **Lợi ích**: Nhờ **Spring Boot DevTools**, mỗi khi bạn sửa file Java và nhấn **Save (`Cmd+S` / `Ctrl+S`)**, ứng dụng sẽ **tự động Hot-Reload lại sau 1-2 giây** mà KHÔNG cần build lại Docker!
+
+---
+
+## 🐳 4. Danh Sách Lệnh Shortcuts (`Taskfile.yml`)
+
+| Lệnh `task` | Mô Tả Chi Tiết | Thời Gian Thực Thi |
+| :--- | :--- | :---: |
+| `task infra` | **[KHUYÊN DÙNG]** Bật toàn bộ container hạ tầng ngầm (Postgres, Redis, RabbitMQ, Gateway, Eureka, Config). | ⚡ Chạy 1 lần |
+| `task dev:auth` | **[HOT-RELOAD]** Chạy `auth-service` tại máy cục bộ với phản hồi 1s khi lưu file. | ⚡ 1 - 2 giây |
+| `task dev:catalog` | **[HOT-RELOAD]** Chạy `catalog-service` tại máy cục bộ. | ⚡ 1 - 2 giây |
+| `task dev:cart` | **[HOT-RELOAD]** Chạy `cart-service` tại máy cục bộ. | ⚡ 1 - 2 giây |
+| `task dev:order` | **[HOT-RELOAD]** Chạy `order-service` tại máy cục bộ. | ⚡ 1 - 2 giây |
+| `task dev:payment` | **[HOT-RELOAD]** Chạy `payment-service` tại máy cục bộ. | ⚡ 1 - 2 giây |
+| `task dev:notification` | **[HOT-RELOAD]** Chạy `notification-service` tại máy cục bộ. | ⚡ 1 - 2 giây |
+| `task dev` | Build lại toàn bộ 10 file JAR và rebuild TẤT CẢ Docker Containers. | 🐢 1 - 3 phút |
+| `task run` | Bật lại tất cả container Docker đã build sẵn. | 🐢 30 giây |
+| `task stop` | Dừng toàn bộ các container Docker đang chạy. | ⚡ Instant |
+| `task clean` | Dừng hệ thống và XÓA SẠCH Volume dữ liệu Database. | ⚡ Instant |
+| `task format` | Tự động căn chỉnh định dạng mã nguồn theo Google Java Format. | ⚡ Instant |
+| `task format:check` | Kiểm tra chuẩn định dạng mã nguồn (Dùng cho CI/CD). | ⚡ Instant |
+| `task logs:ui` | Mở giao diện xem log Dozzle trên trình duyệt (`http://localhost:9999`). | ⚡ Instant |
+
+---
+
+## 🔐 5. Kiến Trúc Bảo Mật & Xác Thực (Security Model)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Gateway as API Gateway (:8080)
+    participant Auth as Auth Service (:8081)
+    participant Order as Order Service (:8084)
+
+    User->>Gateway: POST /api/v1/auth/login
+    Gateway->>Auth: Forward Login Request
+    Auth-->>User: Return JWT Token (Bearer)
+
+    User->>Gateway: GET /api/v1/orders (Header: Authorization Bearer JWT)
+    Gateway->>Gateway: AuthenticationFilter validates JWT Signature
+    Gateway->>Gateway: Extract Claims (User ID, Email, Roles)
+    Gateway->>Order: Forward Request + Inject Headers (X-User-Id, X-User-Email, X-User-Roles)
+    Order-->>User: Return User Orders
 ```
 
-🔥 **Lợi ích**: Nhờ vào **Spring Boot DevTools**, mỗi khi bạn sửa code Java và nhấn **Save (`Ctrl + S` / `Cmd + S`)**, ứng dụng sẽ **tự động Hot-Reload lại chỉ trong 1-2 giây** mà KHÔNG cần dừng container hay rebuild Docker!
+- **Authentication Offloading**: API Gateway tự giải mã và kiểm tra chữ ký JWT Token qua `AuthenticationFilter.java`.
+- **Header Injection**: Các downstream services đằng sau API Gateway nhận thông tin định danh qua HTTP Headers (`X-User-Id`, `X-User-Email`, `X-User-Roles`) giúp đơn giản hóa lớp Security Filter tại từng service (`SecurityConfig.java`).
 
 ---
 
-### 🐳 Danh Sách Lệnh Thao Tác (Task Commands)
+## 🎨 6. Chuẩn Hóa Định Dạng Code (Spotless & Google Format)
 
-| Lệnh `task` | Mô tả chi tiết | Thời gian |
-| :--- | :--- | :--- |
-| `task infra` | **[KHUYÊN DÙNG]** Bật toàn bộ hạ tầng ngầm (Postgres, Redis, RabbitMQ, Eureka, Config, Gateway). | ⚡ Chạy 1 lần |
-| `task dev:auth` | **[KHUYÊN DÙNG]** Chạy `auth-service` ở máy cục bộ với **Hot Reload 1s**. | ⚡ 1 - 2 giây |
-| `task dev:catalog` | **[KHUYÊN DÙNG]** Chạy `catalog-service` ở máy cục bộ với **Hot Reload 1s**. | ⚡ 1 - 2 giây |
-| `task dev:cart` | Chạy `cart-service` ở máy cục bộ với **Hot Reload 1s**. | ⚡ 1 - 2 giây |
-| `task dev:order` | Chạy `order-service` ở máy cục bộ với **Hot Reload 1s**. | ⚡ 1 - 2 giây |
-| `task dev:payment` | Chạy `payment-service` ở máy cục bộ với **Hot Reload 1s**. | ⚡ 1 - 2 giây |
-| `task dev:notification` | Chạy `notification-service` ở máy cục bộ với **Hot Reload 1s**. | ⚡ 1 - 2 giây |
-| `task dev` | Build lại toàn bộ 10 JAR và rebuild TẤT CẢ Docker Containers (Dùng cho full test/release). | 🐢 1 - 3 phút |
-| `task run` | Bật lại tất cả container Docker đã build sẵn. | 🐢 30 giây |
-| `task stop` | Dừng tất cả container Docker đang chạy. | ⚡ Instant |
-| `task format` | Tự động căn chỉnh định dạng code theo Google Java Format. | ⚡ Instant |
+Dự án áp dụng quy chuẩn mã nguồn nghiêm ngặt với **Spotless Plugin** và **Google Java Format (style GOOGLE)**:
 
----
-
-## 🎨 Chuẩn Hóa Định Dạng Mã Nguồn (Formatting Standard)
-
-Để đảm bảo toàn bộ mã nguồn tuân thủ một chuẩn chung, dự án tích hợp **Spotless** và áp dụng **Google Java Format (style GOOGLE)**.
-
-Hệ thống tự động loại bỏ các import không sử dụng và căn chỉnh thụt dòng theo đúng chuẩn Google Java Format. Bạn có thể sử dụng các lệnh sau để tự động định dạng mã nguồn:
-
-* **Tự động định dạng toàn bộ mã nguồn Java:**
+- **Tự động định dạng toàn bộ mã nguồn Java:**
   ```bash
   task format
+  # Hoặc chạy: ./mvnw spotless:apply
   ```
-  *(Hoặc chạy lệnh Maven: `./mvnw spotless:apply`)*
-
-* **Kiểm tra xem mã nguồn có đúng định dạng hay chưa (dùng cho CI/CD):**
+- **Kiểm tra định dạng (CI/CD Pipeline):**
   ```bash
   task format:check
+  # Hoặc chạy: ./mvnw spotless:check
   ```
-  *(Hoặc chạy lệnh Maven: `./mvnw spotless:check`)*
 
 ---
 
-## 🛠️ Cấu Trúc Hệ Thống & Microservices
+## 📊 7. Trực Quan Log & Tài Liệu API (Monitoring & API Docs)
 
-Hệ thống bao gồm **9 Microservices** độc lập phối hợp với nhau thông qua mạng nội bộ Docker:
-
-| Tên Dịch Vụ | Cổng (Port) | Vai Trò & Nhiệm Vụ |
-| :--- | :---: | :--- |
-| **eureka-server** | `8761` | Service Registry - Đăng ký và phát hiện dịch vụ. |
-| **config-server** | `8888` | Config Server - Quản lý cấu hình tập trung cho các service. |
-| **api-gateway** | `8080` | API Gateway - Định tuyến request và lọc JWT Authentication. |
-| **auth-service** | `8081` | Quản lý người dùng, phân quyền, xác thực OAuth2 & OTP. |
-| **catalog-service** | `8082` | Quản lý danh mục sản phẩm, bộ lọc tìm kiếm và tải ảnh Cloudinary. |
-| **cart-service** | `8083` | Quản lý giỏ hàng tạm thời và lưu trữ Redis. |
-| **order-service** | `8084` | Quản lý quy trình đặt hàng, xử lý trạng thái đơn hàng. |
-| **payment-service** | `8085` | Tích hợp cổng thanh toán VNPay. |
-| **notification-service**| *Internal* | Lắng nghe hàng đợi RabbitMQ để gửi email xác thực/đơn hàng. |
-
-### 🗄️ Cơ Sở Dữ Liệu & Hạ Tầng
-* **PostgreSQL**: Chạy ở cổng `5432` chứa 4 cơ sở dữ liệu độc lập:
-  * `postgres` (dành cho `auth-service`)
-  * `kyro_catalog` (dành cho `catalog-service`)
-  * `kyro_order` (dành cho `order-service`)
-  * `kyro_payment` (dành cho `payment-service`)
-* **Flyway Migration**: Mỗi microservice tự quản lý schema của mình thông qua các script SQL migration đặt tại `src/main/resources/db/migration/`.
-* **Redis**: Chạy ở cổng `6379` để cache và lưu trữ thông tin giỏ hàng (`cart-service`).
-* **RabbitMQ**: Chạy ở cổng `5672` (Web UI quản trị: `15672`) xử lý tin nhắn bất đồng bộ gửi email thông báo.
+- **Dozele Log Viewer**: Truy cập `http://localhost:9999` để theo dõi realtime log của từng Docker Container.
+- **Swagger / Scalar Open API Docs**: Truy cập `http://localhost:8080/v3/api-docs` để xem tài liệu API tổng hợp của tất cả các microservices qua Gateway.
+- **RabbitMQ Dashboard**: Truy cập `http://localhost:15672` (User: `guest`, Pass: `guest`) để kiểm tra trạng thái Queues & Exchanges.
 
 ---
 
-## 🐳 Danh Sách Các Lệnh Taskfile Tiện Ích
+## 📄 License & Author
 
-Dưới đây là bảng tổng hợp các lệnh định nghĩa sẵn trong [Taskfile.yml](file:///Users/tphuc263/Project/Kyro/backend/Taskfile.yml):
-
-| Lệnh `task` | Mô tả chi tiết |
-| :--- | :--- |
-| `task dev` | Biên dịch Java và khởi chạy toàn bộ dịch vụ (build mới Docker images). |
-| `task run` | Bật các container đã tồn tại của toàn bộ hệ thống. |
-| `task stop` | Dừng và tắt toàn bộ container của hệ thống. |
-| `task clean` | Dừng hệ thống và xóa sạch volume dữ liệu DB. |
-| `task format` | Tự động định dạng toàn bộ mã nguồn theo chuẩn Google Java Format. |
-| `task format:check` | Kiểm tra định dạng mã nguồn. |
-| `task db:up` | Chỉ khởi động các container hạ tầng (Postgres, Redis, RabbitMQ). |
-| `task db:down` | Dừng các container hạ tầng. |
-| `task db:logs` | Xem log trực tiếp của các container hạ tầng. |
-| `task logs:ui` | Mở giao diện xem log Dozzle trên trình duyệt. |
-
+- **Project**: Kyro Microservices E-Commerce
+- **Architecture Standard**: Java 21 LTS, Clean Architecture & Event-Driven Microservices.
