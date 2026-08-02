@@ -15,10 +15,10 @@ COPY order-service/pom.xml order-service/
 COPY payment-service/pom.xml payment-service/
 COPY notification-service/pom.xml notification-service/
 
-RUN ./mvnw dependency:go-offline -B
+RUN --mount=type=cache,target=/root/.m2 ./mvnw dependency:go-offline -B
 
 COPY . .
-RUN ./mvnw clean package -pl payment-service -am -DskipTests
+RUN --mount=type=cache,target=/root/.m2 ./mvnw clean package -pl payment-service -am -DskipTests
 
 # Stage 2: Runtime stage
 FROM eclipse-temurin:21-jre-jammy
