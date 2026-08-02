@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
  * authenticated user state from gateway-injected headers.
  */
 @RestController
-@RequestMapping("${api.prefix}/payment")
+@RequestMapping({"${api.prefix}/payments", "${api.prefix}/payment"})
 public class PaymentController {
 
   private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
@@ -32,7 +32,7 @@ public class PaymentController {
   }
 
   /** Creates a VNPay checkout URL for an order. */
-  @PostMapping("/create/{orderId}")
+  @PostMapping({"/create/{orderId}", "/{orderId}"})
   public ResponseEntity<Map<String, Object>> createPayment(
       @RequestHeader(value = "X-User-Id", required = false) Long userId,
       @PathVariable Long orderId) {
@@ -97,7 +97,7 @@ public class PaymentController {
   }
 
   /** Gets payment details by order ID. */
-  @GetMapping("/order/{orderId}")
+  @GetMapping({"/order/{orderId}", "/orders/{orderId}"})
   public ResponseEntity<PaymentDetail> getPaymentByOrderId(
       @RequestHeader("X-User-Id") Long userId, @PathVariable Long orderId) {
 

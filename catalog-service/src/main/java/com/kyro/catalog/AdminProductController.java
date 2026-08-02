@@ -22,7 +22,7 @@ public class AdminProductController {
     this.productService = productService;
   }
 
-  @PostMapping("/create")
+  @PostMapping({"", "/create"})
   public ResponseEntity<Product> createProduct(@RequestBody CreateProductRequest request) {
     Product product = productService.createProduct(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(product);
@@ -33,14 +33,14 @@ public class AdminProductController {
     return ResponseEntity.ok(new ProductDTO(productService.findProductById(productId)));
   }
 
-  @DeleteMapping("/{productId}/delete")
+  @DeleteMapping({"/{productId}", "/{productId}/delete"})
   public ResponseEntity<Map<String, String>> deleteProduct(@PathVariable Long productId) {
     productService.adminDeleteProduct(productId);
     return ResponseEntity.ok(
         Map.of("message", String.format("Delete product have ID %d successfully", productId)));
   }
 
-  @GetMapping("/all")
+  @GetMapping({"", "/all"})
   public ResponseEntity<Page<ProductDTO>> findAllProducts(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size,
@@ -70,14 +70,14 @@ public class AdminProductController {
     return ResponseEntity.ok(productPage);
   }
 
-  @PutMapping("/{productId}/update")
+  @PutMapping({"/{productId}", "/{productId}/update"})
   public ResponseEntity<ProductDTO> updateProduct(
       @PathVariable Long productId, @RequestBody Product product) {
     ProductDTO updatedProduct = productService.updateProductByID(productId, product);
     return ResponseEntity.ok(updatedProduct);
   }
 
-  @PostMapping("/create-multiple")
+  @PostMapping({"/bulk", "/create-multiple"})
   public ResponseEntity<Map<String, String>> createMultipleProducts(
       @RequestBody CreateProductRequest[] requests) {
     for (CreateProductRequest request : requests) {

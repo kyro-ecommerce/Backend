@@ -30,7 +30,7 @@ public class UserController {
     this.userRepository = userRepository;
   }
 
-  @PutMapping("/update")
+  @PutMapping({"/profile", "/update"})
   public ResponseEntity<Map<String, String>> updateUser(
       @RequestBody UpdateUserRequest request, @RequestHeader("Authorization") String jwt) {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -43,7 +43,7 @@ public class UserController {
     return ResponseEntity.ok(Map.of("message", "Update User Success!"));
   }
 
-  @DeleteMapping("/delete/{userId}")
+  @DeleteMapping({"/{userId}", "/delete/{userId}"})
   public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long userId) {
     userService.deleteUser(userId);
     return ResponseEntity.ok(Map.of("message", "Delete User Success!"));
@@ -107,7 +107,7 @@ public class UserController {
   }
 
   @Transactional
-  @GetMapping("/address")
+  @GetMapping({"/addresses", "/address"})
   public ResponseEntity<List<AddressDTO>> getUserAddress() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || authentication.getName() == null) {

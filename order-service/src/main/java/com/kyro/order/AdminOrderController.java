@@ -23,7 +23,7 @@ public class AdminOrderController {
     this.orderService = orderService;
   }
 
-  @GetMapping("/all")
+  @GetMapping({"", "/all"})
   public ResponseEntity<Page<OrderDetailDTO>> getAllOrders(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size,

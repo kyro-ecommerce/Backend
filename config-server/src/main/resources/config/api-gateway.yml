@@ -37,7 +37,7 @@ spring:
         - id: cart-service
           uri: lb://cart-service
           predicates:
-            - Path=/api/v1/cart/**
+            - Path=/api/v1/carts/**, /api/v1/cart/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter
@@ -99,7 +99,7 @@ spring:
         - id: payment-service-public
           uri: lb://payment-service
           predicates:
-            - Path=/api/v1/payment/vnpay-callback
+            - Path=/api/v1/payments/vnpay-callback, /api/v1/payment/vnpay-callback
           filters:
             - StripPrefix=0
 
@@ -107,7 +107,7 @@ spring:
         - id: payment-service-authenticated
           uri: lb://payment-service
           predicates:
-            - Path=/api/v1/payment/**
+            - Path=/api/v1/payments/**, /api/v1/payment/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter
