@@ -52,3 +52,6 @@ kyro_postman_collection.json
 
 .codegraph
 logs
+
+# Local Development & Planning
+plans/

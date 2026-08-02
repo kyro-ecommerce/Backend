@@ -120,3 +120,48 @@ tasks:
     desc: "Chạy Unit Tests"
     cmds:
       - "{{.MVNW_CMD}} test"
+
+  # =========================================================================
+  # 📊 4. K6 PERFORMANCE & LOAD TESTING UTILITIES
+  # =========================================================================
+
+  k6:smoke:
+    desc: "Chạy k6 Smoke Test (30s verification)"
+    cmds:
+      - k6 run k6/scenarios/01_smoke_test.js
+
+  k6:browse:
+    desc: "Chạy k6 Catalog & Search Read-Heavy Load Test"
+    cmds:
+      - k6 run k6/scenarios/02_browse_catalog.js
+
+  k6:cart:
+    desc: "Chạy k6 Redis Cart High-Concurrency Load Test"
+    cmds:
+      - k6 run k6/scenarios/03_cart_operations.js
+
+  k6:checkout:
+    desc: "Chạy k6 End-to-End Checkout & Payment Flow Load Test"
+    cmds:
+      - k6 run k6/scenarios/04_checkout_order.js
+
+  k6:stress:
+    desc: "Chạy k6 System Stress Test (Ramping up to 300 VUs)"
+    cmds:
+      - k6 run k6/scenarios/05_stress_test.js
+
+  k6:spike:
+    desc: "Chạy k6 Flash Sale Spike Test (0 -> 250 VUs in 10s)"
+    cmds:
+      - k6 run k6/scenarios/06_spike_test.js
+
+  k6:edge:
+    desc: "Chạy k6 Edge Cases & Resilience Chaos Test"
+    cmds:
+      - k6 run k6/scenarios/07_edge_cases.js
+
+  k6:full:
+    desc: "Chạy k6 Master Suite (Toàn bộ scenarios với tỷ lệ lưu lượng thực tế)"
+    cmds:
+      - k6 run k6/main_suite.js
+
