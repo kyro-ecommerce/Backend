@@ -1,7 +1,6 @@
 package com.kyro.order.messaging;
 
 import com.kyro.enums.OrderStatus;
-import com.kyro.order.Order;
 import com.kyro.order.OrderRepository;
 import com.kyro.order.config.RabbitMQConfig;
 import com.kyro.order.event.StockResultEvent;
@@ -23,7 +22,8 @@ public class OrderSagaEventListener {
 
   @RabbitListener(queues = RabbitMQConfig.ORDER_SAGA_QUEUE)
   public void handleStockResult(StockResultEvent event) {
-    log.info("Received StockResultEvent for Order ID {}: success={}", event.orderId(), event.success());
+    log.info(
+        "Received StockResultEvent for Order ID {}: success={}", event.orderId(), event.success());
     orderRepository
         .findById(event.orderId())
         .ifPresent(
@@ -33,7 +33,10 @@ public class OrderSagaEventListener {
                 log.info("Order ID {} successfully CONFIRMED via Saga.", event.orderId());
               } else {
                 order.setOrderStatus(OrderStatus.CANCELLED);
-                log.warn("Order ID {} CANCELLED due to stock deduction failure: {}", event.orderId(), event.message());
+                log.warn(
+                    "Order ID {} CANCELLED due to stock deduction failure: {}",
+                    event.orderId(),
+                    event.message());
               }
               orderRepository.save(order);
             });

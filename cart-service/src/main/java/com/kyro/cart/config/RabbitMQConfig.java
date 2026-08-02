@@ -26,7 +26,9 @@ public class RabbitMQConfig {
 
   @Bean
   public Binding cartClearBinding() {
-    return BindingBuilder.bind(cartClearQueue()).to(orderExchange()).with(STOCK_RESERVED_ROUTING_KEY);
+    return BindingBuilder.bind(cartClearQueue())
+        .to(orderExchange())
+        .with(STOCK_RESERVED_ROUTING_KEY);
   }
 
   @Bean

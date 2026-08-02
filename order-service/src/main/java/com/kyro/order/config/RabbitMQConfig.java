@@ -30,7 +30,9 @@ public class RabbitMQConfig {
 
   @Bean
   public Binding stockReservedBinding() {
-    return BindingBuilder.bind(orderSagaQueue()).to(orderExchange()).with(STOCK_RESERVED_ROUTING_KEY);
+    return BindingBuilder.bind(orderSagaQueue())
+        .to(orderExchange())
+        .with(STOCK_RESERVED_ROUTING_KEY);
   }
 
   @Bean

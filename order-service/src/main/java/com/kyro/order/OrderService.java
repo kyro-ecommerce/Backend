@@ -149,9 +149,10 @@ public class OrderService {
     for (CartClient.CartItemResponse cartItem : cart.items()) {
       CatalogClient.ProductResponse product = catalogClient.getProductById(cartItem.productId());
       String productTitle = product != null ? product.title() : cartItem.productName();
-      String imageUrl = (product != null && product.images() != null && !product.images().isEmpty())
-          ? product.images().get(0).downloadUrl()
-          : cartItem.productImageUrl();
+      String imageUrl =
+          (product != null && product.images() != null && !product.images().isEmpty())
+              ? product.images().get(0).downloadUrl()
+              : cartItem.productImageUrl();
 
       OrderItem orderItem = new OrderItem();
       orderItem.setOrder(savedOrderIntermediate);
@@ -189,7 +190,11 @@ public class OrderService {
 
       log.info("Published OrderCreatedEvent for Order ID #{} to RabbitMQ", finalSavedOrder.getId());
     } catch (Exception e) {
-      log.error("Failed to publish OrderCreatedEvent for Order ID #{}: {}", finalSavedOrder.getId(), e.getMessage(), e);
+      log.error(
+          "Failed to publish OrderCreatedEvent for Order ID #{}: {}",
+          finalSavedOrder.getId(),
+          e.getMessage(),
+          e);
     }
 
     return createdOrders;

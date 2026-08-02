@@ -25,7 +25,8 @@ public class OrderEventListener {
 
   @RabbitListener(queues = RabbitMQConfig.CATALOG_ORDER_QUEUE)
   public void handleOrderCreated(Map<String, Object> event) {
-    Long orderId = event.get("orderId") != null ? Long.valueOf(event.get("orderId").toString()) : null;
+    Long orderId =
+        event.get("orderId") != null ? Long.valueOf(event.get("orderId").toString()) : null;
     Long userId = event.get("userId") != null ? Long.valueOf(event.get("userId").toString()) : null;
     log.info("Received OrderCreatedEvent for Order ID #{}, User ID #{}", orderId, userId);
 
@@ -42,17 +43,22 @@ public class OrderEventListener {
           int quantity = Integer.parseInt(item.get("quantity").toString());
 
           productService.decreaseStock(productId, size, quantity);
-          log.info("Decreased stock for Product ID {}, Size {}, Quantity {}", productId, size, quantity);
+          log.info(
+              "Decreased stock for Product ID {}, Size {}, Quantity {}", productId, size, quantity);
         }
       }
 
       // Publish stock.reserved success event
-      Map<String, Object> successEvent = Map.of(
-          "orderId", orderId,
-          "userId", userId != null ? userId : 0L,
-          "success", true,
-          "message", "Stock successfully reserved"
-      );
+      Map<String, Object> successEvent =
+          Map.of(
+              "orderId",
+              orderId,
+              "userId",
+              userId != null ? userId : 0L,
+              "success",
+              true,
+              "message",
+              "Stock successfully reserved");
       rabbitTemplate.convertAndSend(RabbitMQConfig.ORDER_EXCHANGE, "stock.reserved", successEvent);
       log.info("Published stock.reserved event for Order ID #{}", orderId);
 
@@ -60,12 +66,16 @@ public class OrderEventListener {
       log.error("Failed to decrease stock for Order ID #{}: {}", orderId, e.getMessage(), e);
 
       // Publish stock.failed compensation event
-      Map<String, Object> failedEvent = Map.of(
-          "orderId", orderId,
-          "userId", userId != null ? userId : 0L,
-          "success", false,
-          "message", e.getMessage() != null ? e.getMessage() : "Insufficient stock"
-      );
+      Map<String, Object> failedEvent =
+          Map.of(
+              "orderId",
+              orderId,
+              "userId",
+              userId != null ? userId : 0L,
+              "success",
+              false,
+              "message",
+              e.getMessage() != null ? e.getMessage() : "Insufficient stock");
       rabbitTemplate.convertAndSend(RabbitMQConfig.ORDER_EXCHANGE, "stock.failed", failedEvent);
       log.info("Published stock.failed event for Order ID #{}", orderId);
     }
