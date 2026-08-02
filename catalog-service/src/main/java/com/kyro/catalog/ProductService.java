@@ -604,7 +604,7 @@ public class ProductService {
   public void decreaseStock(Long productId, String sizeName, int quantity) {
     Product product =
         productRepository
-            .findById(productId)
+            .findByIdWithLock(productId)
             .orElseThrow(() -> new EntityNotFoundException("Product not found"));
 
     ProductSize targetSize =
@@ -631,7 +631,7 @@ public class ProductService {
   public void increaseStock(Long productId, String sizeName, int quantity) {
     Product product =
         productRepository
-            .findById(productId)
+            .findByIdWithLock(productId)
             .orElseThrow(() -> new EntityNotFoundException("Product not found"));
 
     ProductSize targetSize =
