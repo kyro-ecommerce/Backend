@@ -2,8 +2,13 @@ server:
   port: 8080
 
 spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   cloud:
     gateway:
+
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
       globalcors:
@@ -112,13 +117,23 @@ spring:
             - StripPrefix=0
             - AuthenticationFilter
 
-        # Route to AI Service (Public)
+        # Route to AI Service (Public with Rate Limiter & Circuit Breaker)
         - id: ai-service-public
           uri: ${AI_SERVICE_URI:http://kyro-ai-service:8000}
           predicates:
             - Path=/api/v1/ai/**
           filters:
             - StripPrefix=0
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@userKeyResolver}"
+            - name: CircuitBreaker
+              args:
+                name: aiServiceCircuitBreaker
+                fallbackUri: forward:/fallback/ai
 
         # Fallback Route to Monolith (if anything remains)
         - id: kyro-monolith
@@ -127,6 +142,7 @@ spring:
             - Path=/api/v1/**
           filters:
             - StripPrefix=0
+
 
         # --- OpenAPI Docs Routes for Downstream Services ---
         - id: auth-service-docs
@@ -194,5 +210,19 @@ scalar:
       url: /payment-service/v3/api-docs
     - title: Notification Service
       url: /notification-service/v3/api-docs
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      aiServiceCircuitBreaker:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000ms
+        permittedNumberOfCallsInHalfOpenState: 3
+  timelimiter:
+    instances:
+      aiServiceCircuitBreaker:
+        timeoutDuration: 15s
+
 
 
