@@ -4,6 +4,7 @@ WORKDIR /build
 
 COPY mvnw .
 COPY .mvn .mvn
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
 COPY pom.xml .
 COPY eureka-server/pom.xml eureka-server/
 COPY config-server/pom.xml config-server/
