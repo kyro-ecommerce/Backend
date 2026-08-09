@@ -48,6 +48,10 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-hc5</artifactId>
+        </dependency>
         <!-- Spring Boot DevTools for Fast Hot-Reloading during Local Development -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
