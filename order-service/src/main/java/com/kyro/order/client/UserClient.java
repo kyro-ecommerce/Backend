@@ -27,15 +27,7 @@ public interface UserClient {
 @Component
 class UserClientFallback implements UserClient {
   @Override
-  public AddressResponse getAddressById(Long addressId, Long userId) {
-    return new AddressResponse(
-        addressId,
-        "Khách hàng",
-        "N/A",
-        "N/A",
-        "N/A",
-        "N/A",
-        "0000000000",
-        "Địa chỉ lưu từ fallback khi service phản hồi chậm");
+  public AddressResponse getAddressById(Long userId, Long addressId) {
+    return null;
   }
 }

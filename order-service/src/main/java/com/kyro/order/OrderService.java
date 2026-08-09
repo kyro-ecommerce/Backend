@@ -96,7 +96,7 @@ public class OrderService {
     }
 
     // Fetch Shipping Address from auth-service via FeignClient
-    UserClient.AddressResponse addrResp = userClient.getAddressById(addressId, userId);
+    UserClient.AddressResponse addrResp = userClient.getAddressById(userId, addressId);
     if (addrResp == null) {
       log.warn("Address not found with ID: {} for user ID: {}", addressId, userId);
       throw new RuntimeException("Địa chỉ giao hàng không hợp lệ.");
