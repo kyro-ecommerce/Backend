@@ -1,7 +1,6 @@
 package com.kyro.order;
 
 import com.kyro.enums.OrderStatus;
-import com.kyro.enums.PaymentStatus;
 import com.kyro.exceptions.DomainException;
 import com.kyro.order.dto.CreateOrderRequest;
 import com.kyro.order.dto.OrderDTO;
@@ -134,29 +133,5 @@ public class OrderController {
     Order cancelledOrder = orderService.cancelOrder(orderId);
     OrderDTO orderDTO = new OrderDTO(cancelledOrder);
     return ResponseEntity.ok(orderDTO);
-  }
-
-  /**
-   * Internal endpoint queried by catalog-service to check if product has been purchased and
-   * delivered.
-   */
-  @GetMapping("/verify-purchase")
-  public boolean hasPurchasedAndDelivered(
-      @RequestParam("userId") Long userId, @RequestParam("productId") Long productId) {
-
-    List<Order> orders = orderService.userOrderHistory(userId, OrderStatus.DELIVERED);
-    return orders.stream()
-        .flatMap(o -> o.getOrderItems().stream())
-        .anyMatch(oi -> oi.getProductId().equals(productId));
-  }
-
-  /**
-   * Internal endpoint queried by payment-service to update order payment status on VNPay callback.
-   */
-  @PutMapping("/{id}/payment-status")
-  public ResponseEntity<Void> updatePaymentStatus(
-      @PathVariable("id") Long orderId, @RequestParam("status") PaymentStatus status) {
-    orderService.updatePaymentStatus(orderId, status);
-    return ResponseEntity.ok().build();
   }
 }

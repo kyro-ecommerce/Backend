@@ -2,8 +2,6 @@ package com.kyro.auth;
 
 import com.kyro.auth.dto.AddAddressRequest;
 import com.kyro.auth.dto.AddressDTO;
-import com.kyro.auth.dto.BasicUserDTO;
-import com.kyro.auth.dto.ChangeRoleRequest;
 import com.kyro.auth.dto.UpdateUserRequest;
 import com.kyro.auth.dto.UserProfileResponse;
 import com.kyro.exceptions.DomainException;
@@ -176,43 +174,5 @@ public class UserController {
     String email = authentication.getName();
     userService.deleteAddress(addressId, email);
     return ResponseEntity.ok(Map.of("message", "Address deleted successfully"));
-  }
-
-  @PostMapping("/change-role")
-  public ResponseEntity<BasicUserDTO> changeUserRole(
-      @RequestHeader("Authorization") String jwt, @RequestBody ChangeRoleRequest request) {
-
-    User user = userService.findUserByJwt(jwt);
-
-    String targetRole = request.getRole().toUpperCase();
-    if (!targetRole.equals("CUSTOMER")) {
-      throw new IllegalArgumentException("Invalid role. Only CUSTOMER is supported");
-    }
-
-    if (user.getRole().getName().name().equals(targetRole)) {
-      throw new IllegalArgumentException("Account already has role " + targetRole);
-    }
-
-    BasicUserDTO updatedUser = userService.changeUserRole(user.getId(), targetRole);
-    return ResponseEntity.ok(updatedUser);
-  }
-
-  @GetMapping("/internal/{userId}")
-  public ResponseEntity<BasicUserDTO> getUserByIdInternal(@PathVariable Long userId) {
-    User user = userService.getUserById(userId);
-    return ResponseEntity.ok(userService.convertToBasicDto(user));
-  }
-
-  @GetMapping("/internal/address/{addressId}")
-  @Transactional
-  public ResponseEntity<Address> getAddressByIdInternal(
-      @PathVariable Long addressId, @RequestParam Long userId) {
-    User user = userService.getUserById(userId);
-    Address address =
-        user.getAddress().stream()
-            .filter(a -> a.getId().equals(addressId))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("Address not found"));
-    return ResponseEntity.ok(address);
   }
 }

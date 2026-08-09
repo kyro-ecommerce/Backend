@@ -1,6 +1,10 @@
 server:
   port: 8085
 
+internal:
+  api:
+    token: ${INTERNAL_API_TOKEN:}
+
 spring:
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/kyro_order}

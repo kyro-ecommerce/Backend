@@ -96,7 +96,7 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(API + "/auth/**")
                     .permitAll()
-                    .requestMatchers(API + "/users/internal/**")
+                    .requestMatchers(API + "/internal/**")
                     .permitAll()
                     .requestMatchers("/actuator/**")
                     .permitAll()

@@ -15,7 +15,7 @@ public interface OrderClient {
    * @param productId product ID
    * @return true if purchased and delivered, false otherwise
    */
-  @GetMapping("/api/v1/orders/verify-purchase")
+  @GetMapping("/api/v1/internal/orders/purchases")
   boolean hasPurchasedAndDelivered(
       @RequestParam("userId") Long userId, @RequestParam("productId") Long productId);
 }

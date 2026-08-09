@@ -1,6 +1,10 @@
 server:
   port: 8086
 
+internal:
+  api:
+    token: ${INTERNAL_API_TOKEN:}
+
 spring:
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/kyro_payment}
@@ -27,5 +31,4 @@ vnpay:
   url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
   apiUrl: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/merchant_webapi/api.html}
   returnUrl: ${VNPAY_RETURN_URL:http://localhost:5173/checkout?step=4}
-
 

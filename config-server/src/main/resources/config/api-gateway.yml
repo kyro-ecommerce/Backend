@@ -29,7 +29,7 @@ spring:
         - id: auth-service
           uri: lb://auth-service
           predicates:
-            - Path=/api/v1/auth/**, /api/v1/users/**, /api/v1/admin/users/**, /oauth2/**, /login/oauth2/code/**
+            - Path=/api/v1/auth/**, /api/v1/users/**, /oauth2/**, /login/oauth2/code/**
           filters:
             - StripPrefix=0
 
@@ -46,7 +46,7 @@ spring:
         - id: catalog-service-public
           uri: lb://catalog-service
           predicates:
-            - Path=/api/v1/products/**, /api/v1/categories/**, /api/v1/reviews/product/**
+            - Path=/api/v1/products, /api/v1/products/*, /api/v1/categories/**, /api/v1/reviews/product/**
           filters:
             - StripPrefix=0
 
@@ -66,7 +66,7 @@ spring:
             - Path=/api/v1/admin/products/**
           filters:
             - StripPrefix=0
-            - AuthenticationFilter
+            - AuthenticationFilter=ADMIN
 
         # Route to Auth Service Admin Users (Authenticated)
         - id: auth-service-admin
@@ -75,7 +75,7 @@ spring:
             - Path=/api/v1/admin/users/**
           filters:
             - StripPrefix=0
-            - AuthenticationFilter
+            - AuthenticationFilter=ADMIN
 
         # Route to Order Service with Authentication Filter
         - id: order-service
@@ -93,7 +93,7 @@ spring:
             - Path=/api/v1/admin/orders/**
           filters:
             - StripPrefix=0
-            - AuthenticationFilter
+            - AuthenticationFilter=ADMIN
 
         # Route to Payment Service (Public Callbacks)
         - id: payment-service-public
@@ -186,4 +186,3 @@ scalar:
       url: /payment-service/v3/api-docs
     - title: Notification Service
       url: /notification-service/v3/api-docs
-

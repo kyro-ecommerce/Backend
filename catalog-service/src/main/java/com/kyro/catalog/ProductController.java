@@ -57,25 +57,4 @@ public class ProductController {
     ProductDTO productDTO = new ProductDTO(product);
     return ResponseEntity.ok(productDTO);
   }
-
-  @GetMapping("/internal/{productId}")
-  public ResponseEntity<com.kyro.catalog.dto.ProductInternalResponse> getProductByIdInternal(
-      @PathVariable Long productId) {
-    Product product = productService.findProductById(productId);
-    return ResponseEntity.ok(new com.kyro.catalog.dto.ProductInternalResponse(product));
-  }
-
-  @PostMapping("/internal/decrease-stock")
-  public ResponseEntity<Void> decreaseStock(
-      @RequestParam Long productId, @RequestParam String sizeName, @RequestParam int quantity) {
-    productService.decreaseStock(productId, sizeName, quantity);
-    return ResponseEntity.ok().build();
-  }
-
-  @PostMapping("/internal/increase-stock")
-  public ResponseEntity<Void> increaseStock(
-      @RequestParam Long productId, @RequestParam String sizeName, @RequestParam int quantity) {
-    productService.increaseStock(productId, sizeName, quantity);
-    return ResponseEntity.ok().build();
-  }
 }

@@ -58,6 +58,13 @@ public class AuthenticationFilter
       String rolesStr =
           roles != null ? String.join(",", roles.stream().map(Object::toString).toList()) : "";
 
+      if (config.requiredRole != null
+          && !config.requiredRole.isBlank()
+          && (roles == null
+              || roles.stream().noneMatch(role -> config.requiredRole.equals(role.toString())))) {
+        return onError(exchange, "Admin role required", HttpStatus.FORBIDDEN, "FORBIDDEN");
+      }
+
       // Strip any untrusted user headers sent by client and inject verified headers from JWT
       ServerHttpRequest mutatedRequest =
           request
@@ -67,6 +74,7 @@ public class AuthenticationFilter
                     h.remove("X-User-Id");
                     h.remove("X-User-Email");
                     h.remove("X-User-Roles");
+                    h.remove("X-Internal-Token");
                   })
               .header("X-User-Id", userId)
               .header("X-User-Email", email)
@@ -78,20 +86,43 @@ public class AuthenticationFilter
   }
 
   private Mono<Void> onError(ServerWebExchange exchange, String errMessage, HttpStatus httpStatus) {
+    return onError(exchange, errMessage, httpStatus, "UNAUTHORIZED");
+  }
+
+  private Mono<Void> onError(
+      ServerWebExchange exchange, String errMessage, HttpStatus httpStatus, String code) {
     ServerHttpResponse response = exchange.getResponse();
     response.setStatusCode(httpStatus);
     response.getHeaders().setContentType(MediaType.APPLICATION_PROBLEM_JSON);
 
     String jsonBody =
         String.format(
-            "{\"type\":\"urn:problem-type:unauthorized\",\"title\":\"%s\",\"status\":%d,\"detail\":\"%s\",\"code\":\"UNAUTHORIZED\",\"message\":\"%s\"}",
-            httpStatus.getReasonPhrase(), httpStatus.value(), errMessage, errMessage);
+            "{\"type\":\"urn:problem-type:%s\",\"title\":\"%s\",\"status\":%d,\"detail\":\"%s\",\"code\":\"%s\",\"message\":\"%s\"}",
+            code.toLowerCase(),
+            httpStatus.getReasonPhrase(),
+            httpStatus.value(),
+            errMessage,
+            code,
+            errMessage);
 
     DataBuffer buffer = response.bufferFactory().wrap(jsonBody.getBytes(StandardCharsets.UTF_8));
     return response.writeWith(Mono.just(buffer));
   }
 
   public static class Config {
-    // Configuration fields if needed
+    private String requiredRole;
+
+    public String getRequiredRole() {
+      return requiredRole;
+    }
+
+    public void setRequiredRole(String requiredRole) {
+      this.requiredRole = requiredRole;
+    }
+  }
+
+  @Override
+  public java.util.List<String> shortcutFieldOrder() {
+    return java.util.List.of("requiredRole");
   }
 }

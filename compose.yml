@@ -75,6 +75,10 @@ services:
         condition: service_healthy
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:?MAIL_USERNAME must be set}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:?MAIL_PASSWORD must be set}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8888/actuator/health || exit 1"]
       interval: 3s
@@ -111,8 +115,6 @@ services:
       context: .
       dockerfile: auth-service/Dockerfile
     container_name: kyro-auth-service
-    ports:
-      - "8081:8081"
     depends_on:
       config-server:
         condition: service_healthy
@@ -128,6 +130,7 @@ services:
       DATABASE_URL: jdbc:postgresql://kyro-postgres:5432/kyro_auth
       DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN must be set}
       RABBITMQ_HOST: kyro-rabbitmq
       OAUTH2_GOOGLE_CLIENT_ID: ${OAUTH2_GOOGLE_CLIENT_ID:-mock-google-client-id}
       OAUTH2_GOOGLE_CLIENT_SECRET: ${OAUTH2_GOOGLE_CLIENT_SECRET:-mock-google-client-secret}
@@ -148,8 +151,6 @@ services:
       context: .
       dockerfile: catalog-service/Dockerfile
     container_name: kyro-catalog-service
-    ports:
-      - "8082:8082"
     depends_on:
       config-server:
         condition: service_healthy
@@ -164,6 +165,7 @@ services:
       DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
       RABBITMQ_HOST: kyro-rabbitmq
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN must be set}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1"]
       interval: 3s
@@ -177,8 +179,6 @@ services:
       context: .
       dockerfile: cart-service/Dockerfile
     container_name: kyro-cart-service
-    ports:
-      - "8083:8083"
     depends_on:
       config-server:
         condition: service_healthy
@@ -191,6 +191,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       REDIS_HOST: kyro-redis
       RABBITMQ_HOST: kyro-rabbitmq
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN must be set}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1"]
       interval: 3s
@@ -204,8 +205,6 @@ services:
       context: .
       dockerfile: notification-service/Dockerfile
     container_name: kyro-notification-service
-    ports:
-      - "8084:8084"
     depends_on:
       config-server:
         condition: service_healthy
@@ -215,6 +214,10 @@ services:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       RABBITMQ_HOST: kyro-rabbitmq
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:?MAIL_USERNAME must be set}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:?MAIL_PASSWORD must be set}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health || exit 1"]
       interval: 3s
@@ -228,8 +231,6 @@ services:
       context: .
       dockerfile: order-service/Dockerfile
     container_name: kyro-order-service
-    ports:
-      - "8085:8085"
     depends_on:
       config-server:
         condition: service_healthy
@@ -244,6 +245,7 @@ services:
       DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
       RABBITMQ_HOST: kyro-rabbitmq
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN must be set}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8085/actuator/health || exit 1"]
       interval: 3s
@@ -257,8 +259,6 @@ services:
       context: .
       dockerfile: payment-service/Dockerfile
     container_name: kyro-payment-service
-    ports:
-      - "8086:8086"
     depends_on:
       config-server:
         condition: service_healthy
@@ -273,6 +273,7 @@ services:
       DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
       RABBITMQ_HOST: kyro-rabbitmq
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN must be set}
       VNPAY_TMN_CODE: ${VNPAY_TMN_CODE}
       VNPAY_HASH_SECRET: ${VNPAY_HASH_SECRET}
       VNPAY_PAY_URL: ${VNPAY_PAY_URL}
@@ -326,5 +327,3 @@ services:
 
 volumes:
   kyro_postgres_data:
-
-

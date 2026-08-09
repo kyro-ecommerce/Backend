@@ -4,15 +4,14 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 
 /** Feign client to communicate with Auth Service for user details and addresses. */
 @FeignClient(name = "auth-service", fallback = UserClientFallback.class)
 public interface UserClient {
 
-  @GetMapping("/api/v1/users/internal/address/{addressId}")
+  @GetMapping("/api/v1/internal/users/{userId}/addresses/{addressId}")
   AddressResponse getAddressById(
-      @PathVariable("addressId") Long addressId, @RequestParam("userId") Long userId);
+      @PathVariable("userId") Long userId, @PathVariable("addressId") Long addressId);
 
   record AddressResponse(
       Long id,
