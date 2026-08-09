@@ -1,10 +1,10 @@
 package com.kyro.order;
 
 import com.kyro.enums.OrderStatus;
-import com.kyro.enums.PaymentMethod;
-import com.kyro.enums.PaymentStatus;
 import com.kyro.exceptions.DomainException;
+import com.kyro.order.dto.CreateOrderRequest;
 import com.kyro.order.dto.OrderDTO;
+import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +33,7 @@ public class OrderController {
   }
 
   /** Gets order history for the logged-in user. */
-  @GetMapping("/user")
+  @GetMapping
   public ResponseEntity<List<OrderDTO>> getUserOrders(@RequestHeader("X-User-Id") Long userId) {
 
     List<Order> orders = orderService.userOrderHistory(userId, null);
@@ -42,33 +42,14 @@ public class OrderController {
   }
 
   /** Places a new order from current cart items. */
-  @PostMapping({"", "/create/{addressId}"})
+  @PostMapping
   public ResponseEntity<Map<String, Object>> createOrder(
       @RequestHeader("X-User-Id") Long userId,
       @RequestHeader("X-User-Email") String userEmail,
-      @PathVariable(value = "addressId", required = false) Long pathAddressId,
-      @RequestParam(value = "addressId", required = false) Long queryAddressId,
-      @RequestParam(value = "paymentMethod", required = false) PaymentMethod queryPaymentMethod,
-      @RequestBody(required = false) Map<String, Object> body) {
+      @Valid @RequestBody CreateOrderRequest request) {
 
-    Long addressId = pathAddressId != null ? pathAddressId : queryAddressId;
-    PaymentMethod paymentMethod = queryPaymentMethod;
-
-    if (body != null) {
-      if (addressId == null && body.get("addressId") != null) {
-        addressId = Long.valueOf(body.get("addressId").toString());
-      }
-      if (paymentMethod == null && body.get("paymentMethod") != null) {
-        paymentMethod = PaymentMethod.valueOf(body.get("paymentMethod").toString().toUpperCase());
-      }
-    }
-
-    if (addressId == null) {
-      throw new DomainException(
-          HttpStatus.BAD_REQUEST, "Address ID is required to create an order.");
-    }
-
-    List<Order> orders = orderService.placeOrder(addressId, userId, userEmail, paymentMethod);
+    List<Order> orders =
+        orderService.placeOrder(request.addressId(), userId, userEmail, request.paymentMethod());
 
     List<OrderDTO> orderDTOs = orders.stream().map(OrderDTO::new).collect(Collectors.toList());
 
@@ -140,7 +121,7 @@ public class OrderController {
   }
 
   /** Cancels an order. */
-  @PutMapping({"/cancel/{id}", "/{id}/cancel"})
+  @PutMapping("/{id}/cancel")
   public ResponseEntity<OrderDTO> cancelOrder(
       @PathVariable("id") Long orderId, @RequestHeader("X-User-Id") Long userId) {
 
@@ -152,29 +133,5 @@ public class OrderController {
     Order cancelledOrder = orderService.cancelOrder(orderId);
     OrderDTO orderDTO = new OrderDTO(cancelledOrder);
     return ResponseEntity.ok(orderDTO);
-  }
-
-  /**
-   * Internal endpoint queried by catalog-service to check if product has been purchased and
-   * delivered.
-   */
-  @GetMapping("/verify-purchase")
-  public boolean hasPurchasedAndDelivered(
-      @RequestParam("userId") Long userId, @RequestParam("productId") Long productId) {
-
-    List<Order> orders = orderService.userOrderHistory(userId, OrderStatus.DELIVERED);
-    return orders.stream()
-        .flatMap(o -> o.getOrderItems().stream())
-        .anyMatch(oi -> oi.getProductId().equals(productId));
-  }
-
-  /**
-   * Internal endpoint queried by payment-service to update order payment status on VNPay callback.
-   */
-  @PutMapping("/{id}/payment-status")
-  public ResponseEntity<Void> updatePaymentStatus(
-      @PathVariable("id") Long orderId, @RequestParam("status") PaymentStatus status) {
-    orderService.updatePaymentStatus(orderId, status);
-    return ResponseEntity.ok().build();
   }
 }

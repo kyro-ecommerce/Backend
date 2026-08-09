@@ -37,7 +37,7 @@ spring:
         - id: auth-service
           uri: lb://AUTH-SERVICE
           predicates:
-            - Path=/api/v1/auth/**, /api/v1/users/**, /api/v1/addresses/**
+            - Path=/api/v1/auth/**, /api/v1/users/**, /api/v1/admin/users/**
 
         - id: catalog-service
           uri: lb://CATALOG-SERVICE
@@ -47,17 +47,17 @@ spring:
         - id: cart-service
           uri: lb://CART-SERVICE
           predicates:
-            - Path=/api/v1/cart/**
+            - Path=/api/v1/carts/**
 
         - id: order-service
           uri: lb://ORDER-SERVICE
           predicates:
-            - Path=/api/v1/orders/**
+            - Path=/api/v1/orders/**, /api/v1/admin/orders/**
 
         - id: payment-service
           uri: lb://PAYMENT-SERVICE
           predicates:
-            - Path=/api/v1/payment/**
+            - Path=/api/v1/payments/**
 
         - id: ai-service
           uri: http://kyro-ai-service:8000

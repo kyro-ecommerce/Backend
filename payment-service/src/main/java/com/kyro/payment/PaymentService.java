@@ -169,7 +169,8 @@ public class PaymentService {
         payment.setVnp_ResponseCode(vnp_ResponseCode);
 
         // Update payment status in order-service via FeignClient
-        orderClient.updatePaymentStatus(payment.getOrderId(), "COMPLETED");
+        orderClient.updatePaymentStatus(
+            payment.getOrderId(), new OrderClient.PaymentStatusUpdateRequest("COMPLETED"));
 
         return paymentRepository.save(payment);
       } else {
@@ -177,7 +178,8 @@ public class PaymentService {
         payment.setPaymentLog(new Gson().toJson(vnpParams));
 
         // Update payment status in order-service via FeignClient
-        orderClient.updatePaymentStatus(payment.getOrderId(), "FAILED");
+        orderClient.updatePaymentStatus(
+            payment.getOrderId(), new OrderClient.PaymentStatusUpdateRequest("FAILED"));
 
         return paymentRepository.save(payment);
       }

@@ -6,7 +6,6 @@ import com.kyro.auth.security.oauth2.OAuth2FailureHandler;
 import com.kyro.auth.security.oauth2.OAuth2SuccessHandler;
 import com.kyro.auth.security.userdetails.AppUserDetailsService;
 import com.kyro.utils.ErrorResponseUtils;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -84,8 +83,6 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    List<String> securedUrls = List.of(API + "/cart/**", API + "/cartItems/**", API + "/orders/**");
-
     http.csrf(AbstractHttpConfigurer::disable)
         .cors(AbstractHttpConfigurer::disable)
         .exceptionHandling(
@@ -99,19 +96,9 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(API + "/auth/**")
                     .permitAll()
-                    .requestMatchers(API + "/users/internal/**")
-                    .permitAll()
-                    .requestMatchers(API + "/categories/**")
-                    .permitAll()
-                    .requestMatchers(API + "/products/**")
-                    .permitAll()
-                    .requestMatchers(API + "/contact/info")
-                    .permitAll()
-                    .requestMatchers(API + "/chatbot/**")
+                    .requestMatchers(API + "/internal/**")
                     .permitAll()
                     .requestMatchers("/actuator/**")
-                    .permitAll()
-                    .requestMatchers(API + "/payment/vnpay-callback")
                     .permitAll()
                     .requestMatchers(
                         "/v3/api-docs/**", "/scalar/**", "/swagger-ui/**", "/swagger-ui.html")
@@ -120,8 +107,6 @@ public class SecurityConfig {
                     .hasAuthority("ADMIN")
                     .requestMatchers(API + "/customer/**")
                     .hasAnyAuthority("CUSTOMER")
-                    .requestMatchers(securedUrls.toArray(String[]::new))
-                    .authenticated()
                     .requestMatchers("/oauth2/**", "/login/oauth2/code/**")
                     .permitAll()
                     .anyRequest()

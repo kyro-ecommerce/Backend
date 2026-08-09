@@ -4,17 +4,17 @@ import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.PathVariable;
 
 /** Feign client to communicate with Cart Service. */
 @FeignClient(name = "cart-service")
 public interface CartClient {
 
-  @GetMapping("/api/v1/cart")
-  CartResponse getCart(@RequestHeader("X-User-Id") Long userId);
+  @GetMapping("/api/v1/internal/carts/{userId}")
+  CartResponse getCart(@PathVariable("userId") Long userId);
 
-  @DeleteMapping("/api/v1/cart")
-  void clearCart(@RequestHeader("X-User-Id") Long userId);
+  @DeleteMapping("/api/v1/internal/carts/{userId}")
+  void clearCart(@PathVariable("userId") Long userId);
 
   record CartResponse(
       String userId, List<CartItemResponse> items, int totalPrice, int totalDiscountedPrice) {}

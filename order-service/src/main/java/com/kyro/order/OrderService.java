@@ -96,7 +96,7 @@ public class OrderService {
     }
 
     // Fetch Shipping Address from auth-service via FeignClient
-    UserClient.AddressResponse addrResp = userClient.getAddressById(addressId, userId);
+    UserClient.AddressResponse addrResp = userClient.getAddressById(userId, addressId);
     if (addrResp == null) {
       log.warn("Address not found with ID: {} for user ID: {}", addressId, userId);
       throw new RuntimeException("Địa chỉ giao hàng không hợp lệ.");
@@ -254,8 +254,9 @@ public class OrderService {
         || order.getOrderStatus() == OrderStatus.CONFIRMED) {
       for (OrderItem orderItem : order.getOrderItems()) {
         // Restore stock in catalog-service via FeignClient
-        catalogClient.increaseStock(
-            orderItem.getProductId(), orderItem.getSize(), orderItem.getQuantity());
+        catalogClient.adjustStock(
+            orderItem.getProductId(),
+            new CatalogClient.StockAdjustmentRequest(orderItem.getSize(), orderItem.getQuantity()));
         log.info(
             "Restored stock for Product ID {}: Size {} quantity increased by {}.",
             orderItem.getProductId(),

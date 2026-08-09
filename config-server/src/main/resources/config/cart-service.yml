@@ -3,6 +3,10 @@ server:
   servlet:
     context-path: /
 
+internal:
+  api:
+    token: ${INTERNAL_API_TOKEN:}
+
 spring:
   data:
     redis:

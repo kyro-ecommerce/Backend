@@ -4,15 +4,22 @@
 import http from 'k6/http';
 import { check } from 'k6';
 import { CONFIG } from '../config/environments.js';
-import { SEED_USERS, generateAddressPayload } from '../data/test-data.js';
+import { generateAddressPayload } from '../data/test-data.js';
 import { metrics } from './metrics.js';
+
+export const K6_USER_EMAIL = __ENV.K6_USER_EMAIL;
+const K6_USER_PASSWORD = __ENV.K6_USER_PASSWORD;
+
+if (!K6_USER_EMAIL || !K6_USER_PASSWORD) {
+  throw new Error('K6_USER_EMAIL and K6_USER_PASSWORD are required');
+}
 
 /**
  * Authenticates against /api/v1/auth/login and returns JWT access token & user object.
  */
-export function login(email = SEED_USERS[0].email, password = SEED_USERS[0].password) {
+export function login() {
   const url = `${CONFIG.BASE_URL}/api/v1/auth/login`;
-  const payload = JSON.stringify({ email, password });
+  const payload = JSON.stringify({ email: K6_USER_EMAIL, password: K6_USER_PASSWORD });
   const params = { headers: CONFIG.HEADERS.JSON };
 
   const start = Date.now();

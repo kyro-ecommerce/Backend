@@ -71,12 +71,6 @@ cloudinary:
   apiSecret: ${CLOUDINARY_API_SECRET:mock_secret}
   apiSecure: ${CLOUDINARY_API_SECURE:true}
 
-vnpay:
-  tmnCode: ${VNPAY_TMN_CODE}
-  hashSecret: ${VNPAY_HASH_SECRET}
-  url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
-  returnUrl: ${VNPAY_RETURN_URL:http://localhost:8080/api/v1/payment/vnpay-callback}
-
 contact:
   info:
     phone: ${CONTACT_PHONE:0123456789}

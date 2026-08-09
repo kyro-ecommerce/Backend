@@ -29,7 +29,7 @@
 | 🏷️ **Catalog Service** | Danh mục sản phẩm, biến thể (Size/Stock), Cloudinary file upload & Product Events | [👉 Xem Service Doc](docs/services/catalog-service.md) |
 | 🛒 **Cart Service** | Redis In-Memory Cart State, TTL 30 ngày, Synchronous Feign Client validation | [👉 Xem Service Doc](docs/services/cart-service.md) |
 | 📦 **Order Service** | Checkout flow, Order state machine (Pending -> Confirmed -> Delivered), Address snapshot | [👉 Xem Service Doc](docs/services/order-service.md) |
-| 💳 **Payment Service** | Tích hợp cổng thanh toán VNPay, Checksum SHA-512, IPN Webhook verification | [👉 Xem Service Doc](docs/services/payment-service.md) |
+| 💳 **Payment Service** | Tích hợp cổng thanh toán VNPay, tạo URL có chữ ký HMAC SHA-512 và xử lý callback | [👉 Xem Service Doc](docs/services/payment-service.md) |
 | 🔔 **Notification Service** | Consumer RabbitMQ, Thymeleaf HTML Email templates & Async SMTP sending | [👉 Xem Service Doc](docs/services/notification-service.md) |
 | 🤖 **AI Recommendation Service** | Python FastAPI, Gemini AI Embedding API, pgvector Cosine Similarity Search | [👉 Xem Service Doc](docs/services/ai-service.md) |
 | 🚀 **Local Development Guide** | Hướng dẫn cài đặt local dev, Docker Compose, Go Task shortcuts & Hot-Reload | [👉 Xem Tài Liệu](docs/setup/local-development.md) |
