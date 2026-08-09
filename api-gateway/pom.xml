@@ -57,12 +57,23 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Reactive Redis for Gateway Rate Limiter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+        </dependency>
+        <!-- Resilience4j Circuit Breaker for Gateway -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
+        </dependency>
         <!-- Springdoc / Swagger for reactive WebFlux Gateway -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webflux-scalar</artifactId>
             <version>2.8.17</version>
         </dependency>
+
     </dependencies>
 
     <build>
