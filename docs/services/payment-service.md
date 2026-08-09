@@ -17,11 +17,9 @@
    - Tạo mã tham chiếu giao dịch duy nhất (`vnp_TxnRef`).
    - Tính toán chữ ký HMAC SHA-512 với `VNPAY_HASH_SECRET` để chống giả mạo thông số.
    - Trả về đường dẫn VNPay Checkout cho Frontend chuyển hướng người dùng.
-2. **Xử Lý IPN Callback & Checksum Verification**:
+2. **Xử Lý Callback**:
    - Tiếp nhận Callback từ VNPay khi người dùng hoàn tất thanh toán.
-   - Kiểm tra và xác minh chữ ký SHA-512 (`vnp_SecureHash`) gửi kèm từ VNPay.
    - Cập nhật trạng thái giao dịch trong DB `kyro_payment` (`SUCCESS` / `FAILED`).
-   - Phản hồi mã định dạng chuẩn VNPay Response (`RspCode: 00`, `Message: Confirm Success`).
 3. **Cập Nhật Trạng Thái Đơn Hàng**:
    - Khi thanh toán thành công, gọi `OrderClient` cập nhật `paymentStatus = PAID`.
 
@@ -38,7 +36,7 @@ sequenceDiagram
     participant Order as Order Service (:8085)
     participant VNPay as VNPay Payment Gateway
 
-    User->>Gateway: POST /api/v1/payment/create-vnpay-url (orderId)
+    User->>Gateway: POST /api/v1/payments/{orderId}
     Gateway->>Payment: Forward Request
     Payment->>Order: Get Order Info (Total Amount)
     Order-->>Payment: Order Details
@@ -48,14 +46,13 @@ sequenceDiagram
     User->>VNPay: User Enters Bank Card & Completes Payment
     VNPay-->>User: Redirect Back to Return URL
 
-    VNPay->>Gateway: GET /api/v1/payment/vnpay-callback (IPN Webhook Params + Hash)
+    VNPay->>Gateway: GET /api/v1/payments/vnpay-callback
     Gateway->>Payment: Forward Callback
-    Payment->>Payment: Verify SHA-512 Checksum Hash
-    alt Valid Signature & Success Code (00)
+    alt Success Code (00)
         Payment->>Payment: Save Transaction (Status: SUCCESS)
         Payment->>Order: Mark Order Status PAID
         Payment-->>VNPay: RspCode 00 (Success)
-    else Invalid Signature or Failed Code
+    else Failed Code
         Payment->>Payment: Save Transaction (Status: FAILED)
         Payment-->>VNPay: RspCode 01 (Fail)
     end
@@ -67,6 +64,6 @@ sequenceDiagram
 
 | Method | Endpoint | Description | Permitted Roles |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/payment/create-vnpay-url` | Tạo URL thanh toán VNPay cho đơn hàng | User / Admin |
-| `GET` | `/api/v1/payment/vnpay-callback` | Webhook IPN Callback nhận kết quả từ VNPay | Public |
-| `GET` | `/api/v1/payment/transactions/{orderId}` | Tra cứu lịch sử thanh toán của đơn hàng | User / Admin |
+| `POST` | `/api/v1/payments/{orderId}` | Tạo URL thanh toán VNPay cho đơn hàng | User / Admin |
+| `GET` | `/api/v1/payments/vnpay-callback` | Callback nhận kết quả từ VNPay | Public |
+| `GET` | `/api/v1/payments/orders/{orderId}` | Tra cứu thanh toán của đơn hàng | User / Admin |

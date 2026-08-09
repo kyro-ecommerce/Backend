@@ -24,7 +24,7 @@ export default function () {
   group('Catalog - Product List & Filtering', function () {
     const category = getRandomElement(CATEGORIES.TOP);
     const keyword = getRandomElement(SEARCH_KEYWORDS);
-    const filterUrl = `${CONFIG.BASE_URL}/api/v1/products/?topLevelCategory=${category}&minPrice=100&maxPrice=1000000&sort=price_low&keyword=${keyword}`;
+    const filterUrl = `${CONFIG.BASE_URL}/api/v1/products?topLevelCategory=${category}&minPrice=100&maxPrice=1000000&sort=price_low&keyword=${keyword}`;
 
     const start = Date.now();
     const res = http.get(filterUrl, { headers: CONFIG.HEADERS.JSON });
@@ -47,7 +47,7 @@ export default function () {
 
   group('Catalog - View Product Details', function () {
     const productId = Math.floor(Math.random() * 10) + 1; // ID 1..10
-    const detailUrl = `${CONFIG.BASE_URL}/api/v1/products/id/${productId}`;
+    const detailUrl = `${CONFIG.BASE_URL}/api/v1/products/${productId}`;
 
     const start = Date.now();
     const res = http.get(detailUrl, { headers: CONFIG.HEADERS.JSON });

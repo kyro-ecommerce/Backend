@@ -33,7 +33,7 @@ export default function () {
   const size = getRandomElement(PRODUCT_SIZES);
 
   group('Cart - Add Item', function () {
-    const url = `${CONFIG.BASE_URL}/api/v1/cart/add`;
+    const url = `${CONFIG.BASE_URL}/api/v1/carts/items`;
     const payload = JSON.stringify({
       productId: productId,
       size: size,
@@ -61,7 +61,7 @@ export default function () {
   sleep(0.5);
 
   group('Cart - Get Cart Details', function () {
-    const url = `${CONFIG.BASE_URL}/api/v1/cart/`;
+    const url = `${CONFIG.BASE_URL}/api/v1/carts`;
 
     const start = Date.now();
     const res = http.get(url, { headers });
@@ -76,7 +76,7 @@ export default function () {
   sleep(0.5);
 
   group('Cart - Update Item Quantity', function () {
-    const url = `${CONFIG.BASE_URL}/api/v1/cart/update?productId=${productId}&size=${size}&quantity=5`;
+    const url = `${CONFIG.BASE_URL}/api/v1/carts/items?productId=${productId}&size=${size}&quantity=5`;
 
     const start = Date.now();
     const res = http.put(url, null, { headers });
@@ -91,7 +91,7 @@ export default function () {
   sleep(0.5);
 
   group('Cart - Clear Cart', function () {
-    const url = `${CONFIG.BASE_URL}/api/v1/cart/clear`;
+    const url = `${CONFIG.BASE_URL}/api/v1/carts/items`;
 
     const start = Date.now();
     const res = http.del(url, null, { headers });

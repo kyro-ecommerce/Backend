@@ -25,7 +25,7 @@ export default function () {
   });
 
   group('02. Catalog Service Health', function () {
-    const res = http.get(`${CONFIG.BASE_URL}/api/v1/products/all`, {
+    const res = http.get(`${CONFIG.BASE_URL}/api/v1/products`, {
       headers: CONFIG.HEADERS.JSON,
     });
     check(res, {
@@ -37,7 +37,7 @@ export default function () {
     const authSession = login();
     if (authSession) {
       const headers = getAuthHeaders(authSession.token);
-      const res = http.get(`${CONFIG.BASE_URL}/api/v1/cart/`, { headers });
+      const res = http.get(`${CONFIG.BASE_URL}/api/v1/carts`, { headers });
       check(res, {
         'Cart retrieval returns 200': (r) => r.status === 200,
       });

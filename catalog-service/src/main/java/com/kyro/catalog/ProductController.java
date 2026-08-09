@@ -18,7 +18,7 @@ public class ProductController {
     this.productService = productService;
   }
 
-  @GetMapping({"", "/"})
+  @GetMapping
   public ResponseEntity<List<ProductDTO>> findProductsByFilter(
       @RequestParam(required = false) String topLevelCategory,
       @RequestParam(required = false) String secondLevelCategory,
@@ -51,18 +51,11 @@ public class ProductController {
     return new ResponseEntity<>(productDTOs, HttpStatus.OK);
   }
 
-  @GetMapping({"/{productId}", "/id/{productId}"})
+  @GetMapping("/{productId}")
   public ResponseEntity<ProductDTO> findProductById(@PathVariable Long productId) {
     Product product = productService.findProductById(productId);
     ProductDTO productDTO = new ProductDTO(product);
     return ResponseEntity.ok(productDTO);
-  }
-
-  @GetMapping("/all")
-  public ResponseEntity<List<ProductDTO>> getAllProductsWithoutFilter() {
-    List<Product> products = productService.findAllProducts();
-    List<ProductDTO> productDTOs = products.stream().map(ProductDTO::new).toList();
-    return new ResponseEntity<>(productDTOs, HttpStatus.OK);
   }
 
   @GetMapping("/internal/{productId}")

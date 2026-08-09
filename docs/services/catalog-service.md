@@ -44,11 +44,10 @@
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/v1/products` | Lấy danh sách sản phẩm (hỗ trợ phân trang, lọc theo category, search) | Public |
 | `GET` | `/api/v1/products/{id}` | Lấy chi tiết sản phẩm và danh sách biến thể | Public |
-| `POST` | `/api/v1/products` | Tạo sản phẩm mới (Upload ảnh Cloudinary) | Admin |
-| `PUT` | `/api/v1/products/{id}` | Cập nhật sản phẩm | Admin |
-| `DELETE` | `/api/v1/products/{id}` | Xóa sản phẩm | Admin |
-| `POST` | `/api/v1/products/{id}/variants` | Thêm biến thể kích thước / màu sắc | Admin |
-| `POST` | `/api/v1/products/{id}/stock/deduct` | Trừ số lượng tồn kho | Internal Feign |
+| `POST` | `/api/v1/admin/products` | Tạo sản phẩm mới | Admin |
+| `PUT` | `/api/v1/admin/products/{id}` | Cập nhật sản phẩm | Admin |
+| `DELETE` | `/api/v1/admin/products/{id}` | Xóa sản phẩm | Admin |
+| `POST` | `/api/v1/admin/products/bulk` | Tạo nhiều sản phẩm | Admin |
 | `GET` | `/api/v1/categories` | Lấy cây danh mục sản phẩm | Public |
 | `POST` | `/api/v1/reviews` | Đánh giá sản phẩm | User / Admin |
 

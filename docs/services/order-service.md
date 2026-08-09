@@ -48,6 +48,15 @@
 | `GET` | `/api/v1/admin/orders` | Quản lý lấy tất cả đơn hàng toàn hệ thống | Admin |
 | `PUT` | `/api/v1/admin/orders/{id}/status` | Cập nhật trạng thái đơn hàng (CONFIRMED, SHIPPING, DELIVERED) | Admin |
 
+`POST /api/v1/orders` chỉ nhận JSON; `paymentMethod` có thể bỏ qua và mặc định là `COD`:
+
+```json
+{
+  "addressId": 1,
+  "paymentMethod": "VNPAY"
+}
+```
+
 ---
 
 ## 🐰 4. Event Publisher (RabbitMQ Order Created)

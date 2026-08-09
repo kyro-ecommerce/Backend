@@ -35,8 +35,9 @@ Khuyên dùng cấu hình một Environment trong Postman với các giá trị:
 3. **Bước 3: Xem Danh Sách Sản Phẩm**:
    - Request: `GET {{baseUrl}}/api/v1/products`
 4. **Bước 4: Thêm Sản Phẩm Vào Giỏ Hàng**:
-   - Request: `POST {{baseUrl}}/api/v1/cart/items`
+   - Request: `POST {{baseUrl}}/api/v1/carts/items`
 5. **Bước 5: Đặt Hàng (Checkout)**:
    - Request: `POST {{baseUrl}}/api/v1/orders`
+   - Body: `{ "addressId": 1, "paymentMethod": "VNPAY" }`
 6. **Bước 6: Tạo URL Thanh Toán VNPay**:
-   - Request: `POST {{baseUrl}}/api/v1/payment/create-vnpay-url?orderId=1`
+   - Request: `POST {{baseUrl}}/api/v1/payments/1`

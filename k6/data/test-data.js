@@ -2,12 +2,6 @@
  * Test Data Generator & Mocks for Kyro k6 Load Tests
  */
 
-// Preset test accounts (matches database seed or dynamic generation)
-export const SEED_USERS = [
-  { email: 'customer@kyro.com', password: 'Password123!' },
-  { email: 'admin@kyro.com', password: 'Password123!' },
-];
-
 export const PRODUCT_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 
 export const CATEGORIES = {

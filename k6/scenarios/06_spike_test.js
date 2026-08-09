@@ -21,7 +21,7 @@ export const options = {
 export default function () {
   // Flash sale spike: Users rushing to buy Product #1
   const productId = 1;
-  const detailUrl = `${CONFIG.BASE_URL}/api/v1/products/id/${productId}`;
+  const detailUrl = `${CONFIG.BASE_URL}/api/v1/products/${productId}`;
   
   const res = http.get(detailUrl, { headers: CONFIG.HEADERS.JSON });
 

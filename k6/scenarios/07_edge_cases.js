@@ -6,6 +6,7 @@ import http from 'k6/http';
 import { check, group, sleep } from 'k6';
 import { CONFIG } from '../config/environments.js';
 import { EDGE_CASE_DATA } from '../data/test-data.js';
+import { K6_USER_EMAIL, getAuthHeaders, login } from '../utils/auth-helper.js';
 
 export const options = {
   vus: 5,
@@ -18,7 +19,7 @@ export const options = {
 export default function () {
   group('Edge Case 01: Invalid Bearer Tokens (Gateway Auth Filter)', function () {
     EDGE_CASE_DATA.INVALID_TOKENS.forEach((token) => {
-      const res = http.get(`${CONFIG.BASE_URL}/api/v1/cart/`, {
+      const res = http.get(`${CONFIG.BASE_URL}/api/v1/carts`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': token,
@@ -47,7 +48,7 @@ export default function () {
 
   group('Edge Case 03: Non-existent Resource IDs (404 Handling)', function () {
     EDGE_CASE_DATA.OUT_OF_BOUND_IDS.forEach((id) => {
-      const res = http.get(`${CONFIG.BASE_URL}/api/v1/products/id/${id}`, {
+      const res = http.get(`${CONFIG.BASE_URL}/api/v1/products/${id}`, {
         headers: CONFIG.HEADERS.JSON,
       });
       check(res, {
@@ -60,22 +61,14 @@ export default function () {
 
   group('Edge Case 04: Invalid Cart Item Quantities', function () {
     // Token is needed to reach cart service
-    const loginRes = http.post(
-      `${CONFIG.BASE_URL}/api/v1/auth/login`,
-      JSON.stringify({ email: 'customer@kyro.com', password: 'Password123!' }),
-      { headers: CONFIG.HEADERS.JSON }
-    );
-    
-    if (loginRes.status === 200) {
-      const token = JSON.parse(loginRes.body).accessToken;
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      };
+    const session = login();
+
+    if (session) {
+      const headers = getAuthHeaders(session.token);
 
       EDGE_CASE_DATA.INVALID_QUANTITIES.forEach((qty) => {
         const res = http.post(
-          `${CONFIG.BASE_URL}/api/v1/cart/add`,
+          `${CONFIG.BASE_URL}/api/v1/carts/items`,
           JSON.stringify({ productId: 1, size: 'M', quantity: qty }),
           { headers }
         );
@@ -102,14 +95,14 @@ export default function () {
   group('Edge Case 06: OTP Cooldown & Rate Limiting', function () {
     const res1 = http.post(
       `${CONFIG.BASE_URL}/api/v1/auth/register/resend-otp`,
-      JSON.stringify({ email: 'customer@kyro.com' }),
+      JSON.stringify({ email: K6_USER_EMAIL }),
       { headers: CONFIG.HEADERS.JSON }
     );
 
     // Immediately request again to trigger OTP cooldown 429
     const res2 = http.post(
       `${CONFIG.BASE_URL}/api/v1/auth/register/resend-otp`,
-      JSON.stringify({ email: 'customer@kyro.com' }),
+      JSON.stringify({ email: K6_USER_EMAIL }),
       { headers: CONFIG.HEADERS.JSON }
     );
 

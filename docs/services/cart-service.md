@@ -52,8 +52,8 @@ Key Pattern: `cart:{userId}` (Ví dụ `cart:102`)
 
 | Method | Endpoint | Description | Permitted Roles |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/v1/cart` | Lấy toàn bộ thông tin giỏ hàng của người dùng | User / Admin |
-| `POST` | `/api/v1/cart/items` | Thêm sản phẩm vào giỏ (gọi CatalogClient kiểm tra tồn kho) | User / Admin |
-| `PUT` | `/api/v1/cart/items/{variantId}` | Cập nhật số lượng sản phẩm trong giỏ | User / Admin |
-| `DELETE` | `/api/v1/cart/items/{variantId}` | Xóa 1 sản phẩm khỏi giỏ hàng | User / Admin |
-| `DELETE` | `/api/v1/cart/clear` | Xóa sạch giỏ hàng của người dùng | User / Admin / Feign |
+| `GET` | `/api/v1/carts` | Lấy toàn bộ thông tin giỏ hàng của người dùng | User / Admin |
+| `POST` | `/api/v1/carts/items` | Thêm sản phẩm vào giỏ (gọi CatalogClient kiểm tra tồn kho) | User / Admin |
+| `PUT` | `/api/v1/carts/items?productId={id}&size={size}&quantity={quantity}` | Cập nhật số lượng sản phẩm trong giỏ | User / Admin |
+| `DELETE` | `/api/v1/carts/items/{productId}?size={size}` | Xóa 1 sản phẩm khỏi giỏ hàng | User / Admin |
+| `DELETE` | `/api/v1/carts/items` | Xóa sạch giỏ hàng của người dùng | User / Admin / Feign |

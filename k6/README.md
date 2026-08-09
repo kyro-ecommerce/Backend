@@ -45,6 +45,16 @@ k6/
 
 Bạn có thể sử dụng công cụ `task` (Taskfile.yml) hoặc lệnh `k6 run` trực tiếp:
 
+Các scenario có đăng nhập bắt buộc dùng một tài khoản chuyên dụng có role `CUSTOMER`. Không lưu credential trong source:
+
+```bash
+cp .env.example .env
+# Điền K6_USER_EMAIL và K6_USER_PASSWORD trong .env local (đã được gitignore),
+# hoặc inject hai biến này từ secret store của CI.
+```
+
+Nếu gọi `k6` trực tiếp mà không qua `task`, export hai biến trước khi chạy. Suite sẽ dừng ngay ở init phase nếu thiếu credential.
+
 ### 🩺 a. Smoke Test (Kiểm tra sức khỏe nhanh)
 ```bash
 task k6:smoke

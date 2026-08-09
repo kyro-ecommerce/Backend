@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 @FeignClient(name = "cart-service")
 public interface CartClient {
 
-  @GetMapping("/api/v1/cart")
+  @GetMapping("/api/v1/carts")
   CartResponse getCart(@RequestHeader("X-User-Id") Long userId);
 
-  @DeleteMapping("/api/v1/cart")
+  @DeleteMapping("/api/v1/carts/items")
   void clearCart(@RequestHeader("X-User-Id") Long userId);
 
   record CartResponse(

@@ -37,7 +37,7 @@ spring:
         - id: cart-service
           uri: lb://cart-service
           predicates:
-            - Path=/api/v1/carts/**, /api/v1/cart/**
+            - Path=/api/v1/carts/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter
@@ -46,7 +46,7 @@ spring:
         - id: catalog-service-public
           uri: lb://catalog-service
           predicates:
-            - Path=/api/v1/products/**, /api/v1/categories/**, /api/v1/reviews/product/**, /api/v1/review/product/**
+            - Path=/api/v1/products/**, /api/v1/categories/**, /api/v1/reviews/product/**
           filters:
             - StripPrefix=0
 
@@ -54,7 +54,7 @@ spring:
         - id: catalog-service-reviews
           uri: lb://catalog-service
           predicates:
-            - Path=/api/v1/reviews/**, /api/v1/review/**
+            - Path=/api/v1/reviews/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter
@@ -99,7 +99,7 @@ spring:
         - id: payment-service-public
           uri: lb://payment-service
           predicates:
-            - Path=/api/v1/payments/vnpay-callback, /api/v1/payment/vnpay-callback
+            - Path=/api/v1/payments/vnpay-callback
           filters:
             - StripPrefix=0
 
@@ -107,7 +107,7 @@ spring:
         - id: payment-service-authenticated
           uri: lb://payment-service
           predicates:
-            - Path=/api/v1/payments/**, /api/v1/payment/**
+            - Path=/api/v1/payments/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter
@@ -117,14 +117,6 @@ spring:
           uri: ${AI_SERVICE_URI:http://kyro-ai-service:8000}
           predicates:
             - Path=/api/v1/ai/**
-          filters:
-            - StripPrefix=0
-
-        # Fallback Route to Monolith (if anything remains)
-        - id: kyro-monolith
-          uri: lb://kyro-monolith
-          predicates:
-            - Path=/api/v1/**
           filters:
             - StripPrefix=0
 
@@ -194,5 +186,4 @@ scalar:
       url: /payment-service/v3/api-docs
     - title: Notification Service
       url: /notification-service/v3/api-docs
-
 

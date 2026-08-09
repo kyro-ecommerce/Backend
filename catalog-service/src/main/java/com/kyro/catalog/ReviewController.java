@@ -32,7 +32,7 @@ public class ReviewController {
    * Creates a new review for a product. Reads userId from request headers injected by gateway, and
    * fetches user name via UserClient.
    */
-  @PostMapping({"", "/create"})
+  @PostMapping
   public ResponseEntity<ReviewDTO> createReview(
       @RequestHeader("X-User-Id") Long userId, @RequestBody ReviewRequest reviewRequest) {
 
@@ -79,7 +79,7 @@ public class ReviewController {
   }
 
   /** Updates an existing review. */
-  @PutMapping({"/update/{reviewId}", "/{reviewId}"})
+  @PutMapping("/{reviewId}")
   public ResponseEntity<ReviewDTO> updateReview(
       @RequestHeader("X-User-Id") Long userId,
       @PathVariable Long reviewId,
@@ -96,7 +96,7 @@ public class ReviewController {
   }
 
   /** Deletes a review. */
-  @DeleteMapping({"/delete/{reviewId}", "/{reviewId}"})
+  @DeleteMapping("/{reviewId}")
   public ResponseEntity<Map<String, String>> deleteReview(
       @RequestHeader("X-User-Id") Long userId, @PathVariable Long reviewId) {
 

@@ -7,6 +7,7 @@ import { check, group, sleep } from 'k6';
 import { CONFIG } from '../config/environments.js';
 import { SEARCH_KEYWORDS, getRandomElement } from '../data/test-data.js';
 import { metrics } from '../utils/metrics.js';
+import { login } from '../utils/auth-helper.js';
 
 export const options = {
   stages: [
@@ -29,7 +30,7 @@ export default function () {
   if (rand < 0.6) {
     // 60% Read Catalog
     const category = getRandomElement(['clothing', 'footwear']);
-    const res = http.get(`${CONFIG.BASE_URL}/api/v1/products/?topLevelCategory=${category}`, {
+    const res = http.get(`${CONFIG.BASE_URL}/api/v1/products?topLevelCategory=${category}`, {
       headers: CONFIG.HEADERS.JSON,
     });
     check(res, { 'stress product list 200': (r) => r.status === 200 });
@@ -42,11 +43,8 @@ export default function () {
     check(res, { 'stress AI search OK': (r) => r.status === 200 || r.status === 404 });
   } else {
     // 15% Auth attempts
-    const res = http.post(`${CONFIG.BASE_URL}/api/v1/auth/login`, 
-      JSON.stringify({ email: 'customer@kyro.com', password: 'Password123!' }), 
-      { headers: CONFIG.HEADERS.JSON }
-    );
-    check(res, { 'stress login status 200': (r) => r.status === 200 });
+    const session = login();
+    check(session, { 'stress login status 200': (s) => s !== null });
   }
 
   sleep(0.5);
