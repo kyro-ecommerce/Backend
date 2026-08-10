@@ -45,7 +45,7 @@ services:
       interval: 3s
       timeout: 5s
       retries: 10
-      start_period: 10s
+      start_period: 30s
     restart: always
 
   eureka-server:
