@@ -44,7 +44,7 @@ public class Order {
   @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
   private PaymentDetail paymentDetails;
 
-  @ManyToOne(cascade = CascadeType.ALL)
+  @ManyToOne(cascade = CascadeType.PERSIST)
   @JoinColumn(name = "orderAddress")
   private Address shippingAddress;
 
