@@ -1,9 +1,7 @@
 package com.kyro.order;
 
 import com.kyro.enums.OrderStatus;
-import com.kyro.enums.PaymentStatus;
 import com.kyro.order.dto.OrderInternalResponse;
-import com.kyro.order.dto.PaymentStatusUpdateRequest;
 import com.kyro.order.dto.TopSellingProductResponse;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -36,14 +34,4 @@ public class InternalOrderController {
     return orderService.getTopSellingProducts(limit);
   }
 
-  @PatchMapping("/{orderId}/payment-status")
-  public ResponseEntity<Void> updatePaymentStatus(
-      @PathVariable Long orderId, @RequestBody PaymentStatusUpdateRequest request) {
-    PaymentStatus status = request.status();
-    if (status == null) {
-      throw new IllegalArgumentException("Payment status is required");
-    }
-    orderService.updatePaymentStatus(orderId, status);
-    return ResponseEntity.noContent().build();
-  }
 }

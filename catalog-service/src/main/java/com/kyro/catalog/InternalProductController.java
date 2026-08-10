@@ -23,6 +23,7 @@ public class InternalProductController {
   }
 
   @PatchMapping("/{productId}/stock")
+  @Transactional
   public ResponseEntity<Void> adjustStock(
       @PathVariable Long productId, @RequestBody StockAdjustmentRequest request) {
     if (request.quantityDelta() == 0) {

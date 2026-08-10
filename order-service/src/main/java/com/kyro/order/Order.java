@@ -3,7 +3,6 @@ package com.kyro.order;
 import com.kyro.enums.OrderStatus;
 import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
-import com.kyro.payment.PaymentDetail;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -41,10 +40,7 @@ public class Order {
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
   private Collection<OrderItem> orderItems = new HashSet<>();
 
-  @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-  private PaymentDetail paymentDetails;
-
-  @ManyToOne(cascade = CascadeType.ALL)
+  @ManyToOne(cascade = CascadeType.PERSIST)
   @JoinColumn(name = "orderAddress")
   private Address shippingAddress;
 
@@ -123,14 +119,6 @@ public class Order {
 
   public void setOrderItems(Collection<OrderItem> orderItems) {
     this.orderItems = orderItems;
-  }
-
-  public PaymentDetail getPaymentDetails() {
-    return paymentDetails;
-  }
-
-  public void setPaymentDetails(PaymentDetail paymentDetails) {
-    this.paymentDetails = paymentDetails;
   }
 
   public Address getShippingAddress() {

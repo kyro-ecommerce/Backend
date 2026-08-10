@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
 import com.kyro.payment.client.OrderClient;
+import com.kyro.payment.event.PaymentStatusChangedEvent;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -16,6 +17,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -44,10 +46,15 @@ public class PaymentService {
 
   private final OrderClient orderClient;
   private final PaymentRepository paymentRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
-  public PaymentService(OrderClient orderClient, PaymentRepository paymentRepository) {
+  public PaymentService(
+      OrderClient orderClient,
+      PaymentRepository paymentRepository,
+      ApplicationEventPublisher eventPublisher) {
     this.orderClient = orderClient;
     this.paymentRepository = paymentRepository;
+    this.eventPublisher = eventPublisher;
   }
 
   @Transactional
@@ -168,25 +175,24 @@ public class PaymentService {
         payment.setPaymentLog(new Gson().toJson(vnpParams));
         payment.setVnp_ResponseCode(vnp_ResponseCode);
 
-        // Update payment status in order-service via FeignClient
-        orderClient.updatePaymentStatus(
-            payment.getOrderId(), new OrderClient.PaymentStatusUpdateRequest("COMPLETED"));
-
-        return paymentRepository.save(payment);
+        return saveAndPublishStatus(payment);
       } else {
         payment.setPaymentStatus(PaymentStatus.FAILED);
         payment.setPaymentLog(new Gson().toJson(vnpParams));
 
-        // Update payment status in order-service via FeignClient
-        orderClient.updatePaymentStatus(
-            payment.getOrderId(), new OrderClient.PaymentStatusUpdateRequest("FAILED"));
-
-        return paymentRepository.save(payment);
+        return saveAndPublishStatus(payment);
       }
     } catch (Exception e) {
       log.error("Failed to process payment callback: {}", e.getMessage(), e);
       throw new RuntimeException("Lỗi xử lý callback thanh toán: " + e.getMessage());
     }
+  }
+
+  private PaymentDetail saveAndPublishStatus(PaymentDetail payment) {
+    PaymentDetail savedPayment = paymentRepository.save(payment);
+    eventPublisher.publishEvent(
+        new PaymentStatusChangedEvent(savedPayment.getOrderId(), savedPayment.getPaymentStatus().name()));
+    return savedPayment;
   }
 
   private String getRandomNumber(int len) {
