@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ public class OrderService {
   private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
   private final OrderRepository orderRepository;
+  private final OrderItemRepository orderItemRepository;
   private final CatalogClient catalogClient;
   private final CartClient cartClient;
   private final UserClient userClient;
@@ -38,11 +40,13 @@ public class OrderService {
 
   public OrderService(
       OrderRepository orderRepository,
+      OrderItemRepository orderItemRepository,
       CatalogClient catalogClient,
       CartClient cartClient,
       UserClient userClient,
       RabbitTemplate rabbitTemplate) {
     this.orderRepository = orderRepository;
+    this.orderItemRepository = orderItemRepository;
     this.catalogClient = catalogClient;
     this.cartClient = cartClient;
     this.userClient = userClient;
@@ -377,6 +381,8 @@ public class OrderService {
   public Page<OrderDetailDTO> getAllOrdersWithFilters(
       String search,
       OrderStatus status,
+      PaymentMethod paymentMethod,
+      PaymentStatus paymentStatus,
       LocalDate startDate,
       LocalDate endDate,
       Pageable pageable) {

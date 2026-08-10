@@ -1,5 +1,6 @@
 package com.kyro.catalog;
 
+import com.kyro.catalog.client.OrderClient;
 import com.kyro.catalog.dto.CreateProductRequest;
 import com.kyro.catalog.dto.ProductDTO;
 import com.kyro.catalog.messaging.ProductEventPublisher;
@@ -25,18 +26,21 @@ public class ProductService {
   private final ReviewRepository reviewRepository;
   private final ImageService imageService;
   private final ProductEventPublisher productEventPublisher;
+  private final OrderClient orderClient;
 
   public ProductService(
       ProductRepository productRepository,
       CategoryRepository categoryRepository,
       ReviewRepository reviewRepository,
       ImageService imageService,
-      ProductEventPublisher productEventPublisher) {
+      ProductEventPublisher productEventPublisher,
+      OrderClient orderClient) {
     this.productRepository = productRepository;
     this.categoryRepository = categoryRepository;
     this.reviewRepository = reviewRepository;
     this.imageService = imageService;
     this.productEventPublisher = productEventPublisher;
+    this.orderClient = orderClient;
   }
 
   @Transactional
@@ -416,12 +420,33 @@ public class ProductService {
   }
 
   public List<Map<String, Object>> getTopSellingProducts(int limit) {
-    List<Map<String, Object>> result = new ArrayList<>();
-    Pageable pageable = PageRequest.of(0, limit);
-    List<Product> products = productRepository.findTopSellingProducts(pageable);
+    if (limit < 1) {
+      throw new IllegalArgumentException("Top-selling limit must be positive");
+    }
+    List<OrderClient.TopSellingProductResponse> sales = orderClient.getTopSellingProducts(limit);
+    List<Product> products =
+        productRepository
+            .findAllById(
+                sales.stream().map(OrderClient.TopSellingProductResponse::productId).toList())
+            .stream()
+            .toList();
+    return mapTopSellingProducts(sales, products);
+  }
 
-    for (Product p : products) {
-      result.add(mapProductToMap(p));
+  static List<Map<String, Object>> mapTopSellingProducts(
+      List<OrderClient.TopSellingProductResponse> sales, List<Product> products) {
+    Map<Long, Product> productsById =
+        products.stream().collect(Collectors.toMap(Product::getId, product -> product));
+    List<Map<String, Object>> result = new ArrayList<>();
+
+    for (OrderClient.TopSellingProductResponse sale : sales) {
+      Product product = productsById.get(sale.productId());
+      if (product != null) {
+        Map<String, Object> productMap = mapProductToMap(product);
+        productMap.put("quantity_sold", sale.quantitySold());
+        productMap.put("quantitySold", sale.quantitySold());
+        result.add(productMap);
+      }
     }
     return result;
   }
@@ -526,7 +551,7 @@ public class ProductService {
     return new ProductDTO(updatedProduct);
   }
 
-  private Map<String, Object> mapProductToMap(Product p) {
+  private static Map<String, Object> mapProductToMap(Product p) {
     Map<String, Object> productMap = new HashMap<>();
     productMap.put("id", p.getId());
     productMap.put("title", p.getTitle());
