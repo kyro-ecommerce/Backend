@@ -117,6 +117,14 @@ spring:
             - StripPrefix=0
             - AuthenticationFilter
 
+        # Route to AI Service Stream Endpoint (SSE Real-time Streaming without CircuitBreaker buffering)
+        - id: ai-service-stream
+          uri: ${AI_SERVICE_URI:http://localhost:8000}
+          predicates:
+            - Path=/api/v1/ai/chat/stream
+          filters:
+            - StripPrefix=0
+
         # Route to AI Service (Public with Rate Limiter & Circuit Breaker)
         - id: ai-service-public
           uri: ${AI_SERVICE_URI:http://localhost:8000}
