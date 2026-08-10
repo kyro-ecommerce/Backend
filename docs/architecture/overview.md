@@ -87,8 +87,10 @@ graph TD
     Auth -- OTP & User Events --> RabbitMQ
     Order -- Order Events --> RabbitMQ
     Catalog -- Product Events --> RabbitMQ
+    Payment -- payment.status.updated --> RabbitMQ
     RabbitMQ --> Notification
     RabbitMQ --> AIService
+    RabbitMQ --> Order
 ```
 
 ---
@@ -141,10 +143,10 @@ Mỗi dịch vụ sở hữu cơ sở dữ liệu riêng độc lập, không tr
 
 | Microservice | Loại CSDL / Engine | Tên Database / Namespace | Nhiệm Vụ |
 | :--- | :--- | :--- | :--- |
-| **Auth Service** | PostgreSQL 16 | `kyro_auth` | Lưu User, Role, Address, Refresh Tokens |
-| **Catalog Service** | PostgreSQL 16 | `kyro_catalog` | Lưu Category, Product, ProductVariant, Review |
-| **Order Service** | PostgreSQL 16 | `kyro_order` | Lưu Orders, OrderItems, OrderAddress, PaymentDetails |
-| **Payment Service** | PostgreSQL 16 | `kyro_payment` | Lưu Transactions, VNPay IPN Logs |
+| **Auth Service** | PostgreSQL 16 | `kyro_auth` | Lưu Role, User, Address |
+| **Catalog Service** | PostgreSQL 16 | `kyro_catalog` | Lưu Category, Product, Image metadata, Size/Stock, Review |
+| **Order Service** | PostgreSQL 16 | `kyro_order` | Lưu Orders, OrderItems và snapshot địa chỉ giao hàng |
+| **Payment Service** | PostgreSQL 16 | `kyro_payment` | Lưu transaction và VNPay callback data |
 | **Cart Service** | Redis 7 | `kyro-redis` (Key-Value) | Cache giỏ hàng tạm thời với TTL 30 ngày |
 | **AI Service** | PostgreSQL 16 | `pgvector` (`postgres`) | Vector embeddings 768 chiều & Product Index |
 

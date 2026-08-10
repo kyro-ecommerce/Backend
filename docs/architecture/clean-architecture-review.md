@@ -47,8 +47,8 @@ com.kyro.order/
    - Theo Clean Architecture, **Domain Core phải là Pure Java** (không phụ thuộc `@Entity`, Spring, hay Database).
 2. **Service Layer Đóng Vai Trò "Transaction Script"**:
    - `OrderService` đang gánh quá nhiều trách nhiệm (*God Class* trong service): REST validation, gọi HTTP Feign Client, kiểm tra kho, tính toán giá tiền, gọi Native SQL, và phát message RabbitMQ.
-3. **Thao Tác Native SQL Trực Tiếp Tại Service Layer**:
-   - Trong `OrderService.java`, phương thức `deleteOrder` sử dụng raw SQL qua `entityManager.createNativeQuery(...)` để xóa bảng `payment_details`, `order_item`, `orders`, `order_address`. Điều này vi phạm nguyên tắc đóng gói của Repository.
+3. **Luồng checkout tập trung trong Service Layer**:
+   - `OrderService.java` điều phối dữ liệu từ Cart, Catalog và Auth. Đây là điểm cần được kiểm thử kỹ vì nó là ranh giới giao tiếp liên service, nhưng không sử dụng SQL truy cập chéo database.
 
 ### 🎯 Mô Hình Target Hexagonal Architecture (Ports and Adapters)
 Một microservice tuân thủ Hexagonal Architecture chuẩn nên được tổ chức thành 3 tầng rõ rệt:

@@ -30,11 +30,11 @@
 
 ## 🗄️ 2. Structure & Entities
 
-- **`Category`**: `id`, `name`, `slug`, `parentId`, `imageUrl`.
-- **`Product`**: `id`, `name`, `slug`, `description`, `price`, `discountPrice`, `categoryId`, `featured`, `active`.
-- **`ProductVariant`**: `id`, `productId`, `sku`, `size`, `color`, `stockQuantity`.
-- **`ProductImage`**: `id`, `productId`, `imageUrl`, `isPrimary`.
-- **`Review`**: `id`, `productId`, `userId`, `rating`, `comment`, `createdAt`.
+- **`Category`**: `id`, `name`, `parentCategoryId`, `level`, `isParent`.
+- **`Product`**: `id`, `categoryId` (FK), `title`, `brand`, giá, mô tả và thông số kỹ thuật.
+- **`Sizes`**: `id`, `productId` (FK), `name`, `quantity`.
+- **`Image`**: `id`, product (FK), `downloadUrl`, `fileName`, `fileType`; file ảnh thực tế thuộc Cloudinary.
+- **`Review`**: `id`, `productId` (FK), `userId` *(external reference to Auth)*, `rating`, `reviewContent`, `createdAt`.
 
 ---
 

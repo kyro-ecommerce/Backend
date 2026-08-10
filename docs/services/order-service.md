@@ -30,10 +30,10 @@
 
 ## 🗄️ 2. Structure & Entities
 
-- **`Order`**: `id`, `orderNumber` (dạng `ORD-YYYYMMDD-XXXX`), `userId`, `userEmail`, `totalAmount`, `shippingFee`, `discountAmount`, `status`, `paymentMethod`, `paymentStatus`, `createdAt`.
-- **`OrderItem`**: `id`, `orderId`, `productId`, `productName`, `variantId`, `size`, `color`, `price`, `quantity`, `subtotal`.
-- **`OrderAddress`**: `id`, `orderId`, `recipientName`, `phoneNumber`, `streetAddress`, `district`, `city`.
-- **`PaymentDetails`**: `id`, `orderId`, `transactionId`, `paymentMethod`, `amount`, `status`, `paidAt`.
+- **`Order`**: `id`, `userId` *(external reference to Auth)*, `userEmail`, `orderStatus`, `paymentMethod`, `paymentStatus`, tổng tiền và thời điểm đặt/giao.
+- **`OrderItem`**: `id`, `orderId` (FK), `productId` *(external reference to Catalog)*, `productName`, `productImageUrl`, `size`, giá và số lượng tại thời điểm đặt hàng.
+- **`OrderAddress`**: snapshot tên người nhận, số điện thoại và địa chỉ giao hàng; được liên kết nội bộ với `Order`.
+- Dữ liệu giao dịch VNPay thuộc **Payment Service**, không có bảng `PaymentDetails` trong `kyro_order`.
 
 ---
 

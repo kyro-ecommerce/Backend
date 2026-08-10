@@ -3,7 +3,7 @@
 > **Service Name**: `payment-service`  
 > **Port**: `8086`  
 > **Database**: PostgreSQL (`kyro_payment`)  
-> **Integration**: Cổng Thanh Toán VNPay (Sandbox / Production), Order Client (Feign HTTP)  
+> **Integration**: Cổng Thanh Toán VNPay, Order Client (Feign read), RabbitMQ (payment status event)  
 > **Package**: `com.kyro`
 
 ---
@@ -21,7 +21,7 @@
    - Tiếp nhận Callback từ VNPay khi người dùng hoàn tất thanh toán.
    - Cập nhật trạng thái giao dịch trong DB `kyro_payment` (`SUCCESS` / `FAILED`).
 3. **Cập Nhật Trạng Thái Đơn Hàng**:
-   - Khi thanh toán thành công, gọi `OrderClient` cập nhật `paymentStatus = PAID`.
+   - Sau khi transaction commit, phát `payment.status.updated`; Order Service consumer cập nhật trạng thái local.
 
 ---
 
@@ -34,6 +34,7 @@ sequenceDiagram
     participant Gateway as API Gateway (:8080)
     participant Payment as Payment Service (:8086)
     participant Order as Order Service (:8085)
+    participant RabbitMQ
     participant VNPay as VNPay Payment Gateway
 
     User->>Gateway: POST /api/v1/payments/{orderId}
@@ -50,10 +51,13 @@ sequenceDiagram
     Gateway->>Payment: Forward Callback
     alt Success Code (00)
         Payment->>Payment: Save Transaction (Status: SUCCESS)
-        Payment->>Order: Mark Order Status PAID
+        Payment->>RabbitMQ: payment.status.updated
+        RabbitMQ->>Order: Apply payment status
         Payment-->>VNPay: RspCode 00 (Success)
     else Failed Code
         Payment->>Payment: Save Transaction (Status: FAILED)
+        Payment->>RabbitMQ: payment.status.updated
+        RabbitMQ->>Order: Apply payment status
         Payment-->>VNPay: RspCode 01 (Fail)
     end
 ```

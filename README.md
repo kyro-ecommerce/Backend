@@ -145,7 +145,7 @@ graph TD
 | :--- | :---: | :--- | :--- | :--- |
 | **`api-gateway`** | `8080` | Spring Cloud Gateway | *N/A* | Giải mã JWT token, chèn header định danh, CORS & routing tập trung. |
 | **`auth-service`** | `8081` | Spring Security + OAuth2 | PostgreSQL (`kyro_auth`) | Quản lý tài khoản, mã hóa BCrypt, OAuth2 Google/GitHub, OTP qua RabbitMQ. |
-| **`catalog-service`** | `8082` | Spring Boot 3 + Cloudinary | PostgreSQL (`kyro_catalog`) | Quản lý sản phẩm, biến thể Size/Stock, review, phát sự kiện sync AI. |
+| **`catalog-service`** | `8082` | Spring Boot 3 + Cloudinary | PostgreSQL (`kyro_catalog`) | Quản lý sản phẩm, ảnh Cloudinary metadata, size/stock, review, phát sự kiện sync AI. |
 | **`cart-service`** | `8083` | Spring Boot 3 + Redis | Redis (`kyro-redis`) | Lưu giỏ hàng tạm thời với TTL 30 ngày, gọi Feign check tồn kho. |
 | **`notification-service`** | `8084` | Spring Boot 3 + JavaMail | *N/A* | Consumer lắng nghe RabbitMQ gửi email OTP và hóa đơn HTML. |
 | **`order-service`** | `8085` | Spring Boot 3 + OpenFeign | PostgreSQL (`kyro_order`) | Xử lý checkout, tính toán chiết khấu, quản lý vòng đời trạng thái đơn hàng. |

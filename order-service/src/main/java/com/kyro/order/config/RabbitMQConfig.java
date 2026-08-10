@@ -11,12 +11,15 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMQConfig {
 
   public static final String ORDER_EXCHANGE = "order-exchange";
+  public static final String PAYMENT_EXCHANGE = "payment-exchange";
 
   public static final String ORDER_CREATED_ROUTING_KEY = "order.created";
   public static final String STOCK_RESERVED_ROUTING_KEY = "stock.reserved";
   public static final String STOCK_FAILED_ROUTING_KEY = "stock.failed";
 
   public static final String ORDER_SAGA_QUEUE = "order-saga-queue";
+  public static final String PAYMENT_STATUS_QUEUE = "order-payment-status-queue";
+  public static final String PAYMENT_STATUS_UPDATED_ROUTING_KEY = "payment.status.updated";
 
   @Bean
   public TopicExchange orderExchange() {
@@ -26,6 +29,23 @@ public class RabbitMQConfig {
   @Bean
   public Queue orderSagaQueue() {
     return new Queue(ORDER_SAGA_QUEUE, true);
+  }
+
+  @Bean
+  public TopicExchange paymentExchange() {
+    return new TopicExchange(PAYMENT_EXCHANGE);
+  }
+
+  @Bean
+  public Queue paymentStatusQueue() {
+    return new Queue(PAYMENT_STATUS_QUEUE, true);
+  }
+
+  @Bean
+  public Binding paymentStatusBinding() {
+    return BindingBuilder.bind(paymentStatusQueue())
+        .to(paymentExchange())
+        .with(PAYMENT_STATUS_UPDATED_ROUTING_KEY);
   }
 
   @Bean
