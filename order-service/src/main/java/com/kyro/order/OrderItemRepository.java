@@ -13,7 +13,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
   List<OrderItem> findByProductId(Long productId);
 
   @Query(
-      "SELECT new TopSellingProductResponse(oi.productId, SUM(oi.quantity)) "
+      "SELECT new com.kyro.order.dto.TopSellingProductResponse(oi.productId, SUM(oi.quantity)) "
           + "FROM OrderItem oi WHERE oi.order.orderStatus = :status GROUP BY oi.productId "
           + "ORDER BY SUM(oi.quantity) DESC, oi.productId DESC")
   List<TopSellingProductResponse> findTopSellingProducts(
