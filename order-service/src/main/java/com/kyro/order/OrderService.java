@@ -8,6 +8,7 @@ import com.kyro.order.client.CatalogClient;
 import com.kyro.order.client.UserClient;
 import com.kyro.order.dto.OrderDTO;
 import com.kyro.order.dto.OrderDetailDTO;
+import com.kyro.order.dto.TopSellingProductResponse;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -384,9 +385,18 @@ public class OrderService {
 
     Page<Order> orders =
         orderRepository.findAdminOrdersWithFilters(
-            search, status, startDateTime, endDateTime, pageable);
+            search, status, paymentMethod, paymentStatus, startDateTime, endDateTime, pageable);
 
     return orders.map(OrderDetailDTO::new);
+  }
+
+  @Transactional(readOnly = true)
+  public List<TopSellingProductResponse> getTopSellingProducts(int limit) {
+    if (limit < 1) {
+      throw new IllegalArgumentException("Top-selling limit must be positive");
+    }
+    return orderItemRepository.findTopSellingProducts(
+        OrderStatus.DELIVERED, PageRequest.of(0, limit));
   }
 
   private void sendOrderConfirmationEmail(String email, Order order) {
