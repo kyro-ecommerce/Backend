@@ -9,7 +9,7 @@
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3-FF6600?style=for-the-badge&logo=rabbitmq)](https://www.rabbitmq.com/)
 [![Docker](https://img.shields.io/badge/Docker_Compose-Supported-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-> **Kyro Backend** là nền tảng Microservices Thương mại Điện tử hiện đại, thiết kế theo tiêu chuẩn kiến trúc hướng dịch vụ (**Service-Oriented Architecture**), phân tách dữ liệu triệt để (**Database-per-service**), hỗ trợ xác thực tập trung JWT/OAuth2, thanh toán trực tuyến **VNPay**, lưu trữ giỏ hàng siêu tốc trên **Redis**, xử lý sự kiện bất đồng bộ qua **RabbitMQ**, và tích hợp engine AI gợi ý sản phẩm thông minh (**Python FastAPI + Google Gemini AI + pgvector**).
+> **Kyro Backend** là nền tảng Microservices Thương mại Điện tử hiện đại, thiết kế theo tiêu chuẩn kiến trúc hướng dịch vụ (**Service-Oriented Architecture**), phân tách dữ liệu triệt để (**Database-per-service**), hỗ trợ xác thực tập trung JWT/OAuth2, thanh toán trực tuyến **VNPay**, lưu giỏ hàng bền vững trên PostgreSQL với Redis cache, xử lý sự kiện bất đồng bộ qua **RabbitMQ**, và tích hợp engine AI gợi ý sản phẩm thông minh (**Python FastAPI + Google Gemini AI + pgvector**).
 
 ---
 
@@ -27,7 +27,7 @@
 | ⚡ **API Gateway Service** | Giải thích `AuthenticationFilter`, Dynamic routing, CORS, Header Injection | [👉 Xem Service Doc](docs/services/api-gateway.md) |
 | 🔐 **Auth Service** | Spring Security, JWT Token generation, OAuth2 Google/GitHub, Mail OTP lifecycle | [👉 Xem Service Doc](docs/services/auth-service.md) |
 | 🏷️ **Catalog Service** | Danh mục sản phẩm, biến thể (Size/Stock), Cloudinary file upload & Product Events | [👉 Xem Service Doc](docs/services/catalog-service.md) |
-| 🛒 **Cart Service** | Redis In-Memory Cart State, TTL 30 ngày, Synchronous Feign Client validation | [👉 Xem Service Doc](docs/services/cart-service.md) |
+| 🛒 **Cart Service** | PostgreSQL cart state, Redis cache-aside, Synchronous Feign Client validation | [👉 Xem Service Doc](docs/services/cart-service.md) |
 | 📦 **Order Service** | Checkout flow, Order state machine (Pending -> Confirmed -> Delivered), Address snapshot | [👉 Xem Service Doc](docs/services/order-service.md) |
 | 💳 **Payment Service** | Tích hợp cổng thanh toán VNPay, tạo URL có chữ ký HMAC SHA-512 và xử lý callback | [👉 Xem Service Doc](docs/services/payment-service.md) |
 | 🔔 **Notification Service** | Consumer RabbitMQ, Thymeleaf HTML Email templates & Async SMTP sending | [👉 Xem Service Doc](docs/services/notification-service.md) |
@@ -44,7 +44,7 @@
 
 - **Định Tuyến & Xác Thực Tập Trung**: API Gateway chịu trách nhiệm xác thực JWT chữ ký số và tự động chèn HTTP Headers (`X-User-Id`, `X-User-Email`, `X-User-Roles`) chuyển tiếp cho các dịch vụ phía trong.
 - **Xác Thực Đa Phương Thức**: Đăng nhập bằng Email/Password mã hóa BCrypt, khôi phục bằng OTP qua Email, hoặc đăng nhập 1-click qua **OAuth2 (Google & GitHub)**.
-- **Giỏ Hàng Siêu Tốc Trên Redis**: Giỏ hàng tạm thời với thời gian sống (TTL 30 ngày) được lưu trữ dạng In-Memory Key-Value cho tốc độ phản hồi tính bằng milisecond.
+- **Giỏ Hàng Bền Vững + Redis Cache**: PostgreSQL giữ dữ liệu giỏ hàng; Redis chỉ tăng tốc đọc và có thể tái tạo từ database.
 - **Thanh Toán Trực Tuyến VNPay**: Tạo link thanh toán VNPay Sandbox an toàn với chữ ký bảo mật **HMAC SHA-512** và xử lý tự động callback Webhook (IPN).
 - **Gửi Email Bất Đồng Bộ**: `notification-service` làm consumer lắng nghe RabbitMQ Queues gửi email OTP và hóa đơn xác nhận đơn hàng mà không gây lag request client.
 - **Gợi Ý Sản Phẩm AI (Semantic Search)**: `ai-service` viết bằng Python FastAPI sử dụng **Google Gemini AI** chuyển thông tin sản phẩm thành **Vector 768 chiều** và lưu trữ trong **PostgreSQL pgvector** để tìm kiếm khoảng cách Cosine Similarity.
@@ -146,7 +146,7 @@ graph TD
 | **`api-gateway`** | `8080` | Spring Cloud Gateway | *N/A* | Giải mã JWT token, chèn header định danh, CORS & routing tập trung. |
 | **`auth-service`** | `8081` | Spring Security + OAuth2 | PostgreSQL (`kyro_auth`) | Quản lý tài khoản, mã hóa BCrypt, OAuth2 Google/GitHub, OTP qua RabbitMQ. |
 | **`catalog-service`** | `8082` | Spring Boot 3 + Cloudinary | PostgreSQL (`kyro_catalog`) | Quản lý sản phẩm, ảnh Cloudinary metadata, size/stock, review, phát sự kiện sync AI. |
-| **`cart-service`** | `8083` | Spring Boot 3 + Redis | Redis (`kyro-redis`) | Lưu giỏ hàng tạm thời với TTL 30 ngày, gọi Feign check tồn kho. |
+| **`cart-service`** | `8083` | Spring Boot 3 + JPA + Redis | PostgreSQL (`kyro_cart`) + Redis | Lưu giỏ hàng bền vững, Redis cache-aside, gọi Feign kiểm tra giá/tồn kho. |
 | **`notification-service`** | `8084` | Spring Boot 3 + JavaMail | *N/A* | Consumer lắng nghe RabbitMQ gửi email OTP và hóa đơn HTML. |
 | **`order-service`** | `8085` | Spring Boot 3 + OpenFeign | PostgreSQL (`kyro_order`) | Xử lý checkout, tính toán chiết khấu, quản lý vòng đời trạng thái đơn hàng. |
 | **`payment-service`** | `8086` | Spring Boot 3 + VNPay SDK | PostgreSQL (`kyro_payment`) | Tạo URL thanh toán VNPay SHA-512 & xử lý Webhook IPN Callback. |

@@ -49,7 +49,14 @@ public class OrderController {
       @Valid @RequestBody CreateOrderRequest request) {
 
     List<Order> orders =
-        orderService.placeOrder(request.addressId(), userId, userEmail, request.paymentMethod());
+        orderService.placeOrder(
+            request.addressId(),
+            userId,
+            userEmail,
+            request.paymentMethod(),
+            request.cartItemIds(),
+            request.cartVersion(),
+            request.expectedTotalDiscountedPrice());
 
     List<OrderDTO> orderDTOs = orders.stream().map(OrderDTO::new).collect(Collectors.toList());
 

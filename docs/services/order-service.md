@@ -13,12 +13,12 @@
 **Order Service** xử lý quy trình đặt hàng, tính toán giá trị đơn hàng, quản lý vòng đời trạng thái đơn hàng:
 
 1. **Xử Lý Quy Trình Đặt Hàng (Checkout Workflow)**:
-   - Tiếp nhận yêu cầu đặt hàng từ client (`addressId`, `paymentMethod`).
+   - Tiếp nhận yêu cầu đặt hàng từ client (`addressId`, `paymentMethod`, `cartItemIds`, `cartVersion`, `expectedTotalDiscountedPrice`).
    - Gọi `AuthClient` trích xuất và xác thực thông tin địa chỉ giao hàng (`Address`).
-   - Gọi `CartClient` lấy danh sách sản phẩm trong giỏ hàng.
+   - Gọi `CartClient` lấy đúng các item người dùng đã chọn và xác minh lại giá/tồn kho.
    - Kiểm tra và trừ số lượng tồn kho từng sản phẩm qua `CatalogClient`.
    - Lưu thông tin đơn hàng, chi tiết đơn hàng, snapshot địa chỉ giao hàng vào PostgreSQL `kyro_order`.
-   - Gọi `CartClient.clearCart(...)` để giải phóng giỏ hàng của người dùng.
+   - Sau khi giữ kho thành công, chỉ các item đã mua mới bị trừ khỏi giỏ.
 2. **Quản Lý Vòng Đời Trạng Thái Đơn Hàng (Order State Machine)**:
    - Các trạng thái: `PENDING` ➔ `CONFIRMED` ➔ `SHIPPING` ➔ `DELIVERED` / `CANCELLED`.
    - Admin có quyền duyệt đơn, cập nhật trạng thái vận chuyển.
@@ -53,7 +53,10 @@
 ```json
 {
   "addressId": 1,
-  "paymentMethod": "VNPAY"
+  "paymentMethod": "VNPAY",
+  "cartItemIds": [11, 12],
+  "cartVersion": 7,
+  "expectedTotalDiscountedPrice": 1250000
 }
 ```
 

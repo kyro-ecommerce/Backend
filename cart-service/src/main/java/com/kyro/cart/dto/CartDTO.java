@@ -5,14 +5,16 @@ import java.util.List;
 
 public class CartDTO {
   private String userId;
+  private long version;
   private List<CartItemDTO> items = new ArrayList<>();
   private int totalPrice = 0;
   private int totalDiscountedPrice = 0;
 
   public CartDTO() {}
 
-  public CartDTO(String userId, List<CartItemDTO> items, int totalPrice, int totalDiscountedPrice) {
+  public CartDTO(String userId, long version, List<CartItemDTO> items, int totalPrice, int totalDiscountedPrice) {
     this.userId = userId;
+    this.version = version;
     this.items = items != null ? items : new ArrayList<>();
     this.totalPrice = totalPrice;
     this.totalDiscountedPrice = totalDiscountedPrice;
@@ -25,6 +27,9 @@ public class CartDTO {
   public void setUserId(String userId) {
     this.userId = userId;
   }
+
+  public long getVersion() { return version; }
+  public void setVersion(long version) { this.version = version; }
 
   public List<CartItemDTO> getItems() {
     return items;

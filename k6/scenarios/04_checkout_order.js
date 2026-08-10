@@ -25,6 +25,7 @@ export const options = {
 export default function () {
   let token = null;
   let addressId = 1;
+  let cart;
   let createdOrderId = null;
   let paymentTxnRef = null;
 
@@ -58,6 +59,9 @@ export default function () {
     });
 
     const res = http.post(addUrl, payload, { headers });
+    if (res.status === 200) {
+      cart = JSON.parse(res.body);
+    }
     check(res, {
       'item added to cart': (r) => r.status === 200,
     });
@@ -67,9 +71,19 @@ export default function () {
 
   group('04. Place Order (Checkout)', function () {
     const orderUrl = `${CONFIG.BASE_URL}/api/v1/orders`;
+    const item = cart && cart.items && cart.items[0];
+    if (!item) {
+      return;
+    }
     
     const start = Date.now();
-    const res = http.post(orderUrl, JSON.stringify({ addressId, paymentMethod: 'VNPAY' }), { headers });
+    const res = http.post(orderUrl, JSON.stringify({
+      addressId,
+      paymentMethod: 'VNPAY',
+      cartItemIds: [item.id],
+      cartVersion: cart.version,
+      expectedTotalDiscountedPrice: (item.discountedPrice || item.price) * item.quantity,
+    }), { headers });
     metrics.orderDuration.add(Date.now() - start);
 
     const ok = check(res, {

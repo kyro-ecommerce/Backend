@@ -1,6 +1,7 @@
 package com.kyro.cart.dto;
 
 public class CartItemDTO {
+  private Long id;
   private Long productId;
   private String productName;
   private String productImageUrl;
@@ -9,6 +10,9 @@ public class CartItemDTO {
   private String size;
   private Integer discountPercent;
   private Integer discountedPrice;
+  private boolean available = true;
+  private String unavailableReason;
+  private boolean priceChanged;
 
   public CartItemDTO() {}
 
@@ -30,6 +34,9 @@ public class CartItemDTO {
     this.discountPercent = discountPercent;
     this.discountedPrice = discountedPrice;
   }
+
+  public Long getId() { return id; }
+  public void setId(Long id) { this.id = id; }
 
   public Long getProductId() {
     return productId;
@@ -94,4 +101,10 @@ public class CartItemDTO {
   public void setDiscountedPrice(Integer discountedPrice) {
     this.discountedPrice = discountedPrice;
   }
+  public boolean isAvailable() { return available; }
+  public void setAvailable(boolean available) { this.available = available; }
+  public String getUnavailableReason() { return unavailableReason; }
+  public void setUnavailableReason(String unavailableReason) { this.unavailableReason = unavailableReason; }
+  public boolean isPriceChanged() { return priceChanged; }
+  public void setPriceChanged(boolean priceChanged) { this.priceChanged = priceChanged; }
 }

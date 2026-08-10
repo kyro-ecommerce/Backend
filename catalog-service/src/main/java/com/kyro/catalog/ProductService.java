@@ -43,6 +43,11 @@ public class ProductService {
     this.orderClient = orderClient;
   }
 
+  @Transactional(readOnly = true)
+  public List<Product> findProductsByIds(List<Long> productIds) {
+    return productRepository.findAllById(productIds);
+  }
+
   @Transactional
   public Product createProduct(CreateProductRequest req) {
     // Logic for handling categories

@@ -9,6 +9,8 @@ import com.kyro.order.client.UserClient;
 import com.kyro.order.dto.OrderDTO;
 import com.kyro.order.dto.OrderDetailDTO;
 import com.kyro.order.dto.TopSellingProductResponse;
+import com.kyro.exceptions.DomainException;
+import feign.FeignException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -76,13 +78,14 @@ public class OrderService {
   }
 
   @Transactional
-  public List<Order> placeOrder(Long addressId, Long userId, String userEmail) {
-    return placeOrder(addressId, userId, userEmail, PaymentMethod.COD);
-  }
-
-  @Transactional
   public List<Order> placeOrder(
-      Long addressId, Long userId, String userEmail, PaymentMethod paymentMethod) {
+      Long addressId,
+      Long userId,
+      String userEmail,
+      PaymentMethod paymentMethod,
+      List<Long> cartItemIds,
+      long cartVersion,
+      int expectedTotalDiscountedPrice) {
     if (userId == null) {
       log.error("User ID is null when placing order.");
       throw new IllegalArgumentException("Thông tin người dùng không hợp lệ.");
@@ -92,12 +95,28 @@ public class OrderService {
       throw new IllegalArgumentException("Địa chỉ giao hàng không được để trống.");
     }
 
-    // Fetch Cart from cart-service via FeignClient
-    CartClient.CartResponse cart = cartClient.getCart(userId);
+    if (new HashSet<>(cartItemIds).size() != cartItemIds.size()) {
+      throw new DomainException(org.springframework.http.HttpStatus.BAD_REQUEST, "Cart item bị trùng.");
+    }
+    CartClient.CartResponse cart;
+    try {
+      cart = cartClient.getSelection(userId, new CartClient.CartSelectionRequest(cartItemIds));
+    } catch (FeignException e) {
+      if (e.status() == 503) {
+        throw new DomainException(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE, "CATALOG_UNAVAILABLE", "Không thể xác minh sản phẩm.");
+      }
+      throw new DomainException(org.springframework.http.HttpStatus.CONFLICT, "CART_CHANGED", "Giỏ hàng đã thay đổi, vui lòng tải lại.");
+    }
     if (cart == null || cart.items() == null || cart.items().isEmpty()) {
       log.warn("Attempted to place order with an empty cart for user ID: {}", userId);
       throw new RuntimeException(
           "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi đặt hàng.");
+    }
+    if (cart.version() != cartVersion || cart.totalDiscountedPrice() != expectedTotalDiscountedPrice) {
+      throw new DomainException(
+          org.springframework.http.HttpStatus.CONFLICT,
+          "CART_CHANGED",
+          "Giỏ hàng hoặc giá sản phẩm đã thay đổi, vui lòng xác nhận lại.");
     }
 
     // Fetch Shipping Address from auth-service via FeignClient
@@ -174,7 +193,7 @@ public class OrderService {
 
       eventItems.add(
           new com.kyro.order.event.OrderCreatedEvent.OrderItemEvent(
-              cartItem.productId(), cartItem.size(), cartItem.quantity(), cartItem.price()));
+              cartItem.id(), cartItem.productId(), cartItem.size(), cartItem.quantity(), cartItem.price()));
     }
 
     savedOrderIntermediate.setOrderItems(orderItems);

@@ -1,6 +1,6 @@
 /**
  * Scenario 03: Cart Operations Load Test
- * Purpose: Tests high-throughput Redis in-memory cart operations (Add, View, Update, Clear).
+ * Purpose: Tests high-throughput PostgreSQL cart operations with Redis cache (Add, View, Update, Clear).
  */
 import http from 'k6/http';
 import { check, group, sleep } from 'k6';
@@ -49,7 +49,7 @@ export default function () {
       'cart contains items': (r) => {
         try {
           const body = JSON.parse(r.body);
-          return body && body.cartItems && body.cartItems.length > 0;
+          return body && body.items && body.items.length > 0;
         } catch (e) {
           return false;
         }
@@ -76,7 +76,9 @@ export default function () {
   sleep(0.5);
 
   group('Cart - Update Item Quantity', function () {
-    const url = `${CONFIG.BASE_URL}/api/v1/carts/items?productId=${productId}&size=${size}&quantity=5`;
+    const cart = http.get(`${CONFIG.BASE_URL}/api/v1/carts`, { headers });
+    const itemId = JSON.parse(cart.body).items.find((item) => item.productId === productId && item.size === size)?.id;
+    const url = `${CONFIG.BASE_URL}/api/v1/carts/items/${itemId}?quantity=5`;
 
     const start = Date.now();
     const res = http.put(url, null, { headers });

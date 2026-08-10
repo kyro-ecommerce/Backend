@@ -55,6 +55,8 @@ public class OrderEventListener {
               orderId,
               "userId",
               userId != null ? userId : 0L,
+              "items",
+              items,
               "success",
               true,
               "message",
