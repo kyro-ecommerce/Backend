@@ -48,12 +48,27 @@
 | `PUT` | `/api/v1/admin/products/{id}` | Cập nhật sản phẩm | Admin |
 | `DELETE` | `/api/v1/admin/products/{id}` | Xóa sản phẩm | Admin |
 | `POST` | `/api/v1/admin/products/bulk` | Tạo nhiều sản phẩm | Admin |
+| `POST` | `/api/v1/images/upload/{productId}` | Upload một ảnh cho sản phẩm | Admin |
+| `GET` | `/api/v1/images/product/{productId}` | Lấy danh sách ảnh của sản phẩm | Admin |
+| `DELETE` | `/api/v1/images/delete/{imageId}` | Xóa một ảnh | Admin |
 | `GET` | `/api/v1/categories` | Lấy cây danh mục sản phẩm | Public |
 | `POST` | `/api/v1/reviews` | Đánh giá sản phẩm | User / Admin |
 
 ---
 
-## 🐰 4. Event Publisher (RabbitMQ Product Sync)
+## 🖼️ 4. Luồng Tạo Sản Phẩm Và Upload Ảnh
+
+1. Gọi `POST /api/v1/admin/products` với JSON sản phẩm và lưu `id` từ response `201 Created`.
+2. Với từng ảnh, gọi `POST /api/v1/images/upload/{productId}` bằng `multipart/form-data`, field `image`.
+3. Dùng `GET /api/v1/images/product/{productId}` để tải lại danh sách ảnh hoặc `DELETE /api/v1/images/delete/{imageId}` để xóa ảnh.
+
+Nếu một lần upload lỗi, sản phẩm vẫn được giữ lại; client có thể retry ảnh đó với cùng `productId`. Chi tiết sản phẩm trả danh sách ảnh trong `imageUrls`.
+
+Tất cả endpoint ảnh chỉ đi qua API Gateway và yêu cầu JWT có role `ADMIN`.
+
+---
+
+## 🐰 5. Event Publisher (RabbitMQ Product Sync)
 
 ```java
 public void publishProductEvent(Product product, String eventType) {
