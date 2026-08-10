@@ -4,6 +4,8 @@ import com.kyro.enums.OrderStatus;
 import com.kyro.enums.PaymentStatus;
 import com.kyro.order.dto.OrderInternalResponse;
 import com.kyro.order.dto.PaymentStatusUpdateRequest;
+import com.kyro.order.dto.TopSellingProductResponse;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +28,12 @@ public class InternalOrderController {
     return orderService.userOrderHistory(userId, OrderStatus.DELIVERED).stream()
         .flatMap(order -> order.getOrderItems().stream())
         .anyMatch(item -> item.getProductId().equals(productId));
+  }
+
+  @GetMapping("/top-selling")
+  public List<TopSellingProductResponse> getTopSellingProducts(
+      @RequestParam(defaultValue = "10") int limit) {
+    return orderService.getTopSellingProducts(limit);
   }
 
   @PatchMapping("/{orderId}/payment-status")

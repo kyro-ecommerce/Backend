@@ -1,6 +1,8 @@
 package com.kyro.order.messaging;
 
 import com.kyro.enums.OrderStatus;
+import com.kyro.enums.PaymentMethod;
+import com.kyro.enums.PaymentStatus;
 import com.kyro.order.OrderRepository;
 import com.kyro.order.config.RabbitMQConfig;
 import com.kyro.order.event.StockResultEvent;
@@ -29,8 +31,12 @@ public class OrderSagaEventListener {
         .ifPresent(
             order -> {
               if (event.success()) {
-                order.setOrderStatus(OrderStatus.CONFIRMED);
-                log.info("Order ID {} successfully CONFIRMED via Saga.", event.orderId());
+                if (canConfirm(order.getPaymentMethod(), order.getPaymentStatus())) {
+                  order.setOrderStatus(OrderStatus.CONFIRMED);
+                  log.info("Order ID {} successfully CONFIRMED via Saga.", event.orderId());
+                } else {
+                  log.info("Order ID {} reserved stock and is awaiting payment.", event.orderId());
+                }
               } else {
                 order.setOrderStatus(OrderStatus.CANCELLED);
                 log.warn(
@@ -40,5 +46,9 @@ public class OrderSagaEventListener {
               }
               orderRepository.save(order);
             });
+  }
+
+  static boolean canConfirm(PaymentMethod paymentMethod, PaymentStatus paymentStatus) {
+    return paymentMethod == PaymentMethod.COD || paymentStatus == PaymentStatus.COMPLETED;
   }
 }

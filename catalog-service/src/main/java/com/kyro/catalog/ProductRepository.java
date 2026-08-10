@@ -42,10 +42,6 @@ public interface ProductRepository
       @Param("topCategoryName") String topCategoryName,
       @Param("secondCategoryName") String secondCategoryName);
 
-  // Find top selling products
-  @Query("SELECT p FROM Product p ORDER BY p.quantitySold DESC")
-  List<Product> findTopSellingProducts(Pageable pageable);
-
   // Advanced search with multiple filters
   @Query(
       "SELECT p FROM Product p "

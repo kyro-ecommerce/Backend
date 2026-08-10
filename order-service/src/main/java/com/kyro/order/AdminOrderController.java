@@ -1,6 +1,8 @@
 package com.kyro.order;
 
 import com.kyro.enums.OrderStatus;
+import com.kyro.enums.PaymentMethod;
+import com.kyro.enums.PaymentStatus;
 import com.kyro.order.dto.OrderDetailDTO;
 import java.time.LocalDate;
 import java.util.List;
@@ -8,6 +10,7 @@ import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -29,19 +32,39 @@ public class AdminOrderController {
       @RequestParam(defaultValue = "10") int size,
       @RequestParam(required = false) String search,
       @RequestParam(required = false) OrderStatus status,
+      @RequestParam(required = false) PaymentMethod paymentMethod,
+      @RequestParam(required = false) PaymentStatus paymentStatus,
       @RequestParam(required = false) String startDate,
-      @RequestParam(required = false) String endDate) {
+      @RequestParam(required = false) String endDate,
+      @RequestParam(defaultValue = "orderDate") String sortBy,
+      @RequestParam(defaultValue = "desc") String sortDir) {
 
-    Pageable pageable = PageRequest.of(page, size);
+    Pageable pageable = adminPageable(page, size, sortBy, sortDir);
     Page<OrderDetailDTO> ordersPage =
         orderService.getAllOrdersWithFilters(
             search,
             status,
+            paymentMethod,
+            paymentStatus,
             startDate != null ? LocalDate.parse(startDate) : null,
             endDate != null ? LocalDate.parse(endDate) : null,
             pageable);
 
     return ResponseEntity.ok(ordersPage);
+  }
+
+  static Pageable adminPageable(int page, int size, String sortBy, String sortDir) {
+    String property =
+        switch (sortBy) {
+          case "id", "orderDate", "totalDiscountedPrice" -> sortBy;
+          default -> throw new IllegalArgumentException("Unsupported order sort: " + sortBy);
+        };
+    Sort.Direction direction = Sort.Direction.fromString(sortDir);
+    Sort sort = Sort.by(direction, property);
+    if (!"id".equals(property)) {
+      sort = sort.and(Sort.by(direction, "id"));
+    }
+    return PageRequest.of(page, size, sort);
   }
 
   @PutMapping("/{orderId}/confirm")
