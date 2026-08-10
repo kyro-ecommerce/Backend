@@ -1,0 +1,72 @@
+@startuml Database_ERD
+title MÔ HÌNH THỰC THỂ - LIÊN KẾT (ERD)
+left to right direction
+
+hide circle
+hide methods
+skinparam shadowing false
+skinparam linetype polyline
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam rectangle {
+  BorderColor #607D8B
+  FontColor #263238
+  FontStyle bold
+}
+
+' Auth
+rectangle "role" as role #DCEEFF
+rectangle "users" as users #DCEEFF
+rectangle "address" as address #DCEEFF
+
+' Catalog
+rectangle "category" as category #E2F3E5
+rectangle "product" as product #E2F3E5
+rectangle "sizes" as sizes #E2F3E5
+rectangle "image" as image #E2F3E5
+rectangle "review" as review #E2F3E5
+
+' Order
+rectangle "orders" as orders #FFF0D9
+rectangle "order_item" as order_item #FFF0D9
+rectangle "order_address" as order_address #FFF0D9
+
+' Payment
+rectangle "payment_details" as payment_details #EFE2F5
+
+' Redis cart document
+rectangle "Cart" as cart #FFF3BF
+rectangle "CartItem" as cart_item #FFF3BF
+
+' Quan hệ trong cùng cơ sở dữ liệu
+role "1" -- "0..*" users : phân quyền
+users "1" -- "0..*" address : sở hữu
+category "0..1" -- "0..*" category : danh mục cha
+category "1" -- "0..*" product : phân loại
+product "1" -- "0..*" sizes : có biến thể
+product "1" -- "0..*" image : có hình ảnh
+product "1" -- "0..*" review : được đánh giá
+orders "1" -- "1" order_address : giao đến
+orders "1" -- "1..*" order_item : bao gồm
+cart "1" -- "0..*" cart_item : chứa
+
+' Tham chiếu giữa các dịch vụ
+users "1" .. "0..*" review : viết
+users "1" .. "0..*" orders : đặt
+product "1" .. "0..*" order_item : được đặt mua
+orders "1" .. "0..1" payment_details : thanh toán
+users "1" .. "0..1" cart : có giỏ hàng
+product "1" .. "0..*" cart_item : được thêm vào
+
+legend bottom
+  |= Màu |= Nhóm dữ liệu |
+  | <#DCEEFF> | Người dùng |
+  | <#E2F3E5> | Sản phẩm |
+  | <#FFF0D9> | Đơn hàng |
+  | <#EFE2F5> | Thanh toán |
+  | <#FFF3BF> | Giỏ hàng (Redis) |
+  -- Quan hệ trong cùng cơ sở dữ liệu
+  .. Tham chiếu giữa các dịch vụ
+endlegend
+
+@enduml

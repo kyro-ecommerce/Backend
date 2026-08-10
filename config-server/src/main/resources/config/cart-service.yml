@@ -8,6 +8,15 @@ internal:
     token: ${INTERNAL_API_TOKEN:}
 
 spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/kyro_cart}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
   data:
     redis:
       host: ${REDIS_HOST:localhost}

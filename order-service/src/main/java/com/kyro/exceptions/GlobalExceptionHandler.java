@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
+import org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -45,6 +46,15 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(AppException.class)
   public ProblemDetail handleAppException(AppException ex) {
     return buildResponse(ex);
+  }
+
+  @ExceptionHandler(NoFallbackAvailableException.class)
+  public ProblemDetail handleUnavailableDependency(NoFallbackAvailableException ex) {
+    return buildResponse(
+        new AppException(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "DEPENDENCY_UNAVAILABLE",
+            "Dịch vụ phụ thuộc tạm thời không khả dụng. Vui lòng thử lại."));
   }
 
   // 3. Handles Spring Validation annotations errors

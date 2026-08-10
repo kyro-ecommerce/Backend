@@ -186,6 +186,8 @@ services:
     depends_on:
       config-server:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
       rabbitmq:
@@ -194,6 +196,9 @@ services:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       REDIS_HOST: kyro-redis
+      DATABASE_URL: jdbc:postgresql://kyro-postgres:5432/kyro_cart
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres_password}
       RABBITMQ_HOST: kyro-rabbitmq
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN must be set}
     healthcheck:

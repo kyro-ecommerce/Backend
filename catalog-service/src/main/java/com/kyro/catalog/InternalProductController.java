@@ -2,6 +2,7 @@ package com.kyro.catalog;
 
 import com.kyro.catalog.dto.ProductInternalResponse;
 import com.kyro.catalog.dto.StockAdjustmentRequest;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,17 @@ public class InternalProductController {
     return ResponseEntity.ok(
         new ProductInternalResponse(productService.findProductById(productId)));
   }
+
+  @PostMapping("/lookup")
+  public ResponseEntity<List<ProductInternalResponse>> getProducts(
+      @RequestBody ProductLookupRequest request) {
+    return ResponseEntity.ok(
+        productService.findProductsByIds(request.productIds()).stream()
+            .map(ProductInternalResponse::new)
+            .toList());
+  }
+
+  public record ProductLookupRequest(List<Long> productIds) {}
 
   @PatchMapping("/{productId}/stock")
   @Transactional

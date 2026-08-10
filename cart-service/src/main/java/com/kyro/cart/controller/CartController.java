@@ -28,21 +28,19 @@ public class CartController {
     return ResponseEntity.ok(cartService.addItemToCart(userId, item));
   }
 
-  @PutMapping("/items")
+  @PutMapping("/items/{itemId}")
   public ResponseEntity<CartDTO> updateCartItem(
       @RequestHeader("X-User-Id") String userId,
-      @RequestParam Long productId,
-      @RequestParam(required = false) String size,
+      @PathVariable Long itemId,
       @RequestParam int quantity) {
-    return ResponseEntity.ok(cartService.updateCartItem(userId, productId, size, quantity));
+    return ResponseEntity.ok(cartService.updateCartItem(userId, itemId, quantity));
   }
 
-  @DeleteMapping("/items/{productId}")
+  @DeleteMapping("/items/{itemId}")
   public ResponseEntity<CartDTO> removeItemFromCart(
       @RequestHeader("X-User-Id") String userId,
-      @PathVariable Long productId,
-      @RequestParam(required = false) String size) {
-    return ResponseEntity.ok(cartService.removeItemFromCart(userId, productId, size));
+      @PathVariable Long itemId) {
+    return ResponseEntity.ok(cartService.removeItemFromCart(userId, itemId));
   }
 
   @DeleteMapping("/items")
