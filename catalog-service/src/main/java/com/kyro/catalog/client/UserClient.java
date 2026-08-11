@@ -1,5 +1,6 @@
 package com.kyro.catalog.client;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,5 +18,6 @@ public interface UserClient {
   @GetMapping("/api/v1/internal/users/{userId}")
   UserResponse getUserById(@PathVariable("userId") Long userId);
 
+  @JsonIgnoreProperties(ignoreUnknown = true)
   record UserResponse(Long id, String email, String firstName, String lastName) {}
 }
