@@ -1,6 +1,5 @@
 package com.kyro.order;
 
-import com.kyro.enums.OrderStatus;
 import com.kyro.order.dto.OrderInternalResponse;
 import com.kyro.order.dto.TopSellingProductResponse;
 import java.util.List;
@@ -23,9 +22,7 @@ public class InternalOrderController {
 
   @GetMapping("/purchases")
   public boolean hasPurchasedAndDelivered(@RequestParam Long userId, @RequestParam Long productId) {
-    return orderService.userOrderHistory(userId, OrderStatus.DELIVERED).stream()
-        .flatMap(order -> order.getOrderItems().stream())
-        .anyMatch(item -> item.getProductId().equals(productId));
+    return orderService.hasPurchasedAndDelivered(userId, productId);
   }
 
   @GetMapping("/top-selling")
@@ -33,5 +30,4 @@ public class InternalOrderController {
       @RequestParam(defaultValue = "10") int limit) {
     return orderService.getTopSellingProducts(limit);
   }
-
 }

@@ -1,6 +1,7 @@
 package com.kyro.auth;
 
 import com.kyro.auth.dto.BasicUserDTO;
+import com.kyro.auth.dto.UpdateUserRequest;
 import com.kyro.enums.UserRole;
 import java.util.Map;
 import org.springframework.data.domain.Page;
@@ -66,6 +67,13 @@ public class AdminUserController {
   public ResponseEntity<BasicUserDTO> getUserDetails(@PathVariable Long userId) {
     User user = userService.getUserById(userId);
     return ResponseEntity.ok(userService.convertToBasicDto(user));
+  }
+
+  @PutMapping("/{userId}")
+  public ResponseEntity<BasicUserDTO> updateUser(
+      @PathVariable Long userId, @RequestBody UpdateUserRequest request) {
+    userService.updateUser(request, userId);
+    return ResponseEntity.ok(userService.convertToBasicDto(userService.getUserById(userId)));
   }
 
   @PutMapping("/{userId}/change-role")

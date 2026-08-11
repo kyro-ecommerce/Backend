@@ -10,6 +10,7 @@ public class BasicUserDTO {
   private String lastName;
   private String mobile;
   private boolean active;
+  private boolean banned;
   private String role;
 
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -64,6 +65,14 @@ public class BasicUserDTO {
 
   public void setActive(boolean active) {
     this.active = active;
+  }
+
+  public boolean isBanned() {
+    return banned;
+  }
+
+  public void setBanned(boolean banned) {
+    this.banned = banned;
   }
 
   public String getRole() {

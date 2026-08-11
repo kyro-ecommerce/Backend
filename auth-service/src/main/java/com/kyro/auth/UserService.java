@@ -297,6 +297,7 @@ public class UserService {
     dto.setLastName(user.getLastName());
     dto.setMobile(user.getPhone());
     dto.setActive(user.isActive());
+    dto.setBanned(user.isBanned());
     dto.setRole(
         user.getRole() != null && user.getRole().getName() != null
             ? user.getRole().getName().name()

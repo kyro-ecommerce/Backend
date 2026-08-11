@@ -77,6 +77,11 @@ public class OrderService {
     }
   }
 
+  public boolean hasPurchasedAndDelivered(Long userId, Long productId) {
+    return orderItemRepository.existsByOrderUserIdAndStatusAndProductId(
+        userId, OrderStatus.DELIVERED, productId);
+  }
+
   @Transactional
   public List<Order> placeOrder(
       Long addressId,
