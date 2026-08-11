@@ -50,48 +50,38 @@ tasks:
       - docker compose logs -f
 
   # =========================================================================
-  # ⚡ 2. HẠ TẦNG & LOCAL FAST DEV MODE (Dành cho Dev từng Service)
+  # ⚡ 2. DOCKER DEV MODE (Chạy từng service kèm dependencies trong Compose)
   # =========================================================================
 
-  infra:
-    desc: "Chỉ bật Hạ tầng (Postgres, Redis, RabbitMQ, Eureka, Config, Gateway) để code service bên ngoài"
-    cmds:
-      - docker compose up -d --wait postgres redis rabbitmq eureka-server config-server api-gateway
-
-  db:up:
-    desc: "Chỉ bật Database & Middleware cốt lõi (Postgres, Redis, RabbitMQ)"
-    cmds:
-      - docker compose up -d --wait postgres redis rabbitmq
-
   dev:auth:
-    desc: "Chạy auth-service ở máy local kèm Hot-Reload (DevTools)"
+    desc: "Build và chạy auth-service trong Docker, chờ healthy"
     cmds:
-      - "{{.MVNW_CMD}} spring-boot:run -pl auth-service"
+      - docker compose up -d --build --wait auth-service
 
   dev:catalog:
-    desc: "Chạy catalog-service ở máy local kèm Hot-Reload (DevTools)"
+    desc: "Build và chạy catalog-service trong Docker, chờ healthy"
     cmds:
-      - "{{.MVNW_CMD}} spring-boot:run -pl catalog-service"
+      - docker compose up -d --build --wait catalog-service
 
   dev:cart:
-    desc: "Chạy cart-service ở máy local kèm Hot-Reload (DevTools)"
+    desc: "Build và chạy cart-service trong Docker, chờ healthy"
     cmds:
-      - "{{.MVNW_CMD}} spring-boot:run -pl cart-service"
+      - docker compose up -d --build --wait cart-service
 
   dev:order:
-    desc: "Chạy order-service ở máy local kèm Hot-Reload (DevTools)"
+    desc: "Build và chạy order-service trong Docker, chờ healthy"
     cmds:
-      - "{{.MVNW_CMD}} spring-boot:run -pl order-service"
+      - docker compose up -d --build --wait order-service
 
   dev:payment:
-    desc: "Chạy payment-service ở máy local kèm Hot-Reload (DevTools)"
+    desc: "Build và chạy payment-service trong Docker, chờ healthy"
     cmds:
-      - "{{.MVNW_CMD}} spring-boot:run -pl payment-service"
+      - docker compose up -d --build --wait payment-service
 
   dev:notification:
-    desc: "Chạy notification-service ở máy local kèm Hot-Reload (DevTools)"
+    desc: "Build và chạy notification-service trong Docker, chờ healthy"
     cmds:
-      - "{{.MVNW_CMD}} spring-boot:run -pl notification-service"
+      - docker compose up -d --build --wait notification-service
 
   # =========================================================================
   # 🛠️ 3. BUILD, FORMAT & TESTING UTILITIES
@@ -164,4 +154,3 @@ tasks:
     desc: "Chạy k6 Master Suite (Toàn bộ scenarios với tỷ lệ lưu lượng thực tế)"
     cmds:
       - k6 run k6/main_suite.js
-
