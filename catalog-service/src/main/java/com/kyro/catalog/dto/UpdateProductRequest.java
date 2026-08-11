@@ -1,6 +1,5 @@
 package com.kyro.catalog.dto;
 
-import com.kyro.catalog.Image;
 import com.kyro.catalog.ProductSize;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +36,6 @@ public class UpdateProductRequest {
   private String secondLevelCategory;
 
   private List<ProductSize> sizes = new ArrayList<>();
-  private List<Image> imageUrls = new ArrayList<>();
 
   public UpdateProductRequest() {}
 
@@ -199,13 +197,5 @@ public class UpdateProductRequest {
 
   public void setSizes(List<ProductSize> sizes) {
     this.sizes = sizes;
-  }
-
-  public List<Image> getImageUrls() {
-    return imageUrls;
-  }
-
-  public void setImageUrls(List<Image> imageUrls) {
-    this.imageUrls = imageUrls;
   }
 }

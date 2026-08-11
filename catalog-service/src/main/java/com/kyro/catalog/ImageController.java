@@ -1,7 +1,8 @@
 package com.kyro.catalog;
 
 import com.kyro.catalog.dto.ImageDTO;
-import java.io.IOException;
+import com.kyro.catalog.dto.ImageUrlRequest;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -24,22 +25,20 @@ public class ImageController {
   }
 
   @PostMapping("/upload/{productId}")
-  public ResponseEntity<Map<String, Object>> uploadImage(
-      @PathVariable Long productId, @RequestParam("image") MultipartFile file) throws IOException {
+  public ResponseEntity<ImageDTO> uploadImage(
+      @PathVariable Long productId, @RequestParam("image") MultipartFile file) {
 
     log.info("Nhận yêu cầu tải lên hình ảnh cho sản phẩm ID: {}", productId);
 
-    Product product = productService.findProductById(productId);
-    Image image = imageService.uploadImageForProduct(file, product);
+    ImageDTO image = imageService.uploadImageForProduct(file, productId);
+    log.info("Tải lên hình ảnh thành công, ID: {}", image.getImageId());
+    return ResponseEntity.ok(image);
+  }
 
-    log.info("Tải lên hình ảnh thành công, ID: {}", image.getId());
-
-    Map<String, Object> data =
-        Map.of(
-            "imageId", image.getId(),
-            "url", image.getDownloadUrl());
-
-    return ResponseEntity.ok(data);
+  @PostMapping("/url/{productId}")
+  public ResponseEntity<ImageDTO> addImageUrl(
+      @PathVariable Long productId, @Valid @RequestBody ImageUrlRequest request) {
+    return ResponseEntity.ok(imageService.addImageUrl(request.url(), productId));
   }
 
   @DeleteMapping("/delete/{imageId}")

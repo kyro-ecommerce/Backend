@@ -16,6 +16,15 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
   boolean existsByName(String name);
 
+  boolean existsByNameIgnoreCase(String name);
+
+  boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
+  Optional<Category> findByNameIgnoreCase(String name);
+
+  @Query("SELECT COUNT(p) FROM Product p WHERE p.category.id = :categoryId")
+  long countProducts(@Param("categoryId") Long categoryId);
+
   @Query("SELECT c FROM Category c WHERE c.parentCategory.id = :parentId")
   List<Category> findByParentCategory(@Param("parentId") Long parentId);
 

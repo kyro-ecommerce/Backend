@@ -1,6 +1,5 @@
 package com.kyro.catalog.dto;
 
-import com.kyro.catalog.Image;
 import com.kyro.catalog.ProductSize;
 import jakarta.validation.constraints.*;
 import java.util.ArrayList;
@@ -57,9 +56,6 @@ public class CreateProductRequest {
   private String connectionPort;
 
   private List<ProductSize> sizes = new ArrayList<>();
-
-  @Size(max = 255, message = "Image URL must be less than 255 characters")
-  private List<Image> imageUrls = new ArrayList<>();
 
   @NotBlank(message = "Top level category is required")
   private String topLevelCategory;
@@ -219,14 +215,6 @@ public class CreateProductRequest {
 
   public void setSizes(List<ProductSize> sizes) {
     this.sizes = sizes;
-  }
-
-  public List<Image> getImageUrls() {
-    return imageUrls;
-  }
-
-  public void setImageUrls(List<Image> imageUrls) {
-    this.imageUrls = imageUrls;
   }
 
   public String getTopLevelCategory() {

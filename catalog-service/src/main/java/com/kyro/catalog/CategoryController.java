@@ -2,7 +2,6 @@ package com.kyro.catalog;
 
 import com.kyro.catalog.dto.CategoryDTO;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,10 +16,7 @@ public class CategoryController {
 
   @GetMapping("/")
   public ResponseEntity<List<CategoryDTO>> getAllByParentAndSub() {
-    List<Category> categories = categoryService.getAllParentCategories();
-    List<CategoryDTO> categoryDTOs =
-        categories.stream().map(this::convertToDTO).collect(Collectors.toList());
-    return ResponseEntity.ok(categoryDTOs);
+    return ResponseEntity.ok(categoryService.getCategoryTree());
   }
 
   @GetMapping("/all")
@@ -44,13 +40,6 @@ public class CategoryController {
 
   @GetMapping("/categories")
   public ResponseEntity<List<CategoryDTO>> getCategories() {
-    List<Category> categories = categoryService.getAllCategories();
-    List<CategoryDTO> categoryDTOs = categories.stream().map(this::convertToDTO).toList();
-
-    return ResponseEntity.ok(categoryDTOs);
-  }
-
-  private CategoryDTO convertToDTO(Category category) {
-    return new CategoryDTO(category);
+    return ResponseEntity.ok(categoryService.getCategoryTree());
   }
 }

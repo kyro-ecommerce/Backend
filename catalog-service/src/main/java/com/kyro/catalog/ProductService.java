@@ -3,6 +3,7 @@ package com.kyro.catalog;
 import com.kyro.catalog.client.OrderClient;
 import com.kyro.catalog.dto.CreateProductRequest;
 import com.kyro.catalog.dto.ProductDTO;
+import com.kyro.catalog.dto.UpdateProductRequest;
 import com.kyro.catalog.messaging.ProductEventPublisher;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Join;
@@ -56,29 +57,25 @@ public class ProductService {
 
     // Handle top level category
     if (req.getTopLevelCategory() != null && !req.getTopLevelCategory().isEmpty()) {
-      parentCategory = categoryRepository.findByName(req.getTopLevelCategory());
-      if (parentCategory == null) {
-        parentCategory = new Category();
-        parentCategory.setName(req.getTopLevelCategory());
-        parentCategory.setLevel(1);
-        parentCategory.setParent(true);
-        parentCategory = categoryRepository.save(parentCategory);
-      } else if (parentCategory.getLevel() != 1) {
+      parentCategory =
+          categoryRepository
+              .findByNameIgnoreCase(req.getTopLevelCategory())
+              .orElseThrow(() -> new EntityNotFoundException("Top level category not found"));
+      if (parentCategory.getLevel() != 1) {
         throw new IllegalArgumentException("Top level category must have level 1");
       }
 
       // Handle second level category if provided
       if (req.getSecondLevelCategory() != null && !req.getSecondLevelCategory().isEmpty()) {
-        category = categoryRepository.findByName(req.getSecondLevelCategory());
-        if (category == null) {
-          category = new Category();
-          category.setName(req.getSecondLevelCategory());
-          category.setLevel(2);
-          category.setParent(false);
-          category.setParentCategory(parentCategory);
-          category = categoryRepository.save(category);
-        } else if (category.getLevel() != 2) {
-          throw new IllegalArgumentException("Second level category must have level 2");
+        category =
+            categoryRepository
+                .findByNameIgnoreCase(req.getSecondLevelCategory())
+                .orElseThrow(() -> new EntityNotFoundException("Second level category not found"));
+        if (category.getLevel() != 2
+            || category.getParentCategory() == null
+            || !category.getParentCategory().getId().equals(parentCategory.getId())) {
+          throw new IllegalArgumentException(
+              "Second level category does not belong to top level category");
         }
       } else {
         // If no second level, use top level
@@ -117,14 +114,6 @@ public class ProductService {
         size.setProduct(product);
       }
       product.setSizes(req.getSizes());
-    }
-
-    // Handle images if provided
-    if (req.getImageUrls() != null && !req.getImageUrls().isEmpty()) {
-      for (Image imageUrl : req.getImageUrls()) {
-        imageUrl.setProduct(product);
-      }
-      product.setImages(req.getImageUrls());
     }
 
     Product savedProduct = productRepository.save(product);
@@ -493,14 +482,6 @@ public class ProductService {
     if (product.getBrand() != null) existingProduct.setBrand(product.getBrand());
     if (product.getColor() != null) existingProduct.setColor(product.getColor());
 
-    if (product.getImages() != null && !product.getImages().isEmpty()) {
-      existingProduct.getImages().clear();
-      for (Image image : product.getImages()) {
-        image.setProduct(existingProduct);
-        existingProduct.getImages().add(image);
-      }
-    }
-
     if (product.getPrice() > 0) existingProduct.setPrice(product.getPrice());
     if (product.getDiscountPersent() >= 0)
       existingProduct.setDiscountPersent(product.getDiscountPersent());
@@ -520,7 +501,7 @@ public class ProductService {
   }
 
   @Transactional
-  public ProductDTO updateProductByID(Long productId, Product product) {
+  public ProductDTO updateProductByID(Long productId, UpdateProductRequest product) {
     Product curProduct = findProductById(productId);
 
     if (product.getTitle() != null) curProduct.setTitle(product.getTitle());
@@ -528,26 +509,31 @@ public class ProductService {
     if (product.getBrand() != null) curProduct.setBrand(product.getBrand());
     if (product.getColor() != null) curProduct.setColor(product.getColor());
 
-    if (product.getImages() != null && !product.getImages().isEmpty()) {
-      curProduct.getImages().clear();
-      for (Image image : product.getImages()) {
-        image.setProduct(curProduct);
-        curProduct.getImages().add(image);
-      }
-    }
-
-    if (product.getPrice() > 0) curProduct.setPrice(product.getPrice());
-    if (product.getDiscountPersent() >= 0)
+    if (product.getPrice() != null && product.getPrice() > 0)
+      curProduct.setPrice(product.getPrice());
+    if (product.getDiscountPersent() != null && product.getDiscountPersent() >= 0)
       curProduct.setDiscountPersent(product.getDiscountPersent());
     curProduct.updateDiscountedPrice();
 
-    if (product.getQuantity() >= 0) curProduct.setQuantity(product.getQuantity());
+    if (product.getQuantity() != null && product.getQuantity() >= 0)
+      curProduct.setQuantity(product.getQuantity());
 
-    if (product.getCategory() != null && product.getCategory().getId() != null) {
+    if (product.getTopLevelCategory() != null && product.getSecondLevelCategory() != null) {
+      Category parent =
+          categoryRepository
+              .findByNameIgnoreCase(product.getTopLevelCategory())
+              .orElseThrow(() -> new EntityNotFoundException("Top level category not found"));
       Category category =
           categoryRepository
-              .findById(product.getCategory().getId())
-              .orElseThrow(() -> new EntityNotFoundException("Category not found"));
+              .findByNameIgnoreCase(product.getSecondLevelCategory())
+              .orElseThrow(() -> new EntityNotFoundException("Second level category not found"));
+      if (parent.getLevel() != 1
+          || category.getLevel() != 2
+          || category.getParentCategory() == null
+          || !category.getParentCategory().getId().equals(parent.getId())) {
+        throw new IllegalArgumentException(
+            "Second level category does not belong to top level category");
+      }
       curProduct.setCategory(category);
     }
     Product updatedProduct = productRepository.save(curProduct);

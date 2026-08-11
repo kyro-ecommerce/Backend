@@ -2,6 +2,8 @@ package com.kyro.catalog;
 
 import com.kyro.catalog.dto.CreateProductRequest;
 import com.kyro.catalog.dto.ProductDTO;
+import com.kyro.catalog.dto.UpdateProductRequest;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import org.springframework.data.domain.Page;
@@ -10,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,12 +26,13 @@ public class AdminProductController {
   }
 
   @PostMapping
-  public ResponseEntity<Product> createProduct(@RequestBody CreateProductRequest request) {
+  public ResponseEntity<Product> createProduct(@Valid @RequestBody CreateProductRequest request) {
     Product product = productService.createProduct(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(product);
   }
 
   @GetMapping("/{productId}")
+  @Transactional(readOnly = true)
   public ResponseEntity<ProductDTO> getProductById(@PathVariable Long productId) {
     return ResponseEntity.ok(new ProductDTO(productService.findProductById(productId)));
   }
@@ -72,14 +76,14 @@ public class AdminProductController {
 
   @PutMapping("/{productId}")
   public ResponseEntity<ProductDTO> updateProduct(
-      @PathVariable Long productId, @RequestBody Product product) {
+      @PathVariable Long productId, @RequestBody UpdateProductRequest product) {
     ProductDTO updatedProduct = productService.updateProductByID(productId, product);
     return ResponseEntity.ok(updatedProduct);
   }
 
   @PostMapping("/bulk")
   public ResponseEntity<Map<String, String>> createMultipleProducts(
-      @RequestBody CreateProductRequest[] requests) {
+      @Valid @RequestBody CreateProductRequest[] requests) {
     for (CreateProductRequest request : requests) {
       productService.createProduct(request);
     }

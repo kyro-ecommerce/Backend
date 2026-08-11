@@ -1,5 +1,6 @@
 package com.kyro.exceptions;
 
+import com.kyro.catalog.CategoryInUseException;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -44,7 +45,11 @@ public class GlobalExceptionHandler {
   // 2. Handles custom AppException hierarchy
   @ExceptionHandler(AppException.class)
   public ProblemDetail handleAppException(AppException ex) {
-    return buildResponse(ex);
+    ProblemDetail problem = buildResponse(ex);
+    if (ex instanceof CategoryInUseException categoryInUse) {
+      problem.setProperty("blockedCategories", categoryInUse.getBlockedCategories());
+    }
+    return problem;
   }
 
   // 3. Handles Spring Validation annotations errors

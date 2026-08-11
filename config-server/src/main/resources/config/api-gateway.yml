@@ -73,6 +73,14 @@ spring:
             - StripPrefix=0
             - AuthenticationFilter=ADMIN
 
+        - id: catalog-service-admin-categories
+          uri: lb://catalog-service
+          predicates:
+            - Path=/api/v1/admin/categories/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter=ADMIN
+
         # Route to Catalog Service Product Images (Admin only)
         - id: catalog-service-images
           uri: lb://catalog-service
