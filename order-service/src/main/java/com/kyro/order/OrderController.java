@@ -4,6 +4,7 @@ import com.kyro.exceptions.DomainException;
 import com.kyro.order.dto.CreateOrderRequest;
 import com.kyro.order.dto.OrderDTO;
 import com.kyro.order.dto.PageResponse;
+import com.kyro.order.dto.UpdateOrderStatusRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -104,7 +105,7 @@ public class OrderController {
   }
 
   /** Finds an order by its ID. */
-  @GetMapping("/{id:\\d+}")
+  @GetMapping("/{id}")
   public ResponseEntity<OrderDTO> findOrderById(@PathVariable("id") Long orderId) {
     Order order = orderService.findOrderById(orderId);
     OrderDTO orderDTO = new OrderDTO(order);
@@ -112,16 +113,21 @@ public class OrderController {
   }
 
   /** Cancels an order. */
-  @PutMapping("/{id}/cancel")
+  @PatchMapping("/{id}/status")
   public ResponseEntity<OrderDTO> cancelOrder(
-      @PathVariable("id") Long orderId, @RequestHeader("X-User-Id") Long userId) {
+      @PathVariable("id") Long orderId,
+      @RequestHeader("X-User-Id") Long userId,
+      @Valid @RequestBody UpdateOrderStatusRequest request) {
 
     Order order = orderService.findOrderById(orderId);
     if (!order.getUserId().equals(userId)) {
       throw new DomainException(HttpStatus.FORBIDDEN, "Bạn không có quyền hủy đơn hàng này.");
     }
 
-    Order cancelledOrder = orderService.cancelOrder(orderId);
+    if (request.status() != com.kyro.enums.OrderStatus.CANCELLED) {
+      throw new DomainException(HttpStatus.BAD_REQUEST, "Khách hàng chỉ có thể hủy đơn hàng.");
+    }
+    Order cancelledOrder = orderService.updateOrderStatus(orderId, request.status());
     OrderDTO orderDTO = new OrderDTO(cancelledOrder);
     return ResponseEntity.ok(orderDTO);
   }

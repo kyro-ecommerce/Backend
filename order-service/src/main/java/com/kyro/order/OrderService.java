@@ -434,19 +434,13 @@ public class OrderService {
     if (order.getOrderStatus() == newStatus) {
       return order;
     }
-    if (newStatus == OrderStatus.CANCELLED) {
-      return cancelOrder(orderId);
-    } else if (newStatus == OrderStatus.DELIVERED) {
-      order.setOrderStatus(OrderStatus.DELIVERED);
-      order.setPaymentStatus(PaymentStatus.COMPLETED);
-      order.setDeliveryDate(LocalDateTime.now());
-      log.info("Order ID {} marked as DELIVERED by admin.", orderId);
-      return orderRepository.save(order);
-    } else {
-      order.setOrderStatus(newStatus);
-      log.info("Order ID {} status changed to {} by admin.", orderId, newStatus);
-      return orderRepository.save(order);
-    }
+    return switch (newStatus) {
+      case CONFIRMED -> confirmedOrder(orderId);
+      case SHIPPED -> shippedOrder(orderId);
+      case DELIVERED -> deliveredOrder(orderId);
+      case CANCELLED -> cancelOrder(orderId);
+      case PENDING -> throw new IllegalArgumentException("Không thể chuyển đơn hàng về PENDING.");
+    };
   }
 
   @Transactional(readOnly = true)

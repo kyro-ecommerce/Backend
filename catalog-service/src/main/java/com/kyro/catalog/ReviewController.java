@@ -4,6 +4,7 @@ import com.kyro.catalog.client.UserClient;
 import com.kyro.catalog.dto.ReviewDTO;
 import com.kyro.catalog.dto.ReviewRequest;
 import com.kyro.exceptions.DomainException;
+import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Controller for product review operations. */
 @RestController
-@RequestMapping("${api.prefix}/reviews")
+@RequestMapping("${api.prefix}")
 public class ReviewController {
 
   private final ReviewService reviewService;
@@ -32,9 +33,11 @@ public class ReviewController {
    * Creates a new review for a product. Reads userId from request headers injected by gateway, and
    * fetches user name via UserClient.
    */
-  @PostMapping
+  @PostMapping("/products/{productId}/reviews")
   public ResponseEntity<ReviewDTO> createReview(
-      @RequestHeader("X-User-Id") Long userId, @RequestBody ReviewRequest reviewRequest) {
+      @RequestHeader("X-User-Id") Long userId,
+      @PathVariable Long productId,
+      @Valid @RequestBody ReviewRequest reviewRequest) {
 
     UserClient.UserResponse user = userClient.getUserById(userId);
     if (user == null) {
@@ -42,7 +45,8 @@ public class ReviewController {
     }
 
     Review res =
-        reviewService.createReview(userId, user.firstName(), user.lastName(), reviewRequest);
+        reviewService.createReview(
+            userId, user.firstName(), user.lastName(), productId, reviewRequest);
     if (res == null) {
       throw new DomainException(HttpStatus.BAD_REQUEST, "Failed to create review");
     }
@@ -52,7 +56,7 @@ public class ReviewController {
   }
 
   /** Retrieves all reviews for a product. */
-  @GetMapping("/product/{productId}")
+  @GetMapping("/products/{productId}/reviews")
   public ResponseEntity<Map<String, Object>> getProductReview(@PathVariable Long productId) {
     List<Review> reviews = reviewService.getReviewsByProductId(productId);
     Product product = productService.findProductById(productId);
@@ -79,11 +83,11 @@ public class ReviewController {
   }
 
   /** Updates an existing review. */
-  @PutMapping("/{reviewId}")
+  @PutMapping("/reviews/{reviewId}")
   public ResponseEntity<ReviewDTO> updateReview(
       @RequestHeader("X-User-Id") Long userId,
       @PathVariable Long reviewId,
-      @RequestBody ReviewRequest reviewRequest) {
+      @Valid @RequestBody ReviewRequest reviewRequest) {
 
     Review res = reviewService.updateReview(reviewId, reviewRequest, userId);
 
@@ -96,7 +100,7 @@ public class ReviewController {
   }
 
   /** Deletes a review. */
-  @DeleteMapping("/{reviewId}")
+  @DeleteMapping("/reviews/{reviewId}")
   public ResponseEntity<Map<String, String>> deleteReview(
       @RequestHeader("X-User-Id") Long userId, @PathVariable Long reviewId) {
 
@@ -105,7 +109,7 @@ public class ReviewController {
   }
 
   /** Gets a review by its ID. */
-  @GetMapping("/{reviewId}")
+  @GetMapping("/reviews/{reviewId}")
   public ResponseEntity<ReviewDTO> getReviewById(@PathVariable Long reviewId) {
     Review res = reviewService.getReviewById(reviewId);
     if (res == null) {
@@ -117,11 +121,11 @@ public class ReviewController {
   }
 
   /** Checks if a user is eligible to review the product. */
-  @GetMapping("/can-review/{productId}")
-  public ResponseEntity<Boolean> canUserReviewProduct(
+  @GetMapping("/products/{productId}/review-eligibility")
+  public ResponseEntity<Map<String, Boolean>> canUserReviewProduct(
       @RequestHeader("X-User-Id") Long userId, @PathVariable Long productId) {
 
     boolean canReview = reviewService.canUserReviewProduct(userId, productId);
-    return ResponseEntity.ok(canReview);
+    return ResponseEntity.ok(Map.of("eligible", canReview));
   }
 }

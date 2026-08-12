@@ -63,14 +63,14 @@ public class AdminProductController {
                 ProductService.productPageable(page, size, sort, true), filter)));
   }
 
-  @PutMapping("/{productId}")
+  @PatchMapping("/{productId}")
   public ResponseEntity<ProductDTO> updateProduct(
       @PathVariable Long productId, @RequestBody UpdateProductRequest product) {
     ProductDTO updatedProduct = productService.updateProductByID(productId, product);
     return ResponseEntity.ok(updatedProduct);
   }
 
-  @PostMapping("/bulk")
+  @PostMapping("/product-imports")
   public ResponseEntity<Map<String, String>> createMultipleProducts(
       @Valid @RequestBody CreateProductRequest[] requests) {
     for (CreateProductRequest request : requests) {
@@ -78,30 +78,5 @@ public class AdminProductController {
     }
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(Map.of("message", "Tạo nhiều sản phẩm thành công"));
-  }
-
-  @GetMapping("/top-selling")
-  public ResponseEntity<List<Map<String, Object>>> getTopSellingProducts(
-      @RequestParam(defaultValue = "10") int limit) {
-    List<Map<String, Object>> topProducts = productService.getTopSellingProducts(limit);
-    return ResponseEntity.ok(topProducts);
-  }
-
-  @GetMapping("/revenue-by-category")
-  public ResponseEntity<Map<String, Object>> getRevenueByCateogry() {
-    Map<String, Object> categoryRevenue = productService.getRevenueByCateogry();
-    return ResponseEntity.ok(categoryRevenue);
-  }
-
-  @GetMapping("/filter-stats")
-  public ResponseEntity<Map<String, Object>> getFilterStatistics() {
-    Map<String, Object> stats = productService.getAdminFilterStatistics();
-    return ResponseEntity.ok(stats);
-  }
-
-  @GetMapping("/categories")
-  public ResponseEntity<Map<String, Object>> getAllCategories() {
-    Map<String, Object> categories = productService.getAllCategories();
-    return ResponseEntity.ok(categories);
   }
 }

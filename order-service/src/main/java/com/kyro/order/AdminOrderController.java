@@ -1,8 +1,8 @@
 package com.kyro.order;
 
-import com.kyro.enums.OrderStatus;
 import com.kyro.order.dto.OrderDetailDTO;
 import com.kyro.order.dto.PageResponse;
+import com.kyro.order.dto.UpdateOrderStatusRequest;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -56,39 +56,11 @@ public class AdminOrderController {
                 .map(OrderDetailDTO::new)));
   }
 
-  @PutMapping("/{orderId}/confirm")
-  public ResponseEntity<Map<String, String>> confirmOrder(@PathVariable Long orderId) {
-    orderService.confirmedOrder(orderId);
-    return ResponseEntity.ok(Map.of("message", "Xác nhận đơn hàng thành công"));
-  }
-
-  @PutMapping("/{orderId}/ship")
-  public ResponseEntity<Map<String, String>> shipOrder(@PathVariable Long orderId) {
-    orderService.shippedOrder(orderId);
-    return ResponseEntity.ok(Map.of("message", "Chuyển trạng thái vận chuyển thành công"));
-  }
-
-  @PutMapping("/{orderId}/deliver")
-  public ResponseEntity<Map<String, String>> deliverOrder(@PathVariable Long orderId) {
-    orderService.deliveredOrder(orderId);
-    return ResponseEntity.ok(Map.of("message", "Đánh dấu đã giao hàng thành công"));
-  }
-
-  @PutMapping("/{orderId}/cancel")
-  public ResponseEntity<Map<String, String>> cancelOrder(@PathVariable Long orderId) {
-    orderService.cancelOrder(orderId);
-    return ResponseEntity.ok(Map.of("message", "Hủy đơn hàng thành công"));
-  }
-
-  @PutMapping("/{orderId}/status")
+  @PatchMapping("/{orderId}/status")
   public ResponseEntity<Map<String, String>> updateOrderStatus(
-      @PathVariable Long orderId, @RequestBody Map<String, String> body) {
-    String statusStr = body.get("status");
-    if (statusStr == null || statusStr.trim().isEmpty()) {
-      return ResponseEntity.badRequest().body(Map.of("message", "Trạng thái không hợp lệ"));
-    }
-    OrderStatus status = OrderStatus.valueOf(statusStr.trim().toUpperCase());
-    orderService.updateOrderStatus(orderId, status);
+      @PathVariable Long orderId,
+      @jakarta.validation.Valid @RequestBody UpdateOrderStatusRequest request) {
+    orderService.updateOrderStatus(orderId, request.status());
     return ResponseEntity.ok(Map.of("message", "Cập nhật trạng thái đơn hàng thành công"));
   }
 
@@ -96,31 +68,5 @@ public class AdminOrderController {
   public ResponseEntity<Map<String, String>> deleteOrder(@PathVariable Long orderId) {
     orderService.deleteOrder(orderId);
     return ResponseEntity.ok(Map.of("message", "Xóa đơn hàng thành công"));
-  }
-
-  @GetMapping("/stats")
-  public ResponseEntity<Map<String, Object>> getOrderStats(
-      @RequestParam(required = false) String startDate,
-      @RequestParam(required = false) String endDate) {
-
-    LocalDate start =
-        (startDate != null && !startDate.isBlank()) ? LocalDate.parse(startDate) : null;
-    LocalDate end = (endDate != null && !endDate.isBlank()) ? LocalDate.parse(endDate) : null;
-
-    Map<String, Object> stats = orderService.getOrderStatistics(start, end);
-    return ResponseEntity.ok(stats);
-  }
-
-  @GetMapping("/daily-revenue")
-  public ResponseEntity<List<Map<String, Object>>> getDailyRevenue(
-      @RequestParam(required = false) String startDate,
-      @RequestParam(required = false) String endDate) {
-
-    LocalDate start =
-        (startDate != null && !startDate.isBlank()) ? LocalDate.parse(startDate) : null;
-    LocalDate end = (endDate != null && !endDate.isBlank()) ? LocalDate.parse(endDate) : null;
-
-    List<Map<String, Object>> dailyRevenue = orderService.getDailyRevenue(start, end);
-    return ResponseEntity.ok(dailyRevenue);
   }
 }

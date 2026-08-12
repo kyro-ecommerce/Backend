@@ -71,7 +71,7 @@ export default function () {
 
   group('Catalog - Product Reviews', function () {
     const productId = Math.floor(Math.random() * 5) + 1;
-    const reviewUrl = `${CONFIG.BASE_URL}/api/v1/reviews/product/${productId}`;
+    const reviewUrl = `${CONFIG.BASE_URL}/api/v1/products/${productId}/reviews`;
 
     const start = Date.now();
     const res = http.get(reviewUrl, { headers: CONFIG.HEADERS.JSON });

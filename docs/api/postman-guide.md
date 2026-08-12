@@ -40,4 +40,4 @@ Khuyên dùng cấu hình một Environment trong Postman với các giá trị:
    - Request: `POST {{baseUrl}}/api/v1/orders`
    - Body: `{ "addressId": 1, "paymentMethod": "VNPAY", "cartItemIds": [11], "cartVersion": 0, "expectedTotalDiscountedPrice": 100000 }`
 6. **Bước 6: Tạo URL Thanh Toán VNPay**:
-   - Request: `POST {{baseUrl}}/api/v1/payments/1`
+   - Request: `POST {{baseUrl}}/api/v1/orders/1/payments`

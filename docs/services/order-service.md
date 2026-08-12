@@ -44,9 +44,9 @@
 | `POST` | `/api/v1/orders` | Đặt hàng từ giỏ hàng hiện tại (Checkout) | User / Admin |
 | `GET` | `/api/v1/orders` | Lấy danh sách đơn hàng của người dùng đang đăng nhập | User / Admin |
 | `GET` | `/api/v1/orders/{id}` | Lấy chi tiết đơn hàng theo ID | User / Admin |
-| `PUT` | `/api/v1/orders/{id}/cancel` | Hủy đơn hàng (nếu đang ở trạng thái PENDING) | User / Admin |
+| `PATCH` | `/api/v1/orders/{id}/status` | Khách hủy đơn với `{ "status": "CANCELLED" }` | User / Admin |
 | `GET` | `/api/v1/admin/orders` | Quản lý lấy tất cả đơn hàng toàn hệ thống | Admin |
-| `PUT` | `/api/v1/admin/orders/{id}/status` | Cập nhật trạng thái đơn hàng (CONFIRMED, SHIPPING, DELIVERED) | Admin |
+| `PATCH` | `/api/v1/admin/orders/{id}/status` | Cập nhật trạng thái đơn hàng theo lifecycle | Admin |
 
 `POST /api/v1/orders` chỉ nhận JSON; `paymentMethod` có thể bỏ qua và mặc định là `COD`:
 

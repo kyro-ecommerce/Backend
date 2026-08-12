@@ -2,7 +2,9 @@ package com.kyro.cart.controller;
 
 import com.kyro.cart.dto.CartDTO;
 import com.kyro.cart.dto.CartItemDTO;
+import com.kyro.cart.dto.UpdateCartItemRequest;
 import com.kyro.cart.service.CartService;
+import jakarta.validation.Valid;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,18 +30,17 @@ public class CartController {
     return ResponseEntity.ok(cartService.addItemToCart(userId, item));
   }
 
-  @PutMapping("/items/{itemId}")
+  @PatchMapping("/items/{itemId}")
   public ResponseEntity<CartDTO> updateCartItem(
       @RequestHeader("X-User-Id") String userId,
       @PathVariable Long itemId,
-      @RequestParam int quantity) {
-    return ResponseEntity.ok(cartService.updateCartItem(userId, itemId, quantity));
+      @Valid @RequestBody UpdateCartItemRequest request) {
+    return ResponseEntity.ok(cartService.updateCartItem(userId, itemId, request.quantity()));
   }
 
   @DeleteMapping("/items/{itemId}")
   public ResponseEntity<CartDTO> removeItemFromCart(
-      @RequestHeader("X-User-Id") String userId,
-      @PathVariable Long itemId) {
+      @RequestHeader("X-User-Id") String userId, @PathVariable Long itemId) {
     return ResponseEntity.ok(cartService.removeItemFromCart(userId, itemId));
   }
 

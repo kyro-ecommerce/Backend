@@ -112,7 +112,7 @@ export default function () {
   sleep(0.5);
 
   group('05. Create VNPay Payment URL', function () {
-    const payUrl = `${CONFIG.BASE_URL}/api/v1/payments/${createdOrderId}`;
+    const payUrl = `${CONFIG.BASE_URL}/api/v1/orders/${createdOrderId}/payments`;
     
     const start = Date.now();
     const res = http.post(payUrl, null, { headers });
@@ -142,7 +142,7 @@ export default function () {
   sleep(0.5);
 
   group('06. Simulate VNPay Callback Webhook (IPN)', function () {
-    const callbackUrl = `${CONFIG.BASE_URL}/api/v1/payments/vnpay-callback?vnp_TxnRef=${encodeURIComponent(paymentTxnRef)}&vnp_ResponseCode=00&vnp_Amount=50000000&vnp_TransactionNo=14000000`;
+    const callbackUrl = `${CONFIG.BASE_URL}/api/v1/payment-providers/vnpay/callback?vnp_TxnRef=${encodeURIComponent(paymentTxnRef)}&vnp_ResponseCode=00&vnp_Amount=50000000&vnp_TransactionNo=14000000`;
 
     const start = Date.now();
     const res = http.get(callbackUrl, { headers: CONFIG.HEADERS.JSON });

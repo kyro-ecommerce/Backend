@@ -37,7 +37,7 @@ sequenceDiagram
     participant RabbitMQ
     participant VNPay as VNPay Payment Gateway
 
-    User->>Gateway: POST /api/v1/payments/{orderId}
+    User->>Gateway: POST /api/v1/orders/{orderId}/payments
     Gateway->>Payment: Forward Request
     Payment->>Order: Get Order Info (Total Amount)
     Order-->>Payment: Order Details
@@ -47,7 +47,7 @@ sequenceDiagram
     User->>VNPay: User Enters Bank Card & Completes Payment
     VNPay-->>User: Redirect Back to Return URL
 
-    VNPay->>Gateway: GET /api/v1/payments/vnpay-callback
+    VNPay->>Gateway: GET /api/v1/payment-providers/vnpay/callback
     Gateway->>Payment: Forward Callback
     alt Success Code (00)
         Payment->>Payment: Save Transaction (Status: SUCCESS)
@@ -68,6 +68,6 @@ sequenceDiagram
 
 | Method | Endpoint | Description | Permitted Roles |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/payments/{orderId}` | Tạo URL thanh toán VNPay cho đơn hàng | User / Admin |
-| `GET` | `/api/v1/payments/vnpay-callback` | Callback nhận kết quả từ VNPay | Public |
-| `GET` | `/api/v1/payments/orders/{orderId}` | Tra cứu thanh toán của đơn hàng | User / Admin |
+| `POST` | `/api/v1/orders/{orderId}/payments` | Tạo URL thanh toán VNPay cho đơn hàng | User / Admin |
+| `GET` | `/api/v1/payment-providers/vnpay/callback` | Callback nhận kết quả từ VNPay | Public |
+| `GET` | `/api/v1/orders/{orderId}/payment` | Tra cứu thanh toán của đơn hàng | User / Admin |

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("${api.prefix}/images")
+@RequestMapping("${api.prefix}/admin")
 public class ImageController {
   private static final Logger log = LoggerFactory.getLogger(ImageController.class);
 
@@ -24,7 +24,7 @@ public class ImageController {
     this.productService = productService;
   }
 
-  @PostMapping("/upload/{productId}")
+  @PostMapping(value = "/products/{productId}/images", consumes = "multipart/form-data")
   public ResponseEntity<ImageDTO> uploadImage(
       @PathVariable Long productId, @RequestParam("image") MultipartFile file) {
 
@@ -35,13 +35,13 @@ public class ImageController {
     return ResponseEntity.ok(image);
   }
 
-  @PostMapping("/url/{productId}")
+  @PostMapping(value = "/products/{productId}/images", consumes = "application/json")
   public ResponseEntity<ImageDTO> addImageUrl(
       @PathVariable Long productId, @Valid @RequestBody ImageUrlRequest request) {
     return ResponseEntity.ok(imageService.addImageUrl(request.url(), productId));
   }
 
-  @DeleteMapping("/delete/{imageId}")
+  @DeleteMapping("/images/{imageId}")
   public ResponseEntity<Map<String, String>> deleteImage(@PathVariable Long imageId) {
     log.info("Nhận yêu cầu xóa hình ảnh ID: {}", imageId);
     imageService.deleteImage(imageId);
@@ -50,7 +50,7 @@ public class ImageController {
     return ResponseEntity.ok(Map.of("message", "Xóa hình ảnh thành công"));
   }
 
-  @GetMapping("/product/{productId}")
+  @GetMapping("/products/{productId}/images")
   public ResponseEntity<List<ImageDTO>> getProductImages(@PathVariable Long productId) {
     productService.findProductById(productId);
     List<ImageDTO> imagesDTO = imageService.getProductImages(productId);

@@ -1,7 +1,9 @@
 package com.kyro.auth;
 
 import com.kyro.auth.dto.BasicUserDTO;
+import com.kyro.auth.dto.ChangeRoleRequest;
 import com.kyro.auth.dto.UpdateUserRequest;
+import com.kyro.auth.dto.UpdateUserStatusRequest;
 import com.kyro.enums.UserRole;
 import java.util.Map;
 import org.springframework.data.domain.Page;
@@ -49,61 +51,37 @@ public class AdminUserController {
     return ResponseEntity.ok(dtoList);
   }
 
-  @GetMapping("/customers/stats")
-  public ResponseEntity<Map<String, Object>> getCustomerStats() {
-    long totalCustomers = userRepository.countByRoleName(UserRole.CUSTOMER);
-    long totalAdmins = userRepository.countByRoleName(UserRole.ADMIN);
-    long totalUsers = userRepository.count();
-
-    return ResponseEntity.ok(
-        Map.of(
-            "totalCustomers", totalCustomers,
-            "totalAdmins", totalAdmins,
-            "totalUsers", totalUsers,
-            "activeCustomers", totalCustomers));
-  }
-
   @GetMapping("/{userId}")
   public ResponseEntity<BasicUserDTO> getUserDetails(@PathVariable Long userId) {
     User user = userService.getUserById(userId);
     return ResponseEntity.ok(userService.convertToBasicDto(user));
   }
 
-  @PutMapping("/{userId}")
+  @PatchMapping("/{userId}")
   public ResponseEntity<BasicUserDTO> updateUser(
       @PathVariable Long userId, @RequestBody UpdateUserRequest request) {
     userService.updateUser(request, userId);
     return ResponseEntity.ok(userService.convertToBasicDto(userService.getUserById(userId)));
   }
 
-  @PutMapping("/{userId}/change-role")
+  @PatchMapping("/{userId}/role")
   public ResponseEntity<BasicUserDTO> changeRole(
-      @PathVariable Long userId, @RequestBody Map<String, String> body) {
-    String role = body.get("role");
-    BasicUserDTO updated = userService.changeUserRole(userId, role);
+      @PathVariable Long userId, @RequestBody ChangeRoleRequest request) {
+    BasicUserDTO updated = userService.changeUserRole(userId, request.getRole());
     return ResponseEntity.ok(updated);
   }
 
-  @PutMapping("/{userId}/status")
+  @PatchMapping("/{userId}/status")
   public ResponseEntity<Map<String, String>> changeStatus(
-      @PathVariable Long userId, @RequestBody Map<String, Boolean> body) {
+      @PathVariable Long userId, @RequestBody UpdateUserStatusRequest request) {
     User user = userService.getUserById(userId);
-    Boolean active = body.get("active");
-    if (active != null) {
-      user.setActive(active);
-      userRepository.save(user);
+    if (request.getActive() == null && request.getBanned() == null) {
+      return ResponseEntity.badRequest().body(Map.of("message", "Trạng thái không hợp lệ"));
     }
-    return ResponseEntity.ok(Map.of("message", "Cập nhật trạng thái người dùng thành công"));
-  }
-
-  @PutMapping("/{userId}/ban")
-  public ResponseEntity<Map<String, String>> banUser(
-      @PathVariable Long userId, @RequestParam boolean banned) {
-    User user = userService.getUserById(userId);
-    user.setBanned(banned);
+    if (request.getActive() != null) user.setActive(request.getActive());
+    if (request.getBanned() != null) user.setBanned(request.getBanned());
     userRepository.save(user);
-    return ResponseEntity.ok(
-        Map.of("message", banned ? "Khóa tài khoản thành công" : "Mở khóa tài khoản thành công"));
+    return ResponseEntity.ok(Map.of("message", "Cập nhật trạng thái người dùng thành công"));
   }
 
   @DeleteMapping("/{userId}")

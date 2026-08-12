@@ -93,7 +93,7 @@ public class AuthController {
         Map.of("message", "Mã xác thực đã được gửi tới email. Vui lòng kiểm tra và xác thực."));
   }
 
-  @PostMapping("/register/verify")
+  @PostMapping("/verification")
   public ResponseEntity<Map<String, String>> verifyOtp(
       @RequestBody OtpVerificationRequest request) {
     boolean isVerified = userService.verifyOtp(request);
@@ -104,7 +104,7 @@ public class AuthController {
     throw new AppException("Mã OTP không hợp lệ hoặc đã hết hạn.");
   }
 
-  @PostMapping("/refresh-token")
+  @PostMapping("/refresh")
   public ResponseEntity<Map<String, String>> refreshAccessToken(HttpServletRequest request) {
     String refreshToken = cookieUtils.getRefreshTokenFromCookies(request);
     if (refreshToken != null && jwtUtils.validateToken(refreshToken)) {
@@ -128,7 +128,7 @@ public class AuthController {
     return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công!"));
   }
 
-  @PostMapping("/register/resend-otp")
+  @PostMapping("/verification/resend")
   public ResponseEntity<Map<String, String>> resendOtp(@RequestBody Map<String, String> request) {
     String email = request.get("email");
     if (email == null || email.isEmpty()) {
@@ -153,7 +153,7 @@ public class AuthController {
         Map.of("message", "Mã OTP mới đã được gửi tới email. Vui lòng kiểm tra hộp thư của bạn."));
   }
 
-  @PostMapping("/register/forgot-password")
+  @PostMapping("/password-reset")
   public ResponseEntity<Map<String, String>> forgotPass(
       @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
     OtpVerificationRequest tmp = new OtpVerificationRequest();

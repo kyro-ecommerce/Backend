@@ -28,7 +28,7 @@ public class UserController {
     this.userRepository = userRepository;
   }
 
-  @PutMapping("/profile")
+  @PatchMapping("/me")
   public ResponseEntity<Map<String, String>> updateUser(
       @RequestBody UpdateUserRequest request, @RequestHeader("Authorization") String jwt) {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -41,14 +41,8 @@ public class UserController {
     return ResponseEntity.ok(Map.of("message", "Update User Success!"));
   }
 
-  @DeleteMapping("/{userId}")
-  public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long userId) {
-    userService.deleteUser(userId);
-    return ResponseEntity.ok(Map.of("message", "Delete User Success!"));
-  }
-
   @Transactional
-  @GetMapping("/profile")
+  @GetMapping("/me")
   public ResponseEntity<UserProfileResponse> getUserProfile() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || authentication.getName() == null) {
@@ -105,7 +99,7 @@ public class UserController {
   }
 
   @Transactional
-  @GetMapping("/addresses")
+  @GetMapping("/me/addresses")
   public ResponseEntity<List<AddressDTO>> getUserAddress() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || authentication.getName() == null) {
@@ -130,7 +124,7 @@ public class UserController {
     return ResponseEntity.ok(addressDTOS);
   }
 
-  @PostMapping("/addresses")
+  @PostMapping("/me/addresses")
   @Transactional
   public ResponseEntity<AddressDTO> addUserAddress(
       @RequestHeader("Authorization") String jwt, @RequestBody AddAddressRequest req) {
@@ -148,7 +142,7 @@ public class UserController {
     return ResponseEntity.ok(createdAddress);
   }
 
-  @PutMapping("/addresses/{addressId}")
+  @PutMapping("/me/addresses/{addressId}")
   @Transactional
   public ResponseEntity<AddressDTO> updateAddress(
       @PathVariable("addressId") Long addressId,
@@ -163,7 +157,7 @@ public class UserController {
     return ResponseEntity.ok(updatedAddress);
   }
 
-  @DeleteMapping("/addresses/{addressId}")
+  @DeleteMapping("/me/addresses/{addressId}")
   @Transactional
   public ResponseEntity<Map<String, String>> deleteAddress(
       @PathVariable("addressId") Long addressId, @RequestHeader("Authorization") String jwt) {
