@@ -1,19 +1,17 @@
 package com.kyro.order;
 
 import com.kyro.enums.OrderStatus;
-import com.kyro.enums.PaymentMethod;
-import com.kyro.enums.PaymentStatus;
 import java.time.LocalDateTime;
 import java.util.List;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 /** Repository interface for managing Order database operations in order-service. */
-public interface OrderRepository extends JpaRepository<Order, Long> {
+public interface OrderRepository
+    extends JpaRepository<Order, Long>, JpaSpecificationExecutor<Order> {
 
   List<Order> findByUserId(Long userId);
 
@@ -42,27 +40,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
   List<Order> findAllWithUserOrderByOrderDateDesc();
 
   List<Order> findAllByOrderByOrderDateDesc();
-
-  @Query(
-      "SELECT o FROM Order o LEFT JOIN o.shippingAddress a WHERE "
-          + "(:search IS NULL OR :search = '' OR "
-          + "LOWER(o.userEmail) LIKE LOWER(CONCAT('%', :search, '%')) OR "
-          + "LOWER(a.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR "
-          + "a.phoneNumber LIKE CONCAT('%', :search, '%') OR "
-          + "CAST(o.id AS string) LIKE CONCAT('%', :search, '%')) "
-          + "AND (:status IS NULL OR o.orderStatus = :status) "
-          + "AND (:paymentMethod IS NULL OR o.paymentMethod = :paymentMethod) "
-          + "AND (:paymentStatus IS NULL OR o.paymentStatus = :paymentStatus) "
-          + "AND (CAST(:startDate AS timestamp) IS NULL OR o.orderDate >= :startDate) "
-          + "AND (CAST(:endDate AS timestamp) IS NULL OR o.orderDate <= :endDate)")
-  Page<Order> findAdminOrdersWithFilters(
-      @Param("search") String search,
-      @Param("status") OrderStatus status,
-      @Param("paymentMethod") PaymentMethod paymentMethod,
-      @Param("paymentStatus") PaymentStatus paymentStatus,
-      @Param("startDate") LocalDateTime startDate,
-      @Param("endDate") LocalDateTime endDate,
-      Pageable pageable);
 
   @Query(
       "SELECT COUNT(o) FROM Order o WHERE "

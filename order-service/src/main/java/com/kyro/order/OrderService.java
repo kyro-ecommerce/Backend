@@ -3,14 +3,16 @@ package com.kyro.order;
 import com.kyro.enums.OrderStatus;
 import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
+import com.kyro.exceptions.DomainException;
 import com.kyro.order.client.CartClient;
 import com.kyro.order.client.CatalogClient;
 import com.kyro.order.client.UserClient;
 import com.kyro.order.dto.OrderDTO;
 import com.kyro.order.dto.OrderDetailDTO;
 import com.kyro.order.dto.TopSellingProductResponse;
-import com.kyro.exceptions.DomainException;
 import feign.FeignException;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -21,6 +23,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,12 +73,116 @@ public class OrderService {
             });
   }
 
-  public List<Order> userOrderHistory(Long userId, OrderStatus status) {
-    if (status != null) {
-      return orderRepository.findByUserIdAndOrderStatus(userId, status);
-    } else {
-      return orderRepository.findByUserId(userId);
+  @Transactional(readOnly = true)
+  public Page<Order> findOrders(OrderFilter filter, Pageable pageable) {
+    validateOrderFilter(filter);
+    String search = clean(filter.search());
+    LocalDateTime start = filter.startDate() == null ? null : filter.startDate().atStartOfDay();
+    LocalDateTime end =
+        filter.endDate() == null ? null : filter.endDate().atTime(23, 59, 59, 999_999_999);
+
+    Specification<Order> specification =
+        (root, query, cb) -> {
+          List<Predicate> predicates = new ArrayList<>();
+          if (filter.userId() != null) {
+            predicates.add(cb.equal(root.get("userId"), filter.userId()));
+          }
+          if (search != null) {
+            String pattern = "%" + search.toLowerCase(Locale.ROOT) + "%";
+            var address = root.join("shippingAddress", JoinType.LEFT);
+            predicates.add(
+                cb.or(
+                    cb.like(cb.lower(root.get("userEmail")), pattern),
+                    cb.like(cb.lower(address.get("fullName")), pattern),
+                    cb.like(address.get("phoneNumber"), "%" + search + "%"),
+                    cb.like(root.get("id").as(String.class), "%" + search + "%")));
+          }
+          if (filter.status() != null) {
+            predicates.add(cb.equal(root.get("orderStatus"), filter.status()));
+          }
+          if (filter.paymentMethod() != null) {
+            predicates.add(cb.equal(root.get("paymentMethod"), filter.paymentMethod()));
+          }
+          if (filter.paymentStatus() != null) {
+            predicates.add(cb.equal(root.get("paymentStatus"), filter.paymentStatus()));
+          }
+          if (start != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get("orderDate"), start));
+          }
+          if (end != null) {
+            predicates.add(cb.lessThanOrEqualTo(root.get("orderDate"), end));
+          }
+          if (filter.minTotal() != null) {
+            predicates.add(cb.ge(root.get("totalDiscountedPrice"), filter.minTotal()));
+          }
+          if (filter.maxTotal() != null) {
+            predicates.add(cb.le(root.get("totalDiscountedPrice"), filter.maxTotal()));
+          }
+          return cb.and(predicates.toArray(Predicate[]::new));
+        };
+    return orderRepository.findAll(specification, pageable);
+  }
+
+  static Pageable orderPageable(int page, int size, List<String> sortValues) {
+    if (page < 0 || size < 1 || size > 100) {
+      throw new IllegalArgumentException("page must be >= 0 and size must be between 1 and 100");
     }
+    Set<String> fields =
+        Set.of("id", "orderDate", "deliveryDate", "totalDiscountedPrice", "totalItems");
+    List<String> sortTokens = sortTokens(sortValues);
+    List<Sort.Order> orders = new ArrayList<>();
+    for (int index = 0; index < sortTokens.size(); index += 2) {
+      String property = sortTokens.get(index);
+      if (!fields.contains(property)) {
+        throw new IllegalArgumentException("Unsupported order sort: " + property);
+      }
+      orders.add(new Sort.Order(Sort.Direction.fromString(sortTokens.get(index + 1)), property));
+    }
+    if (orders.isEmpty()) {
+      orders.add(Sort.Order.desc("orderDate"));
+    }
+    if (orders.stream().noneMatch(order -> order.getProperty().equals("id"))) {
+      orders.add(new Sort.Order(orders.get(0).getDirection(), "id"));
+    }
+    return PageRequest.of(page, size, Sort.by(orders));
+  }
+
+  private static List<String> sortTokens(List<String> sortValues) {
+    if (sortValues == null) {
+      return List.of();
+    }
+    List<String> tokens =
+        sortValues.stream()
+            .flatMap(value -> Arrays.stream(value.split(",")))
+            .map(String::trim)
+            .filter(value -> !value.isEmpty())
+            .toList();
+    if (tokens.size() % 2 != 0) {
+      throw new IllegalArgumentException("sort must use field,direction pairs");
+    }
+    return tokens;
+  }
+
+  private static void validateOrderFilter(OrderFilter filter) {
+    if (filter.startDate() != null
+        && filter.endDate() != null
+        && filter.startDate().isAfter(filter.endDate())) {
+      throw new IllegalArgumentException("startDate must not be after endDate");
+    }
+    if (filter.minTotal() != null && filter.minTotal() < 0
+        || filter.maxTotal() != null && filter.maxTotal() < 0
+        || filter.minTotal() != null
+            && filter.maxTotal() != null
+            && filter.minTotal() > filter.maxTotal()) {
+      throw new IllegalArgumentException("Invalid order total range");
+    }
+    if (clean(filter.search()) != null && clean(filter.search()).length() > 100) {
+      throw new IllegalArgumentException("search must not exceed 100 characters");
+    }
+  }
+
+  private static String clean(String value) {
+    return value == null || value.isBlank() ? null : value.trim();
   }
 
   public boolean hasPurchasedAndDelivered(Long userId, Long productId) {
@@ -101,23 +209,31 @@ public class OrderService {
     }
 
     if (new HashSet<>(cartItemIds).size() != cartItemIds.size()) {
-      throw new DomainException(org.springframework.http.HttpStatus.BAD_REQUEST, "Cart item bị trùng.");
+      throw new DomainException(
+          org.springframework.http.HttpStatus.BAD_REQUEST, "Cart item bị trùng.");
     }
     CartClient.CartResponse cart;
     try {
       cart = cartClient.getSelection(userId, new CartClient.CartSelectionRequest(cartItemIds));
     } catch (FeignException e) {
       if (e.status() == 503) {
-        throw new DomainException(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE, "CATALOG_UNAVAILABLE", "Không thể xác minh sản phẩm.");
+        throw new DomainException(
+            org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+            "CATALOG_UNAVAILABLE",
+            "Không thể xác minh sản phẩm.");
       }
-      throw new DomainException(org.springframework.http.HttpStatus.CONFLICT, "CART_CHANGED", "Giỏ hàng đã thay đổi, vui lòng tải lại.");
+      throw new DomainException(
+          org.springframework.http.HttpStatus.CONFLICT,
+          "CART_CHANGED",
+          "Giỏ hàng đã thay đổi, vui lòng tải lại.");
     }
     if (cart == null || cart.items() == null || cart.items().isEmpty()) {
       log.warn("Attempted to place order with an empty cart for user ID: {}", userId);
       throw new RuntimeException(
           "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi đặt hàng.");
     }
-    if (cart.version() != cartVersion || cart.totalDiscountedPrice() != expectedTotalDiscountedPrice) {
+    if (cart.version() != cartVersion
+        || cart.totalDiscountedPrice() != expectedTotalDiscountedPrice) {
       throw new DomainException(
           org.springframework.http.HttpStatus.CONFLICT,
           "CART_CHANGED",
@@ -198,7 +314,11 @@ public class OrderService {
 
       eventItems.add(
           new com.kyro.order.event.OrderCreatedEvent.OrderItemEvent(
-              cartItem.id(), cartItem.productId(), cartItem.size(), cartItem.quantity(), cartItem.price()));
+              cartItem.id(),
+              cartItem.productId(),
+              cartItem.size(),
+              cartItem.quantity(),
+              cartItem.price()));
     }
 
     savedOrderIntermediate.setOrderItems(orderItems);
@@ -399,25 +519,6 @@ public class OrderService {
     // Find all orders sorting by date descending
     List<Order> orders = orderRepository.findAllByOrderByOrderDateDesc();
     return orders.stream().map(OrderDetailDTO::new).collect(Collectors.toList());
-  }
-
-  @Transactional(readOnly = true)
-  public Page<OrderDetailDTO> getAllOrdersWithFilters(
-      String search,
-      OrderStatus status,
-      PaymentMethod paymentMethod,
-      PaymentStatus paymentStatus,
-      LocalDate startDate,
-      LocalDate endDate,
-      Pageable pageable) {
-    LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
-    LocalDateTime endDateTime = endDate != null ? endDate.atTime(23, 59, 59) : null;
-
-    Page<Order> orders =
-        orderRepository.findAdminOrdersWithFilters(
-            search, status, paymentMethod, paymentStatus, startDateTime, endDateTime, pageable);
-
-    return orders.map(OrderDetailDTO::new);
   }
 
   @Transactional(readOnly = true)

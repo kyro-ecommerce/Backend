@@ -3,8 +3,6 @@ package com.kyro.catalog;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -33,36 +31,6 @@ public interface ProductRepository
   // Find products by multiple category IDs
   List<Product> findByCategoryIdIn(List<Long> categoryIds);
 
-  // Find products by top and second level category names
-  @Query(
-      "SELECT p FROM Product p WHERE LOWER(p.category.name) = LOWER(:secondCategoryName) "
-          + "AND LOWER(p.category.parentCategory.name) = LOWER(:topCategoryName) "
-          + "AND p.category.level = 2")
-  List<Product> findProductsByTopAndSecondCategoryNames(
-      @Param("topCategoryName") String topCategoryName,
-      @Param("secondCategoryName") String secondCategoryName);
-
-  // Advanced search with multiple filters
-  @Query(
-      "SELECT p FROM Product p "
-          + "WHERE (:keyword IS NULL OR LOWER(p.title) LIKE LOWER(concat('%', :keyword, '%'))) "
-          + "AND (:categoryId IS NULL OR p.category.id = :categoryId) "
-          + "AND (:color IS NULL OR LOWER(p.color) = LOWER(:color)) "
-          + "AND (:minPrice IS NULL OR p.discountedPrice >= :minPrice) "
-          + "AND (:maxPrice IS NULL OR p.discountedPrice <= :maxPrice) "
-          + "ORDER BY "
-          + "CASE WHEN :sort = 'price_low' THEN p.discountedPrice END ASC, "
-          + "CASE WHEN :sort = 'price_high' THEN p.discountedPrice END DESC, "
-          + "CASE WHEN :sort = 'discount' THEN p.discountPersent END DESC, "
-          + "CASE WHEN :sort = 'newest' THEN p.createdAt END DESC")
-  List<Product> findByFilters(
-      @Param("keyword") String keyword,
-      @Param("categoryId") Long categoryId,
-      @Param("color") String color,
-      @Param("minPrice") Integer minPrice,
-      @Param("maxPrice") Integer maxPrice,
-      @Param("sort") String sort);
-
   // Get product by ID
   Product getProductById(Long productId);
 
@@ -76,29 +44,6 @@ public interface ProductRepository
   List<Product> searchProducts(@Param("keyword") String keyword);
 
   List<Product> findByCategory(Category category);
-
-  @Query(
-      "SELECT p FROM Product p WHERE (:keyword IS NULL OR :keyword = '' OR      LOWER(p.title) LIKE"
-          + " LOWER(CONCAT('%', :keyword, '%'))) AND (:topLevelCategory IS NULL OR"
-          + " :topLevelCategory = '' OR      (p.category.level = 1 AND LOWER(p.category.name) ="
-          + " LOWER(:topLevelCategory)) OR      (p.category.level = 2 AND"
-          + " LOWER(p.category.parentCategory.name) = LOWER(:topLevelCategory))) AND"
-          + " (:secondLevelCategory IS NULL OR :secondLevelCategory = '' OR      (p.category.level"
-          + " = 2 AND LOWER(p.category.name) = LOWER(:secondLevelCategory))) AND (:color IS NULL OR"
-          + " :color = '' OR LOWER(p.color) = LOWER(:color)) AND (:minPrice IS NULL OR p.price >="
-          + " :minPrice) AND (:maxPrice IS NULL OR p.price <= :maxPrice) AND (:inStock IS NULL OR  "
-          + "    (:inStock = true AND EXISTS (SELECT 1 FROM ProductSize ps WHERE ps.product = p AND"
-          + " ps.quantity > 0)) OR      (:inStock = false AND NOT EXISTS (SELECT 1 FROM ProductSize"
-          + " ps WHERE ps.product = p AND ps.quantity > 0)))")
-  Page<Product> getProductsWithFilter(
-      @Param("keyword") String keyword,
-      @Param("topLevelCategory") String topLevelCategory,
-      @Param("secondLevelCategory") String secondLevelCategory,
-      @Param("color") String color,
-      @Param("minPrice") Integer minPrice,
-      @Param("maxPrice") Integer maxPrice,
-      @Param("inStock") Boolean inStock,
-      Pageable pageable);
 
   // Get distinct top-level categories for all products (admin)
   @Query(

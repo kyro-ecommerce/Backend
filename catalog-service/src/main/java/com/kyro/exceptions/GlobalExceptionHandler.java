@@ -19,6 +19,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Order(Ordered.LOWEST_PRECEDENCE)
 @RestControllerAdvice
@@ -72,6 +74,11 @@ public class GlobalExceptionHandler {
     return buildResponse(new AppException(GlobalErrorCode.RESOURCE_NOT_FOUND, ex.getMessage()));
   }
 
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ProblemDetail handleNoResourceFoundException(NoResourceFoundException ex) {
+    return buildResponse(new AppException(GlobalErrorCode.RESOURCE_NOT_FOUND, ex.getMessage()));
+  }
+
   // 5. Handles JPA EntityExistsException
   @ExceptionHandler(EntityExistsException.class)
   public ProblemDetail handleEntityExistsException(EntityExistsException ex) {
@@ -100,6 +107,13 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(IllegalArgumentException.class)
   public ProblemDetail handleIllegalArgumentException(IllegalArgumentException ex) {
     return buildResponse(new AppException(GlobalErrorCode.INVALID_ARGUMENT, ex.getMessage()));
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ProblemDetail handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+    return buildResponse(
+        new AppException(
+            GlobalErrorCode.INVALID_ARGUMENT, "Invalid value for parameter: " + ex.getName()));
   }
 
   // Helper to build a standard ProblemDetail response

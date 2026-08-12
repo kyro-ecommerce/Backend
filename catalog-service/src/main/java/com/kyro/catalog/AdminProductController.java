@@ -1,15 +1,12 @@
 package com.kyro.catalog;
 
 import com.kyro.catalog.dto.CreateProductRequest;
+import com.kyro.catalog.dto.PageResponse;
 import com.kyro.catalog.dto.ProductDTO;
 import com.kyro.catalog.dto.UpdateProductRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,33 +42,25 @@ public class AdminProductController {
   }
 
   @GetMapping
-  public ResponseEntity<Page<ProductDTO>> findAllProducts(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size,
-      @RequestParam(defaultValue = "createdAt") String sortBy,
-      @RequestParam(defaultValue = "desc") String sortDir,
+  public ResponseEntity<PageResponse<ProductDTO>> findAllProducts(
       @RequestParam(required = false) String keyword,
-      @RequestParam(required = false) String topLevelCategory,
-      @RequestParam(required = false) String secondLevelCategory,
+      @RequestParam(required = false) Long categoryId,
       @RequestParam(required = false) String color,
       @RequestParam(required = false) Integer minPrice,
       @RequestParam(required = false) Integer maxPrice,
-      @RequestParam(required = false) String sort,
-      @RequestParam(required = false) String status) {
-    Sort sortObj = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
-    Pageable pageable = PageRequest.of(page, size, sortObj);
-
-    FilterProduct filter = new FilterProduct();
-    filter.setKeyword(keyword);
-    filter.setTopLevelCategory(topLevelCategory);
-    filter.setSecondLevelCategory(secondLevelCategory);
-    filter.setColor(color);
-    filter.setMinPrice(minPrice);
-    filter.setMaxPrice(maxPrice);
-    filter.setSort(sort);
-
-    Page<ProductDTO> productPage = productService.getProductsWithFilter(pageable, filter, status);
-    return ResponseEntity.ok(productPage);
+      @RequestParam(required = false) String brand,
+      @RequestParam(required = false) Boolean inStock,
+      @RequestParam(required = false) Double minRating,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(required = false) List<String> sort) {
+    FilterProduct filter =
+        new FilterProduct(
+            categoryId, color, minPrice, maxPrice, keyword, brand, inStock, minRating);
+    return ResponseEntity.ok(
+        PageResponse.from(
+            productService.getProductsWithFilter(
+                ProductService.productPageable(page, size, sort, true), filter)));
   }
 
   @PutMapping("/{productId}")
