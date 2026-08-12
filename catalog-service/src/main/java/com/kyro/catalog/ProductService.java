@@ -3,10 +3,9 @@ package com.kyro.catalog;
 import com.kyro.catalog.client.OrderClient;
 import com.kyro.catalog.dto.CreateProductRequest;
 import com.kyro.catalog.dto.ProductDTO;
+import com.kyro.catalog.dto.UpdateProductRequest;
 import com.kyro.catalog.messaging.ProductEventPublisher;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -56,29 +55,25 @@ public class ProductService {
 
     // Handle top level category
     if (req.getTopLevelCategory() != null && !req.getTopLevelCategory().isEmpty()) {
-      parentCategory = categoryRepository.findByName(req.getTopLevelCategory());
-      if (parentCategory == null) {
-        parentCategory = new Category();
-        parentCategory.setName(req.getTopLevelCategory());
-        parentCategory.setLevel(1);
-        parentCategory.setParent(true);
-        parentCategory = categoryRepository.save(parentCategory);
-      } else if (parentCategory.getLevel() != 1) {
+      parentCategory =
+          categoryRepository
+              .findByNameIgnoreCase(req.getTopLevelCategory())
+              .orElseThrow(() -> new EntityNotFoundException("Top level category not found"));
+      if (parentCategory.getLevel() != 1) {
         throw new IllegalArgumentException("Top level category must have level 1");
       }
 
       // Handle second level category if provided
       if (req.getSecondLevelCategory() != null && !req.getSecondLevelCategory().isEmpty()) {
-        category = categoryRepository.findByName(req.getSecondLevelCategory());
-        if (category == null) {
-          category = new Category();
-          category.setName(req.getSecondLevelCategory());
-          category.setLevel(2);
-          category.setParent(false);
-          category.setParentCategory(parentCategory);
-          category = categoryRepository.save(category);
-        } else if (category.getLevel() != 2) {
-          throw new IllegalArgumentException("Second level category must have level 2");
+        category =
+            categoryRepository
+                .findByNameIgnoreCase(req.getSecondLevelCategory())
+                .orElseThrow(() -> new EntityNotFoundException("Second level category not found"));
+        if (category.getLevel() != 2
+            || category.getParentCategory() == null
+            || !category.getParentCategory().getId().equals(parentCategory.getId())) {
+          throw new IllegalArgumentException(
+              "Second level category does not belong to top level category");
         }
       } else {
         // If no second level, use top level
@@ -119,14 +114,6 @@ public class ProductService {
       product.setSizes(req.getSizes());
     }
 
-    // Handle images if provided
-    if (req.getImageUrls() != null && !req.getImageUrls().isEmpty()) {
-      for (Image imageUrl : req.getImageUrls()) {
-        imageUrl.setProduct(product);
-      }
-      product.setImages(req.getImageUrls());
-    }
-
     Product savedProduct = productRepository.save(product);
     // Publish event so AI Service can index this new product
     productEventPublisher.publishProductCreated(savedProduct);
@@ -149,36 +136,6 @@ public class ProductService {
       return product.get();
     }
     throw new EntityNotFoundException("Product not found with id: " + id);
-  }
-
-  public List<Product> findAllProducts() {
-    return productRepository.findAll();
-  }
-
-  @Transactional
-  public List<ProductDTO> getAllProducts(
-      String search, String categoryName, String sort, String order) {
-    List<Product> products;
-
-    if (search != null && !search.isEmpty()) {
-      products = productRepository.searchProducts(search);
-    } else if (categoryName != null && !categoryName.isEmpty()) {
-      Category category = categoryRepository.findByName(categoryName);
-
-      if (category != null) {
-        products = productRepository.findByCategory(category);
-      } else {
-        products = new ArrayList<>();
-      }
-    } else {
-      products = productRepository.findAll();
-    }
-
-    if (sort != null && order != null) {
-      sortProducts(products, sort, order);
-    }
-
-    return products.stream().map(ProductDTO::new).toList();
   }
 
   public List<Product> searchProducts(String keyword) {
@@ -207,43 +164,143 @@ public class ProductService {
     return productRepository.findByCategoryIdIn(categoryIdsToSearch);
   }
 
-  public List<Product> findByCategoryTopAndSecond(String topCategory, String secondCategory) {
-    return productRepository.findProductsByTopAndSecondCategoryNames(topCategory, secondCategory);
-  }
-
   @Transactional(readOnly = true)
-  public Page<ProductDTO> getProductsWithFilter(
-      Pageable pageable, FilterProduct filter, String status) {
+  public Page<ProductDTO> getProductsWithFilter(Pageable pageable, FilterProduct filter) {
+    validateProductFilter(filter);
 
-    Boolean inStock = null;
-    if (status != null && !status.equals("all")) {
-      switch (status) {
-        case "inStock":
-          inStock = true;
-          break;
-        case "outOfStock":
-          inStock = false;
-          break;
+    List<Long> categoryIds = null;
+    if (filter.getCategoryId() != null) {
+      Optional<Category> category = categoryRepository.findById(filter.getCategoryId());
+      if (category.isEmpty()) {
+        return Page.empty(pageable);
+      }
+      categoryIds = new ArrayList<>();
+      categoryIds.add(category.get().getId());
+      if (category.get().getLevel() == 1) {
+        categoryRepository.findByParentCategoryId(category.get().getId()).stream()
+            .map(Category::getId)
+            .forEach(categoryIds::add);
       }
     }
 
-    Pageable finalPageable = pageable;
-    if (filter != null && filter.getSort() != null && !filter.getSort().isEmpty()) {
-      finalPageable = applySorting(pageable, filter.getSort());
+    String keyword = clean(filter.getKeyword());
+    String brand = clean(filter.getBrand());
+    String color = clean(filter.getColor());
+    List<Long> selectedCategoryIds = categoryIds;
+    Specification<Product> specification =
+        (root, query, cb) -> {
+          List<Predicate> predicates = new ArrayList<>();
+          if (keyword != null) {
+            String pattern = "%" + keyword.toLowerCase(Locale.ROOT) + "%";
+            predicates.add(
+                cb.or(
+                    cb.like(cb.lower(root.get("title")), pattern),
+                    cb.like(cb.lower(root.get("description")), pattern),
+                    cb.like(cb.lower(root.get("brand")), pattern)));
+          }
+          if (selectedCategoryIds != null) {
+            predicates.add(root.get("category").get("id").in(selectedCategoryIds));
+          }
+          if (brand != null) {
+            predicates.add(cb.equal(cb.lower(root.get("brand")), brand.toLowerCase(Locale.ROOT)));
+          }
+          if (color != null) {
+            predicates.add(cb.equal(cb.lower(root.get("color")), color.toLowerCase(Locale.ROOT)));
+          }
+          if (filter.getMinPrice() != null) {
+            predicates.add(cb.ge(root.get("discountedPrice"), filter.getMinPrice()));
+          }
+          if (filter.getMaxPrice() != null) {
+            predicates.add(cb.le(root.get("discountedPrice"), filter.getMaxPrice()));
+          }
+          if (filter.getInStock() != null) {
+            predicates.add(
+                filter.getInStock()
+                    ? cb.gt(root.get("quantity"), 0)
+                    : cb.le(root.get("quantity"), 0));
+          }
+          if (filter.getMinRating() != null) {
+            predicates.add(cb.ge(root.get("averageRating"), filter.getMinRating()));
+          }
+          return cb.and(predicates.toArray(Predicate[]::new));
+        };
+
+    return productRepository.findAll(specification, pageable).map(ProductDTO::new);
+  }
+
+  static Pageable productPageable(int page, int size, List<String> sortValues, boolean admin) {
+    if (page < 0 || size < 1 || size > 100) {
+      throw new IllegalArgumentException("page must be >= 0 and size must be between 1 and 100");
     }
 
-    Page<Product> productPage =
-        productRepository.getProductsWithFilter(
-            filter != null ? filter.getKeyword() : null,
-            filter != null ? filter.getTopLevelCategory() : null,
-            filter != null ? filter.getSecondLevelCategory() : null,
-            filter != null ? filter.getColor() : null,
-            filter != null ? filter.getMinPrice() : null,
-            filter != null ? filter.getMaxPrice() : null,
-            inStock,
-            finalPageable);
+    Map<String, String> fields =
+        new HashMap<>(
+            Map.of(
+                "id", "id",
+                "title", "title",
+                "brand", "brand",
+                "price", "discountedPrice",
+                "discountPercent", "discountPersent",
+                "createdAt", "createdAt",
+                "averageRating", "averageRating",
+                "quantitySold", "quantitySold"));
+    if (admin) {
+      fields.put("quantity", "quantity");
+    }
 
-    return productPage.map(ProductDTO::new);
+    List<String> sortTokens = sortTokens(sortValues);
+    List<Sort.Order> orders = new ArrayList<>();
+    for (int index = 0; index < sortTokens.size(); index += 2) {
+      String requestedProperty = sortTokens.get(index);
+      String property = fields.get(requestedProperty);
+      if (property == null) {
+        throw new IllegalArgumentException("Unsupported product sort: " + requestedProperty);
+      }
+      orders.add(new Sort.Order(Sort.Direction.fromString(sortTokens.get(index + 1)), property));
+    }
+    if (orders.isEmpty()) {
+      orders.add(Sort.Order.desc("createdAt"));
+    }
+    if (orders.stream().noneMatch(order -> order.getProperty().equals("id"))) {
+      orders.add(new Sort.Order(orders.get(0).getDirection(), "id"));
+    }
+    return PageRequest.of(page, size, Sort.by(orders));
+  }
+
+  private static List<String> sortTokens(List<String> sortValues) {
+    if (sortValues == null) {
+      return List.of();
+    }
+    List<String> tokens =
+        sortValues.stream()
+            .flatMap(value -> Arrays.stream(value.split(",")))
+            .map(String::trim)
+            .filter(value -> !value.isEmpty())
+            .toList();
+    if (tokens.size() % 2 != 0) {
+      throw new IllegalArgumentException("sort must use field,direction pairs");
+    }
+    return tokens;
+  }
+
+  private static void validateProductFilter(FilterProduct filter) {
+    if (filter.getMinPrice() != null && filter.getMinPrice() < 0
+        || filter.getMaxPrice() != null && filter.getMaxPrice() < 0
+        || filter.getMinPrice() != null
+            && filter.getMaxPrice() != null
+            && filter.getMinPrice() > filter.getMaxPrice()) {
+      throw new IllegalArgumentException("Invalid product price range");
+    }
+    if (filter.getMinRating() != null && (filter.getMinRating() < 0 || filter.getMinRating() > 5)) {
+      throw new IllegalArgumentException("minRating must be between 0 and 5");
+    }
+    if (clean(filter.getKeyword()) != null && clean(filter.getKeyword()).length() > 100) {
+      throw new IllegalArgumentException("keyword must not exceed 100 characters");
+    }
+  }
+
+  private static String clean(String value) {
+    return value == null || value.isBlank() ? null : value.trim();
   }
 
   public Map<String, Object> getAdminFilterStatistics() {
@@ -323,107 +380,6 @@ public class ProductService {
     productEventPublisher.publishProductDeleted(productId);
   }
 
-  @Transactional(readOnly = true)
-  public List<Product> findAllProductsByFilter(FilterProduct filter) {
-    Specification<Product> spec =
-        (root, query, criteriaBuilder) -> {
-          List<Predicate> predicates = new ArrayList<>();
-
-          // Filter by keyword
-          if (filter.getKeyword() != null && !filter.getKeyword().isEmpty()) {
-            predicates.add(
-                criteriaBuilder.like(
-                    criteriaBuilder.lower(root.get("title")),
-                    "%" + filter.getKeyword().toLowerCase() + "%"));
-          }
-
-          // Filter by color
-          if (filter.getColor() != null && !filter.getColor().isEmpty()) {
-            predicates.add(
-                criteriaBuilder.equal(
-                    criteriaBuilder.lower(root.get("color")), filter.getColor().toLowerCase()));
-          }
-
-          // Filter by price range
-          if (filter.getMinPrice() != null) {
-            predicates.add(
-                criteriaBuilder.greaterThanOrEqualTo(
-                    root.get("discountedPrice"), filter.getMinPrice()));
-          }
-          if (filter.getMaxPrice() != null) {
-            predicates.add(
-                criteriaBuilder.lessThanOrEqualTo(
-                    root.get("discountedPrice"), filter.getMaxPrice()));
-          }
-
-          // --- UPDATED CATEGORY AND BRAND FILTER LOGIC ---
-          boolean needsCategoryJoin =
-              (filter.getTopLevelCategory() != null && !filter.getTopLevelCategory().isEmpty())
-                  || (filter.getBrand() != null && !filter.getBrand().isEmpty())
-                  || (filter.getSecondLevelCategory() != null
-                      && !filter.getSecondLevelCategory().isEmpty());
-
-          if (needsCategoryJoin) {
-            Join<Product, Category> categoryJoin = root.join("category", JoinType.LEFT);
-
-            // Filter by Top-Level Category OR Parent of a Brand/Second-Level Category
-            if (filter.getTopLevelCategory() != null && !filter.getTopLevelCategory().isEmpty()) {
-              Join<Category, Category> parentCategoryJoin =
-                  categoryJoin.join("parentCategory", JoinType.LEFT);
-              Predicate topLevelDirect =
-                  criteriaBuilder.equal(
-                      criteriaBuilder.lower(categoryJoin.get("name")),
-                      filter.getTopLevelCategory().toLowerCase());
-              Predicate parentOfChild =
-                  criteriaBuilder.equal(
-                      criteriaBuilder.lower(parentCategoryJoin.get("name")),
-                      filter.getTopLevelCategory().toLowerCase());
-              predicates.add(criteriaBuilder.or(topLevelDirect, parentOfChild));
-            }
-
-            // Filter by Brand (which is a Level 2 Category)
-            if (filter.getBrand() != null && !filter.getBrand().isEmpty()) {
-              predicates.add(
-                  criteriaBuilder.equal(
-                      criteriaBuilder.lower(categoryJoin.get("name")),
-                      filter.getBrand().toLowerCase()));
-            }
-
-            // Filter by Second-Level Category (if brand is not already doing it)
-            if (filter.getSecondLevelCategory() != null
-                && !filter.getSecondLevelCategory().isEmpty()) {
-              predicates.add(
-                  criteriaBuilder.equal(
-                      criteriaBuilder.lower(categoryJoin.get("name")),
-                      filter.getSecondLevelCategory().toLowerCase()));
-            }
-          }
-          // --- END OF UPDATE ---
-
-          return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
-
-    Sort sort = Sort.unsorted();
-    if (filter.getSort() != null && !filter.getSort().isEmpty()) {
-      switch (filter.getSort().toLowerCase()) {
-        case "price_low":
-          sort = Sort.by(Sort.Direction.ASC, "discountedPrice");
-          break;
-        case "price_high":
-          sort = Sort.by(Sort.Direction.DESC, "discountedPrice");
-          break;
-        case "discount":
-          sort = Sort.by(Sort.Direction.DESC, "discountPersent");
-          break;
-        case "newest":
-          sort = Sort.by(Sort.Direction.DESC, "createdAt");
-          break;
-      }
-    }
-
-    return productRepository.findAll(spec, sort);
-  }
-
   public List<Map<String, Object>> getTopSellingProducts(int limit) {
     if (limit < 1) {
       throw new IllegalArgumentException("Top-selling limit must be positive");
@@ -493,14 +449,6 @@ public class ProductService {
     if (product.getBrand() != null) existingProduct.setBrand(product.getBrand());
     if (product.getColor() != null) existingProduct.setColor(product.getColor());
 
-    if (product.getImages() != null && !product.getImages().isEmpty()) {
-      existingProduct.getImages().clear();
-      for (Image image : product.getImages()) {
-        image.setProduct(existingProduct);
-        existingProduct.getImages().add(image);
-      }
-    }
-
     if (product.getPrice() > 0) existingProduct.setPrice(product.getPrice());
     if (product.getDiscountPersent() >= 0)
       existingProduct.setDiscountPersent(product.getDiscountPersent());
@@ -520,7 +468,7 @@ public class ProductService {
   }
 
   @Transactional
-  public ProductDTO updateProductByID(Long productId, Product product) {
+  public ProductDTO updateProductByID(Long productId, UpdateProductRequest product) {
     Product curProduct = findProductById(productId);
 
     if (product.getTitle() != null) curProduct.setTitle(product.getTitle());
@@ -528,26 +476,31 @@ public class ProductService {
     if (product.getBrand() != null) curProduct.setBrand(product.getBrand());
     if (product.getColor() != null) curProduct.setColor(product.getColor());
 
-    if (product.getImages() != null && !product.getImages().isEmpty()) {
-      curProduct.getImages().clear();
-      for (Image image : product.getImages()) {
-        image.setProduct(curProduct);
-        curProduct.getImages().add(image);
-      }
-    }
-
-    if (product.getPrice() > 0) curProduct.setPrice(product.getPrice());
-    if (product.getDiscountPersent() >= 0)
+    if (product.getPrice() != null && product.getPrice() > 0)
+      curProduct.setPrice(product.getPrice());
+    if (product.getDiscountPersent() != null && product.getDiscountPersent() >= 0)
       curProduct.setDiscountPersent(product.getDiscountPersent());
     curProduct.updateDiscountedPrice();
 
-    if (product.getQuantity() >= 0) curProduct.setQuantity(product.getQuantity());
+    if (product.getQuantity() != null && product.getQuantity() >= 0)
+      curProduct.setQuantity(product.getQuantity());
 
-    if (product.getCategory() != null && product.getCategory().getId() != null) {
+    if (product.getTopLevelCategory() != null && product.getSecondLevelCategory() != null) {
+      Category parent =
+          categoryRepository
+              .findByNameIgnoreCase(product.getTopLevelCategory())
+              .orElseThrow(() -> new EntityNotFoundException("Top level category not found"));
       Category category =
           categoryRepository
-              .findById(product.getCategory().getId())
-              .orElseThrow(() -> new EntityNotFoundException("Category not found"));
+              .findByNameIgnoreCase(product.getSecondLevelCategory())
+              .orElseThrow(() -> new EntityNotFoundException("Second level category not found"));
+      if (parent.getLevel() != 1
+          || category.getLevel() != 2
+          || category.getParentCategory() == null
+          || !category.getParentCategory().getId().equals(parent.getId())) {
+        throw new IllegalArgumentException(
+            "Second level category does not belong to top level category");
+      }
       curProduct.setCategory(category);
     }
     Product updatedProduct = productRepository.save(curProduct);
@@ -577,61 +530,6 @@ public class ProductService {
             : null;
     productMap.put("imageUrl", imgUrl);
     return productMap;
-  }
-
-  private void sortProducts(List<Product> products, String sortBy, String order) {
-    Comparator<Product> comparator = null;
-
-    switch (sortBy) {
-      case "price":
-        comparator = Comparator.comparing(Product::getPrice);
-        break;
-      case "createdAt":
-        comparator = Comparator.comparing(Product::getCreatedAt);
-        break;
-      case "quantitySold":
-        comparator = Comparator.comparing(Product::getQuantitySold);
-        break;
-      case "quantity":
-        comparator = Comparator.comparing(Product::getQuantity);
-        break;
-      default:
-        return;
-    }
-
-    if ("desc".equalsIgnoreCase(order)) {
-      comparator = comparator.reversed();
-    }
-
-    products.sort(comparator);
-  }
-
-  private Pageable applySorting(Pageable pageable, String sortType) {
-    Sort sort;
-    switch (sortType) {
-      case "price_low":
-        sort = Sort.by(Sort.Direction.ASC, "discountedPrice");
-        break;
-      case "price_high":
-        sort = Sort.by(Sort.Direction.DESC, "discountedPrice");
-        break;
-      case "discount":
-        sort = Sort.by(Sort.Direction.DESC, "discountPersent");
-        break;
-      case "newest":
-        sort = Sort.by(Sort.Direction.DESC, "createdAt");
-        break;
-      case "name_asc":
-        sort = Sort.by(Sort.Direction.ASC, "title");
-        break;
-      case "name_desc":
-        sort = Sort.by(Sort.Direction.DESC, "title");
-        break;
-      default:
-        return pageable;
-    }
-
-    return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
   }
 
   @Transactional

@@ -128,7 +128,7 @@ Bộ test này thực hiện test cặn kẽ các tình huống biên & lỗi ti
    - **Kỳ vọng**: Cart Service kiểm tra validate DTO và phản hồi `400 Bad Request`.
 
 5. **Callback Webhook VNPay Bị Biến Dạng**:
-   - Gọi callback VNPay `/vnpay-callback` thiếu tham số `vnp_TxnRef`.
+   - Gọi callback VNPay `/payment-providers/vnpay/callback` thiếu tham số `vnp_TxnRef`.
    - **Kỳ vọng**: Payment Service trả về lỗi `400 Bad Request` an toàn.
 
 6. **Rate Limiting Gửi OTP (`429 Too Many Requests`)**:

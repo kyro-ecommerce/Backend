@@ -6,5 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ImageRepository extends JpaRepository<Image, Long> {
   List<Image> findByProductId(Long productId);
 
+  long countByProductId(Long productId);
+
   void deleteByProductId(Long productId);
 }

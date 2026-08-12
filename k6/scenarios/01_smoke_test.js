@@ -45,7 +45,7 @@ export default function () {
   });
 
   group('04. Category & Reviews Health', function () {
-    const res = http.get(`${CONFIG.BASE_URL}/api/v1/categories/`, {
+    const res = http.get(`${CONFIG.BASE_URL}/api/v1/categories`, {
       headers: CONFIG.HEADERS.JSON,
     });
     check(res, {

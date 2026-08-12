@@ -6,6 +6,10 @@ internal:
     token: ${INTERNAL_API_TOKEN:}
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/kyro_catalog}
     username: ${DATABASE_USERNAME:postgres}
@@ -26,9 +30,9 @@ spring:
     password: ${RABBITMQ_PASSWORD:guest}
 
 cloudinary:
-  cloudName: ${CLOUDINARY_CLOUD_NAME:mock_cloud}
-  apiKey: ${CLOUDINARY_API_KEY:mock_key}
-  apiSecret: ${CLOUDINARY_API_SECRET:mock_secret}
+  cloudName: ${CLOUDINARY_CLOUD_NAME}
+  apiKey: ${CLOUDINARY_API_KEY}
+  apiSecret: ${CLOUDINARY_API_SECRET}
   apiSecure: ${CLOUDINARY_API_SECURE:true}
 
 # Product event exchange for AI Service synchronization

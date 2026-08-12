@@ -82,7 +82,7 @@ export default function () {
   sleep(0.5);
 
   group('Edge Case 05: Malformed VNPay Callback Params', function () {
-    const res = http.get(`${CONFIG.BASE_URL}/api/v1/payments/vnpay-callback`, {
+    const res = http.get(`${CONFIG.BASE_URL}/api/v1/payment-providers/vnpay/callback`, {
       headers: CONFIG.HEADERS.JSON,
     });
     check(res, {
@@ -94,14 +94,14 @@ export default function () {
 
   group('Edge Case 06: OTP Cooldown & Rate Limiting', function () {
     const res1 = http.post(
-      `${CONFIG.BASE_URL}/api/v1/auth/register/resend-otp`,
+      `${CONFIG.BASE_URL}/api/v1/auth/verification/resend`,
       JSON.stringify({ email: K6_USER_EMAIL }),
       { headers: CONFIG.HEADERS.JSON }
     );
 
     // Immediately request again to trigger OTP cooldown 429
     const res2 = http.post(
-      `${CONFIG.BASE_URL}/api/v1/auth/register/resend-otp`,
+      `${CONFIG.BASE_URL}/api/v1/auth/verification/resend`,
       JSON.stringify({ email: K6_USER_EMAIL }),
       { headers: CONFIG.HEADERS.JSON }
     );

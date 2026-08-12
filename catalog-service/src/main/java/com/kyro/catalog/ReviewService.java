@@ -35,18 +35,15 @@ public class ReviewService {
    */
   @Transactional
   public Review createReview(
-      Long userId, String firstName, String lastName, ReviewRequest reviewRequest) {
-    if (!canUserReviewProduct(userId, reviewRequest.getProductId())) {
+      Long userId, String firstName, String lastName, Long productId, ReviewRequest reviewRequest) {
+    if (!canUserReviewProduct(userId, productId)) {
       throw new IllegalStateException("User is not eligible to review this product.");
     }
 
     Product product =
         productRepository
-            .findById(reviewRequest.getProductId())
-            .orElseThrow(
-                () ->
-                    new RuntimeException(
-                        "Product not found with id: " + reviewRequest.getProductId()));
+            .findById(productId)
+            .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
 
     Review review = new Review();
     review.setContent(reviewRequest.getContent());

@@ -26,7 +26,7 @@ public class CloudinaryService {
 
     Map<String, Object> params = new HashMap<>();
     params.put("folder", "tech_shop");
-    params.put("resource_type", "auto");
+    params.put("resource_type", "image");
     params.put("unique_filename", true);
 
     try {

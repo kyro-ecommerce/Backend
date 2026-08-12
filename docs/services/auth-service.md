@@ -41,14 +41,13 @@
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/v1/auth/register` | Đăng ký tài khoản người dùng mới | Public |
 | `POST` | `/api/v1/auth/login` | Đăng nhập nhận JWT Access & Refresh Token | Public |
-| `POST` | `/api/v1/auth/refresh-token` | Sinh Access Token mới từ Refresh Token | Public |
-| `POST` | `/api/v1/auth/forgot-password` | Gửi mã OTP khôi phục mật khẩu qua Email | Public |
-| `POST` | `/api/v1/auth/reset-password` | Đổi mật khẩu mới bằng mã OTP | Public |
-| `GET` | `/api/v1/users/me` | Lấy thông tin cá nhân của người dùng hiện tại | User / Admin |
-| `GET` | `/api/v1/addresses` | Lấy danh sách địa chỉ của người dùng | User / Admin |
-| `POST` | `/api/v1/addresses` | Thêm địa chỉ nhận hàng mới | User / Admin |
-| `PUT` | `/api/v1/addresses/{id}` | Cập nhật thông tin địa chỉ | User / Admin |
-| `DELETE` | `/api/v1/addresses/{id}` | Xóa địa chỉ nhận hàng | User / Admin |
+| `POST` | `/api/v1/auth/verification` | Xác thực OTP đăng ký | Public |
+| `POST` | `/api/v1/auth/verification/resend` | Gửi lại OTP | Public |
+| `POST` | `/api/v1/auth/refresh` | Sinh Access Token mới từ Refresh Token | Public |
+| `POST` | `/api/v1/auth/password-reset` | Đổi mật khẩu mới bằng OTP | Public |
+| `GET/PATCH` | `/api/v1/users/me` | Đọc/cập nhật thông tin cá nhân | User / Admin |
+| `GET/POST` | `/api/v1/users/me/addresses` | Danh sách/thêm địa chỉ | User / Admin |
+| `PUT/DELETE` | `/api/v1/users/me/addresses/{id}` | Cập nhật/xóa địa chỉ | User / Admin |
 
 ---
 

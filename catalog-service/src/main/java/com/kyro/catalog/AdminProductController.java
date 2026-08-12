@@ -1,15 +1,15 @@
 package com.kyro.catalog;
 
 import com.kyro.catalog.dto.CreateProductRequest;
+import com.kyro.catalog.dto.PageResponse;
 import com.kyro.catalog.dto.ProductDTO;
+import com.kyro.catalog.dto.UpdateProductRequest;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,12 +23,13 @@ public class AdminProductController {
   }
 
   @PostMapping
-  public ResponseEntity<Product> createProduct(@RequestBody CreateProductRequest request) {
+  public ResponseEntity<Product> createProduct(@Valid @RequestBody CreateProductRequest request) {
     Product product = productService.createProduct(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(product);
   }
 
   @GetMapping("/{productId}")
+  @Transactional(readOnly = true)
   public ResponseEntity<ProductDTO> getProductById(@PathVariable Long productId) {
     return ResponseEntity.ok(new ProductDTO(productService.findProductById(productId)));
   }
@@ -41,74 +42,41 @@ public class AdminProductController {
   }
 
   @GetMapping
-  public ResponseEntity<Page<ProductDTO>> findAllProducts(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size,
-      @RequestParam(defaultValue = "createdAt") String sortBy,
-      @RequestParam(defaultValue = "desc") String sortDir,
+  public ResponseEntity<PageResponse<ProductDTO>> findAllProducts(
       @RequestParam(required = false) String keyword,
-      @RequestParam(required = false) String topLevelCategory,
-      @RequestParam(required = false) String secondLevelCategory,
+      @RequestParam(required = false) Long categoryId,
       @RequestParam(required = false) String color,
       @RequestParam(required = false) Integer minPrice,
       @RequestParam(required = false) Integer maxPrice,
-      @RequestParam(required = false) String sort,
-      @RequestParam(required = false) String status) {
-    Sort sortObj = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
-    Pageable pageable = PageRequest.of(page, size, sortObj);
-
-    FilterProduct filter = new FilterProduct();
-    filter.setKeyword(keyword);
-    filter.setTopLevelCategory(topLevelCategory);
-    filter.setSecondLevelCategory(secondLevelCategory);
-    filter.setColor(color);
-    filter.setMinPrice(minPrice);
-    filter.setMaxPrice(maxPrice);
-    filter.setSort(sort);
-
-    Page<ProductDTO> productPage = productService.getProductsWithFilter(pageable, filter, status);
-    return ResponseEntity.ok(productPage);
+      @RequestParam(required = false) String brand,
+      @RequestParam(required = false) Boolean inStock,
+      @RequestParam(required = false) Double minRating,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(required = false) List<String> sort) {
+    FilterProduct filter =
+        new FilterProduct(
+            categoryId, color, minPrice, maxPrice, keyword, brand, inStock, minRating);
+    return ResponseEntity.ok(
+        PageResponse.from(
+            productService.getProductsWithFilter(
+                ProductService.productPageable(page, size, sort, true), filter)));
   }
 
-  @PutMapping("/{productId}")
+  @PatchMapping("/{productId}")
   public ResponseEntity<ProductDTO> updateProduct(
-      @PathVariable Long productId, @RequestBody Product product) {
+      @PathVariable Long productId, @RequestBody UpdateProductRequest product) {
     ProductDTO updatedProduct = productService.updateProductByID(productId, product);
     return ResponseEntity.ok(updatedProduct);
   }
 
-  @PostMapping("/bulk")
+  @PostMapping("/product-imports")
   public ResponseEntity<Map<String, String>> createMultipleProducts(
-      @RequestBody CreateProductRequest[] requests) {
+      @Valid @RequestBody CreateProductRequest[] requests) {
     for (CreateProductRequest request : requests) {
       productService.createProduct(request);
     }
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(Map.of("message", "Tạo nhiều sản phẩm thành công"));
-  }
-
-  @GetMapping("/top-selling")
-  public ResponseEntity<List<Map<String, Object>>> getTopSellingProducts(
-      @RequestParam(defaultValue = "10") int limit) {
-    List<Map<String, Object>> topProducts = productService.getTopSellingProducts(limit);
-    return ResponseEntity.ok(topProducts);
-  }
-
-  @GetMapping("/revenue-by-category")
-  public ResponseEntity<Map<String, Object>> getRevenueByCateogry() {
-    Map<String, Object> categoryRevenue = productService.getRevenueByCateogry();
-    return ResponseEntity.ok(categoryRevenue);
-  }
-
-  @GetMapping("/filter-stats")
-  public ResponseEntity<Map<String, Object>> getFilterStatistics() {
-    Map<String, Object> stats = productService.getAdminFilterStatistics();
-    return ResponseEntity.ok(stats);
-  }
-
-  @GetMapping("/categories")
-  public ResponseEntity<Map<String, Object>> getAllCategories() {
-    Map<String, Object> categories = productService.getAllCategories();
-    return ResponseEntity.ok(categories);
   }
 }

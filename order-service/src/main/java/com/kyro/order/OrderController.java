@@ -1,16 +1,19 @@
 package com.kyro.order;
 
-import com.kyro.enums.OrderStatus;
 import com.kyro.exceptions.DomainException;
 import com.kyro.order.dto.CreateOrderRequest;
 import com.kyro.order.dto.OrderDTO;
+import com.kyro.order.dto.PageResponse;
+import com.kyro.order.dto.UpdateOrderStatusRequest;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,11 +37,36 @@ public class OrderController {
 
   /** Gets order history for the logged-in user. */
   @GetMapping
-  public ResponseEntity<List<OrderDTO>> getUserOrders(@RequestHeader("X-User-Id") Long userId) {
-
-    List<Order> orders = orderService.userOrderHistory(userId, null);
-    List<OrderDTO> orderDTOs = orders.stream().map(OrderDTO::new).collect(Collectors.toList());
-    return ResponseEntity.ok(orderDTOs);
+  public ResponseEntity<PageResponse<OrderDTO>> getUserOrders(
+      @RequestHeader("X-User-Id") Long userId,
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String paymentMethod,
+      @RequestParam(required = false) String paymentStatus,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+          LocalDate startDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+          LocalDate endDate,
+      @RequestParam(required = false) Integer minTotal,
+      @RequestParam(required = false) Integer maxTotal,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(required = false) List<String> sort) {
+    OrderFilter filter =
+        OrderFilter.from(
+            userId,
+            null,
+            status,
+            paymentMethod,
+            paymentStatus,
+            startDate,
+            endDate,
+            minTotal,
+            maxTotal);
+    return ResponseEntity.ok(
+        PageResponse.from(
+            orderService
+                .findOrders(filter, OrderService.orderPageable(page, size, sort))
+                .map(OrderDTO::new)));
   }
 
   /** Places a new order from current cart items. */
@@ -84,60 +112,22 @@ public class OrderController {
     return new ResponseEntity<>(orderDTO, HttpStatus.OK);
   }
 
-  /** Gets pending orders for the logged-in user. */
-  @GetMapping("/pending")
-  public ResponseEntity<List<OrderDTO>> getPendingOrders(@RequestHeader("X-User-Id") Long userId) {
-    List<Order> orders = orderService.userOrderHistory(userId, OrderStatus.PENDING);
-    List<OrderDTO> orderDTOs = orders.stream().map(OrderDTO::new).collect(Collectors.toList());
-    return ResponseEntity.ok(orderDTOs);
-  }
-
-  /** Gets confirmed orders for the logged-in user. */
-  @GetMapping("/confirmed")
-  public ResponseEntity<List<OrderDTO>> getConfirmedOrders(
-      @RequestHeader("X-User-Id") Long userId) {
-    List<Order> orders = orderService.userOrderHistory(userId, OrderStatus.CONFIRMED);
-    List<OrderDTO> orderDTOs = orders.stream().map(OrderDTO::new).collect(Collectors.toList());
-    return ResponseEntity.ok(orderDTOs);
-  }
-
-  /** Gets shipped orders for the logged-in user. */
-  @GetMapping("/shipped")
-  public ResponseEntity<List<OrderDTO>> getShippedOrders(@RequestHeader("X-User-Id") Long userId) {
-    List<Order> orders = orderService.userOrderHistory(userId, OrderStatus.SHIPPED);
-    List<OrderDTO> orderDTOs = orders.stream().map(OrderDTO::new).collect(Collectors.toList());
-    return ResponseEntity.ok(orderDTOs);
-  }
-
-  /** Gets delivered orders for the logged-in user. */
-  @GetMapping("/delivered")
-  public ResponseEntity<List<OrderDTO>> getDeliveredOrders(
-      @RequestHeader("X-User-Id") Long userId) {
-    List<Order> orders = orderService.userOrderHistory(userId, OrderStatus.DELIVERED);
-    List<OrderDTO> orderDTOs = orders.stream().map(OrderDTO::new).collect(Collectors.toList());
-    return ResponseEntity.ok(orderDTOs);
-  }
-
-  /** Gets cancelled orders for the logged-in user. */
-  @GetMapping("/cancelled")
-  public ResponseEntity<List<OrderDTO>> getCancelledOrders(
-      @RequestHeader("X-User-Id") Long userId) {
-    List<Order> orders = orderService.userOrderHistory(userId, OrderStatus.CANCELLED);
-    List<OrderDTO> orderDTOs = orders.stream().map(OrderDTO::new).collect(Collectors.toList());
-    return ResponseEntity.ok(orderDTOs);
-  }
-
   /** Cancels an order. */
-  @PutMapping("/{id}/cancel")
+  @PatchMapping("/{id}/status")
   public ResponseEntity<OrderDTO> cancelOrder(
-      @PathVariable("id") Long orderId, @RequestHeader("X-User-Id") Long userId) {
+      @PathVariable("id") Long orderId,
+      @RequestHeader("X-User-Id") Long userId,
+      @Valid @RequestBody UpdateOrderStatusRequest request) {
 
     Order order = orderService.findOrderById(orderId);
     if (!order.getUserId().equals(userId)) {
       throw new DomainException(HttpStatus.FORBIDDEN, "Bạn không có quyền hủy đơn hàng này.");
     }
 
-    Order cancelledOrder = orderService.cancelOrder(orderId);
+    if (request.status() != com.kyro.enums.OrderStatus.CANCELLED) {
+      throw new DomainException(HttpStatus.BAD_REQUEST, "Khách hàng chỉ có thể hủy đơn hàng.");
+    }
+    Order cancelledOrder = orderService.updateOrderStatus(orderId, request.status());
     OrderDTO orderDTO = new OrderDTO(cancelledOrder);
     return ResponseEntity.ok(orderDTO);
   }

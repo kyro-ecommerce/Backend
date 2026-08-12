@@ -51,7 +51,15 @@ spring:
         - id: catalog-service-public
           uri: lb://catalog-service
           predicates:
-            - Path=/api/v1/products, /api/v1/products/*, /api/v1/categories/**, /api/v1/reviews/product/**
+            - Path=/api/v1/products, /api/v1/products/*, /api/v1/categories
+          filters:
+            - StripPrefix=0
+
+        - id: catalog-service-public-reviews
+          uri: lb://catalog-service
+          predicates:
+            - Path=/api/v1/products/*/reviews
+            - Method=GET
           filters:
             - StripPrefix=0
 
@@ -59,7 +67,7 @@ spring:
         - id: catalog-service-reviews
           uri: lb://catalog-service
           predicates:
-            - Path=/api/v1/reviews/**
+            - Path=/api/v1/reviews/**, /api/v1/products/*/reviews, /api/v1/products/*/review-eligibility
           filters:
             - StripPrefix=0
             - AuthenticationFilter
@@ -68,16 +76,15 @@ spring:
         - id: catalog-service-admin
           uri: lb://catalog-service
           predicates:
-            - Path=/api/v1/admin/products/**
+            - Path=/api/v1/admin/products/**, /api/v1/admin/product-imports/**, /api/v1/admin/analytics/products/**, /api/v1/admin/images/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter=ADMIN
 
-        # Route to Catalog Service Product Images (Admin only)
-        - id: catalog-service-images
+        - id: catalog-service-admin-categories
           uri: lb://catalog-service
           predicates:
-            - Path=/api/v1/images/**
+            - Path=/api/v1/admin/categories/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter=ADMIN
@@ -86,10 +93,27 @@ spring:
         - id: auth-service-admin
           uri: lb://auth-service
           predicates:
-            - Path=/api/v1/admin/users/**
+            - Path=/api/v1/admin/users/**, /api/v1/admin/analytics/users/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter=ADMIN
+
+        # Route to Payment Service (Public Callbacks)
+        - id: payment-service-public
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/payment-providers/vnpay/callback
+          filters:
+            - StripPrefix=0
+
+        # Route to Payment Service (Authenticated)
+        - id: payment-service-authenticated
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/orders/*/payments, /api/v1/orders/*/payment
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
 
         # Route to Order Service with Authentication Filter
         - id: order-service
@@ -104,27 +128,10 @@ spring:
         - id: order-service-admin
           uri: lb://order-service
           predicates:
-            - Path=/api/v1/admin/orders/**
+            - Path=/api/v1/admin/orders/**, /api/v1/admin/analytics/orders/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter=ADMIN
-
-        # Route to Payment Service (Public Callbacks)
-        - id: payment-service-public
-          uri: lb://payment-service
-          predicates:
-            - Path=/api/v1/payments/vnpay-callback
-          filters:
-            - StripPrefix=0
-
-        # Route to Payment Service (Authenticated)
-        - id: payment-service-authenticated
-          uri: lb://payment-service
-          predicates:
-            - Path=/api/v1/payments/**
-          filters:
-            - StripPrefix=0
-            - AuthenticationFilter
 
         # Route to AI Service Stream Endpoint (SSE Real-time Streaming without CircuitBreaker buffering)
         - id: ai-service-stream
@@ -151,16 +158,6 @@ spring:
               args:
                 name: aiServiceCircuitBreaker
                 fallbackUri: forward:/fallback/ai
-
-        # Fallback Route to Monolith (if anything remains)
-        - id: kyro-monolith
-          uri: lb://kyro-monolith
-          predicates:
-            - Path=/api/v1/**
-          filters:
-            - StripPrefix=0
-
-
         # --- OpenAPI Docs Routes for Downstream Services ---
         - id: auth-service-docs
           uri: lb://auth-service

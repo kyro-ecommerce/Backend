@@ -54,6 +54,6 @@ PostgreSQL giữ một `cart` theo người dùng và các `cart_item`; Redis d�
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/v1/carts` | Lấy toàn bộ thông tin giỏ hàng của người dùng | User / Admin |
 | `POST` | `/api/v1/carts/items` | Thêm sản phẩm vào giỏ (gọi CatalogClient kiểm tra tồn kho) | User / Admin |
-| `PUT` | `/api/v1/carts/items/{itemId}?quantity={quantity}` | Cập nhật số lượng sản phẩm trong giỏ | User / Admin |
+| `PATCH` | `/api/v1/carts/items/{itemId}` | Cập nhật số lượng với `{ "quantity": n }` | User / Admin |
 | `DELETE` | `/api/v1/carts/items/{itemId}` | Xóa 1 sản phẩm khỏi giỏ hàng | User / Admin |
 | `DELETE` | `/api/v1/carts/items` | Xóa sạch giỏ hàng của người dùng | User / Admin / Feign |
