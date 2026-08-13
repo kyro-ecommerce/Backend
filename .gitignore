@@ -56,4 +56,5 @@ k6/results/*
 !k6/results/.gitkeep
 
 # Local Development & Planning
-plans/
+/plans/
+/notes/

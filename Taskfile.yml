@@ -53,35 +53,45 @@ tasks:
   # ⚡ 2. DOCKER DEV MODE (Chạy từng service kèm dependencies trong Compose)
   # =========================================================================
 
+  dev:infra:
+    desc: "Chạy hạ tầng dùng chung một lần, không build lại image"
+    cmds:
+      - docker compose up -d --wait postgres redis rabbitmq eureka-server config-server
+
   dev:auth:
     desc: "Build và chạy auth-service trong Docker, chờ healthy"
     cmds:
-      - docker compose up -d --build --wait auth-service
+      - docker compose up -d --no-deps --build --wait auth-service
 
   dev:catalog:
     desc: "Build và chạy catalog-service trong Docker, chờ healthy"
     cmds:
-      - docker compose up -d --build --wait catalog-service
+      - docker compose up -d --no-deps --build --wait catalog-service
 
   dev:cart:
     desc: "Build và chạy cart-service trong Docker, chờ healthy"
     cmds:
-      - docker compose up -d --build --wait cart-service
+      - docker compose up -d --no-deps --build --wait cart-service
 
   dev:order:
     desc: "Build và chạy order-service trong Docker, chờ healthy"
     cmds:
-      - docker compose up -d --build --wait order-service
+      - docker compose up -d --no-deps --build --wait order-service
 
   dev:payment:
     desc: "Build và chạy payment-service trong Docker, chờ healthy"
     cmds:
-      - docker compose up -d --build --wait payment-service
+      - docker compose up -d --no-deps --build --wait payment-service
 
   dev:notification:
     desc: "Build và chạy notification-service trong Docker, chờ healthy"
     cmds:
-      - docker compose up -d --build --wait notification-service
+      - docker compose up -d --no-deps --build --wait notification-service
+
+  dev:gateway:
+    desc: "Build và chạy api-gateway trong Docker, chờ healthy"
+    cmds:
+      - docker compose up -d --no-deps --build --wait api-gateway
 
   # =========================================================================
   # 🛠️ 3. BUILD, FORMAT & TESTING UTILITIES

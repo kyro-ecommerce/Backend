@@ -1,0 +1,9 @@
+**
+!mvnw
+!.mvn/
+!.mvn/**
+!pom.xml
+!*/
+!*/pom.xml
+!*/src/
+!*/src/**
