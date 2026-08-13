@@ -1,10 +1,13 @@
 package com.kyro.order;
 
 import com.kyro.enums.OrderStatus;
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +17,10 @@ public interface OrderRepository
     extends JpaRepository<Order, Long>, JpaSpecificationExecutor<Order> {
 
   List<Order> findByUserId(Long userId);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT o FROM Order o WHERE o.id = :id")
+  Optional<Order> findByIdForUpdate(@Param("id") Long id);
 
   List<Order> findByOrderDateBetweenAndOrderStatus(
       LocalDateTime startDate, LocalDateTime endDate, OrderStatus status);

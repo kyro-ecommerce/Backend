@@ -3,6 +3,7 @@ package com.kyro.payment;
 import com.google.gson.Gson;
 import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
+import com.kyro.exceptions.DomainException;
 import com.kyro.payment.client.OrderClient;
 import com.kyro.payment.event.PaymentStatusChangedEvent;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -108,8 +110,12 @@ public class PaymentService {
 
       // Find existing PaymentDetail or create a new record to avoid unique order_id constraint
       // violation
-      PaymentDetail paymentDetail =
-          paymentRepository.findByOrderId(orderId).orElseGet(PaymentDetail::new);
+      Optional<PaymentDetail> existingPayment = paymentRepository.findByOrderId(orderId);
+      if (existingPayment.isPresent()) {
+        throw new DomainException(
+            HttpStatus.CONFLICT, "Đơn hàng này đã có một yêu cầu thanh toán.");
+      }
+      PaymentDetail paymentDetail = existingPayment.orElseGet(PaymentDetail::new);
 
       paymentDetail.setOrderId(orderId);
       paymentDetail.setPaymentMethod(PaymentMethod.VNPAY);

@@ -37,15 +37,7 @@ public class OrderEventListener {
     try {
       List<Map<String, Object>> items = (List<Map<String, Object>>) event.get("items");
       if (items != null) {
-        for (Map<String, Object> item : items) {
-          Long productId = Long.valueOf(item.get("productId").toString());
-          String size = (String) item.get("size");
-          int quantity = Integer.parseInt(item.get("quantity").toString());
-
-          productService.decreaseStock(productId, size, quantity);
-          log.info(
-              "Decreased stock for Product ID {}, Size {}, Quantity {}", productId, size, quantity);
-        }
+        productService.decreaseStock(items);
       }
 
       // Publish stock.reserved success event

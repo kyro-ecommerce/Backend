@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +44,7 @@ public class OrderService {
   private final CartClient cartClient;
   private final UserClient userClient;
   private final RabbitTemplate rabbitTemplate;
+  private final ApplicationEventPublisher eventPublisher;
 
   public OrderService(
       OrderRepository orderRepository,
@@ -50,13 +52,15 @@ public class OrderService {
       CatalogClient catalogClient,
       CartClient cartClient,
       UserClient userClient,
-      RabbitTemplate rabbitTemplate) {
+      RabbitTemplate rabbitTemplate,
+      ApplicationEventPublisher eventPublisher) {
     this.orderRepository = orderRepository;
     this.orderItemRepository = orderItemRepository;
     this.catalogClient = catalogClient;
     this.cartClient = cartClient;
     this.userClient = userClient;
     this.rabbitTemplate = rabbitTemplate;
+    this.eventPublisher = eventPublisher;
   }
 
   public OrderDTO convertToDto(Order order) {
@@ -327,32 +331,16 @@ public class OrderService {
     createdOrders.add(finalSavedOrder);
     log.info("Successfully created order ID: {} with status PENDING", finalSavedOrder.getId());
 
-    // Publish OrderCreatedEvent to RabbitMQ for Async Stock Deduct & Cart Clear (Saga Pattern)
-    try {
-      com.kyro.order.event.OrderCreatedEvent orderCreatedEvent =
-          new com.kyro.order.event.OrderCreatedEvent(
-              finalSavedOrder.getId(), userId, userEmail, eventItems);
-
-      rabbitTemplate.convertAndSend(
-          com.kyro.order.config.RabbitMQConfig.ORDER_EXCHANGE,
-          com.kyro.order.config.RabbitMQConfig.ORDER_CREATED_ROUTING_KEY,
-          orderCreatedEvent);
-
-      log.info("Published OrderCreatedEvent for Order ID #{} to RabbitMQ", finalSavedOrder.getId());
-    } catch (Exception e) {
-      log.error(
-          "Failed to publish OrderCreatedEvent for Order ID #{}: {}",
-          finalSavedOrder.getId(),
-          e.getMessage(),
-          e);
-    }
+    eventPublisher.publishEvent(
+        new com.kyro.order.event.OrderCreatedEvent(
+            finalSavedOrder.getId(), userId, userEmail, eventItems));
 
     return createdOrders;
   }
 
   @Transactional
   public Order confirmedOrder(Long orderId) {
-    Order order = findOrderById(orderId);
+    Order order = findOrderByIdForUpdate(orderId);
     if (order.getOrderStatus() != OrderStatus.PENDING) {
       throw new RuntimeException(
           "Đơn hàng không thể xác nhận ở trạng thái hiện tại (" + order.getOrderStatus() + ")");
@@ -369,7 +357,7 @@ public class OrderService {
 
   @Transactional
   public Order shippedOrder(Long orderId) {
-    Order order = findOrderById(orderId);
+    Order order = findOrderByIdForUpdate(orderId);
     if (order.getOrderStatus() != OrderStatus.CONFIRMED) {
       throw new RuntimeException(
           "Đơn hàng phải được xác nhận trước khi gửi (trạng thái hiện tại: "
@@ -383,7 +371,7 @@ public class OrderService {
 
   @Transactional
   public Order deliveredOrder(Long orderId) {
-    Order order = findOrderById(orderId);
+    Order order = findOrderByIdForUpdate(orderId);
     if (order.getOrderStatus() != OrderStatus.SHIPPED) {
       throw new RuntimeException(
           "Đơn hàng phải được gửi trước khi giao (trạng thái hiện tại: "
@@ -399,27 +387,22 @@ public class OrderService {
 
   @Transactional
   public Order cancelOrder(Long orderId) {
-    Order order = findOrderById(orderId);
+    Order order = findOrderByIdForUpdate(orderId);
     if (order.getOrderStatus() == OrderStatus.DELIVERED
         || order.getOrderStatus() == OrderStatus.CANCELLED) {
       throw new RuntimeException("Không thể hủy đơn hàng ở trạng thái " + order.getOrderStatus());
     }
 
+    if (!order.isStockReserved() && order.getOrderStatus() == OrderStatus.PENDING) {
+      throw new DomainException(
+          org.springframework.http.HttpStatus.CONFLICT,
+          "Đơn hàng đang chờ giữ hàng, vui lòng thử lại sau.");
+    }
+
     if (order.isStockReserved()
         && (order.getOrderStatus() == OrderStatus.PENDING
             || order.getOrderStatus() == OrderStatus.CONFIRMED)) {
-      for (OrderItem orderItem : order.getOrderItems()) {
-        // Restore stock in catalog-service via FeignClient
-        catalogClient.adjustStock(
-            orderItem.getProductId(),
-            new CatalogClient.StockAdjustmentRequest(orderItem.getSize(), orderItem.getQuantity()));
-        log.info(
-            "Restored stock for Product ID {}: Size {} quantity increased by {}.",
-            orderItem.getProductId(),
-            orderItem.getSize(),
-            orderItem.getQuantity());
-      }
-      order.setStockReserved(false);
+      restoreStock(order);
     }
 
     order.setOrderStatus(OrderStatus.CANCELLED);
@@ -459,7 +442,14 @@ public class OrderService {
 
   @Transactional
   public void deleteOrder(Long orderId) {
-    Order order = findOrderById(orderId);
+    Order order = findOrderByIdForUpdate(orderId);
+    if (order.getOrderStatus() != OrderStatus.CANCELLED
+        || order.getPaymentMethod() == PaymentMethod.VNPAY
+            && order.getPaymentStatus() == PaymentStatus.COMPLETED) {
+      throw new DomainException(
+          org.springframework.http.HttpStatus.CONFLICT,
+          "Chỉ có thể xóa đơn đã hủy và chưa thanh toán.");
+    }
     orderRepository.delete(order);
     log.info("Order ID {} deleted successfully.", orderId);
   }
@@ -583,23 +573,29 @@ public class OrderService {
 
   @Transactional
   public void updatePaymentStatus(Long orderId, PaymentStatus status) {
-    Order order = findOrderById(orderId);
+    Order order = findOrderByIdForUpdate(orderId);
     if (order.getPaymentStatus() == PaymentStatus.COMPLETED && status != PaymentStatus.COMPLETED) {
       log.info("Ignored payment status regression {} for completed order {}", status, orderId);
       return;
     }
-    applyPaymentStatus(order, status);
+    if (applyPaymentStatus(order, status)) {
+      restoreStock(order);
+      order.setOrderStatus(OrderStatus.CANCELLED);
+    }
     orderRepository.save(order);
     log.info("Successfully updated payment status for order ID {} to {}", orderId, status);
   }
 
-  static void applyPaymentStatus(Order order, PaymentStatus status) {
+  static boolean applyPaymentStatus(Order order, PaymentStatus status) {
     order.setPaymentStatus(status);
     if (status == PaymentStatus.COMPLETED
         && order.isStockReserved()
         && order.getOrderStatus() == OrderStatus.PENDING) {
       order.setOrderStatus(OrderStatus.CONFIRMED);
     }
+    return status == PaymentStatus.FAILED
+        && order.isStockReserved()
+        && order.getOrderStatus() == OrderStatus.PENDING;
   }
 
   static void applyCancellationPaymentStatus(Order order) {
@@ -607,5 +603,51 @@ public class OrderService {
         || order.getPaymentStatus() != PaymentStatus.COMPLETED) {
       order.setPaymentStatus(PaymentStatus.CANCELLED);
     }
+  }
+
+  @Transactional
+  public void handleStockResult(com.kyro.order.event.StockResultEvent event) {
+    Order order = findOrderByIdForUpdate(event.orderId());
+    if (applyStockResult(order, event.success())) {
+      restoreStock(order);
+    }
+    orderRepository.save(order);
+  }
+
+  static boolean applyStockResult(Order order, boolean success) {
+    if (order.getOrderStatus() != OrderStatus.PENDING) {
+      return false;
+    }
+    if (!success) {
+      order.setStockReserved(false);
+      order.setOrderStatus(OrderStatus.CANCELLED);
+      applyCancellationPaymentStatus(order);
+      return false;
+    }
+    order.setStockReserved(true);
+    if (order.getPaymentStatus() == PaymentStatus.FAILED) {
+      order.setOrderStatus(OrderStatus.CANCELLED);
+      return true;
+    }
+    if (order.getPaymentMethod() == PaymentMethod.COD
+        || order.getPaymentStatus() == PaymentStatus.COMPLETED) {
+      order.setOrderStatus(OrderStatus.CONFIRMED);
+    }
+    return false;
+  }
+
+  private Order findOrderByIdForUpdate(Long orderId) {
+    return orderRepository
+        .findByIdForUpdate(orderId)
+        .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
+  }
+
+  private void restoreStock(Order order) {
+    for (OrderItem item : order.getOrderItems()) {
+      catalogClient.adjustStock(
+          item.getProductId(),
+          new CatalogClient.StockAdjustmentRequest(item.getSize(), item.getQuantity()));
+    }
+    order.setStockReserved(false);
   }
 }

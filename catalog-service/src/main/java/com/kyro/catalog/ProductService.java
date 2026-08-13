@@ -560,6 +560,18 @@ public class ProductService {
   }
 
   @Transactional
+  public void decreaseStock(List<Map<String, Object>> items) {
+    items.stream()
+        .sorted(Comparator.comparing(item -> Long.valueOf(item.get("productId").toString())))
+        .forEach(
+            item ->
+                decreaseStock(
+                    Long.valueOf(item.get("productId").toString()),
+                    item.get("size").toString(),
+                    Integer.parseInt(item.get("quantity").toString())));
+  }
+
+  @Transactional
   public void increaseStock(Long productId, String sizeName, int quantity) {
     Product product =
         productRepository
