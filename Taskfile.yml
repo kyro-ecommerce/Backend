@@ -111,46 +111,22 @@ tasks:
     cmds:
       - "{{.MVNW_CMD}} test"
 
-  # =========================================================================
-  # 📊 4. K6 PERFORMANCE & LOAD TESTING UTILITIES
-  # =========================================================================
-
-  k6:smoke:
-    desc: "Chạy k6 Smoke Test (30s verification)"
+  perf:feign:
+    desc: "Đo luồng Feign đồng bộ khi tạo order"
     cmds:
-      - k6 run k6/scenarios/01_smoke_test.js
+      - ./k6/performance/run.sh feign
 
-  k6:browse:
-    desc: "Chạy k6 Catalog & Search Read-Heavy Load Test"
+  perf:rabbitmq:
+    desc: "Đo luồng RabbitMQ từ Payment sang Order"
     cmds:
-      - k6 run k6/scenarios/02_browse_catalog.js
+      - ./k6/performance/run.sh rabbitmq
 
-  k6:cart:
-    desc: "Chạy k6 Redis Cart High-Concurrency Load Test"
+  perf:payment-failure:
+    desc: "Mô phỏng VNPay từ chối thanh toán và kiểm tra đồng bộ RabbitMQ"
     cmds:
-      - k6 run k6/scenarios/03_cart_operations.js
+      - ./k6/performance/run.sh payment-failure
 
-  k6:checkout:
-    desc: "Chạy k6 End-to-End Checkout & Payment Flow Load Test"
+  perf:reset:
+    desc: "Xóa fixture performance và phục hồi stock seed"
     cmds:
-      - k6 run k6/scenarios/04_checkout_order.js
-
-  k6:stress:
-    desc: "Chạy k6 System Stress Test (Ramping up to 300 VUs)"
-    cmds:
-      - k6 run k6/scenarios/05_stress_test.js
-
-  k6:spike:
-    desc: "Chạy k6 Flash Sale Spike Test (0 -> 250 VUs in 10s)"
-    cmds:
-      - k6 run k6/scenarios/06_spike_test.js
-
-  k6:edge:
-    desc: "Chạy k6 Edge Cases & Resilience Chaos Test"
-    cmds:
-      - k6 run k6/scenarios/07_edge_cases.js
-
-  k6:full:
-    desc: "Chạy k6 Master Suite (Toàn bộ scenarios với tỷ lệ lưu lượng thực tế)"
-    cmds:
-      - k6 run k6/main_suite.js
+      - ./k6/performance/run.sh reset
