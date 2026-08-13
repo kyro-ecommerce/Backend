@@ -1,9 +1,8 @@
 package com.kyro.order.messaging;
 
-import com.kyro.enums.OrderStatus;
 import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
-import com.kyro.order.OrderRepository;
+import com.kyro.order.OrderService;
 import com.kyro.order.config.RabbitMQConfig;
 import com.kyro.order.event.StockResultEvent;
 import org.slf4j.Logger;
@@ -16,36 +15,17 @@ public class OrderSagaEventListener {
 
   private static final Logger log = LoggerFactory.getLogger(OrderSagaEventListener.class);
 
-  private final OrderRepository orderRepository;
+  private final OrderService orderService;
 
-  public OrderSagaEventListener(OrderRepository orderRepository) {
-    this.orderRepository = orderRepository;
+  public OrderSagaEventListener(OrderService orderService) {
+    this.orderService = orderService;
   }
 
   @RabbitListener(queues = RabbitMQConfig.ORDER_SAGA_QUEUE)
   public void handleStockResult(StockResultEvent event) {
     log.info(
         "Received StockResultEvent for Order ID {}: success={}", event.orderId(), event.success());
-    orderRepository
-        .findById(event.orderId())
-        .ifPresent(
-            order -> {
-              if (event.success()) {
-                if (canConfirm(order.getPaymentMethod(), order.getPaymentStatus())) {
-                  order.setOrderStatus(OrderStatus.CONFIRMED);
-                  log.info("Order ID {} successfully CONFIRMED via Saga.", event.orderId());
-                } else {
-                  log.info("Order ID {} reserved stock and is awaiting payment.", event.orderId());
-                }
-              } else {
-                order.setOrderStatus(OrderStatus.CANCELLED);
-                log.warn(
-                    "Order ID {} CANCELLED due to stock deduction failure: {}",
-                    event.orderId(),
-                    event.message());
-              }
-              orderRepository.save(order);
-            });
+    orderService.handleStockResult(event);
   }
 
   static boolean canConfirm(PaymentMethod paymentMethod, PaymentStatus paymentStatus) {

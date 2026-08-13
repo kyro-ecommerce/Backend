@@ -106,8 +106,12 @@ public class OrderController {
 
   /** Finds an order by its ID. */
   @GetMapping("/{id}")
-  public ResponseEntity<OrderDTO> findOrderById(@PathVariable("id") Long orderId) {
+  public ResponseEntity<OrderDTO> findOrderById(
+      @PathVariable("id") Long orderId, @RequestHeader("X-User-Id") Long userId) {
     Order order = orderService.findOrderById(orderId);
+    if (!order.getUserId().equals(userId)) {
+      throw new DomainException(HttpStatus.FORBIDDEN, "Bạn không có quyền xem đơn hàng này.");
+    }
     OrderDTO orderDTO = new OrderDTO(order);
     return new ResponseEntity<>(orderDTO, HttpStatus.OK);
   }
