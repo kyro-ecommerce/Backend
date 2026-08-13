@@ -1,38 +1,32 @@
-# K6: số liệu để báo cáo và phản biện
+# K6: giao tiếp giữa các service
 
-K6 ở đây là **integration/load test**, không thay thế unit test. Nó đo từ API Gateway qua các service; vì vậy `http_req_duration` và `synchronous_path_latency` là độ trễ API end-to-end, **không phải** latency riêng của một Feign call. Muốn số Feign riêng phải thêm tracing/metrics vào ứng dụng, chưa cần làm nếu thầy chỉ yêu cầu kết quả thực tế của hệ thống.
+Phần báo cáo chỉ cần hai luồng đại diện:
 
-## Chạy tối thiểu
+| Kịch bản | Luồng | Số liệu chính |
+| --- | --- | --- |
+| Feign đồng bộ | Gateway → Order → Auth/Cart/Catalog | `synchronous_path_latency` p95, `technical_success_rate`, `events_produced` |
+| RabbitMQ bất đồng bộ | Payment callback → RabbitMQ → Order | `rabbitmq_propagation_latency` p95, `rabbitmq_observation_success_rate`, backlog |
 
-Chỉ chạy local Docker, có `k6`, `docker`, `task`, và `JWT_SECRET` trong `.env`. Không chạy với VNPay thật: callback đều là synthetic, không gọi mạng VNPay.
+Đây là latency end-to-end của luồng có Feign, không phải thời gian riêng bên trong từng Feign call. Không cần benchmark mọi endpoint; hai luồng trên đại diện cho hai kiểu giao tiếp trong hệ thống.
+
+## Cách chạy
 
 ```bash
 task run
-task perf:payment-failure  # VNPay trả lỗi 24 -> Payment FAILED phải đến Order qua RabbitMQ
-task perf:capacity         # 10, 25, 50, 100, 200 RPS: Payment, Order và checkout
-task perf:spike            # 1,000 user: 10 SKU và tranh chấp 1 SKU
-task perf:reset            # dọn fixture và khôi phục stock sau khi chụp kết quả
+task perf:feign
+task perf:rabbitmq
+task perf:reset
 ```
 
-Mỗi lần chạy ghi vào `k6/results/`; các file sinh ra được Git ignore. Chỉ đính kèm bảng số liệu cuối vào báo cáo, không commit log/JSON/CSV của từng lần chạy.
+Mỗi test warm-up 10 giây, sau đó chạy mặc định 25 request/giây trong 30 giây. Muốn đổi tải:
 
-| Câu hỏi | Số liệu / file |
-| --- | --- |
-| Latency API | `http_req_duration` (p(95), p(99)) trong `*.json` |
-| Throughput và tỉ lệ thành công | `http_reqs`, `technical_success_rate`, `checkout_success_rate` trong `*.json` |
-| RabbitMQ có theo kịp không | `rabbitmq_propagation_latency`, `rabbitmq_observation_success_rate`; backlog và thời gian drain trong `runs.csv`, `*-rabbit.csv` |
-| Trạng thái cuối không bị lệch | `*-verify.csv` — Payment và Order phải cùng `FAILED` hoặc `COMPLETED` |
+```bash
+PERF_RATE=50 PERF_DURATION=60s task perf:feign
+PERF_RATE=50 PERF_DURATION=60s task perf:rabbitmq
+```
 
-Chỉ kết luận throughput bền vững ở mức RPS cao nhất có mọi threshold pass, backlog sau drain = 0, và `*-verify.csv` không có trạng thái trái kỳ vọng. Ghi rõ cấu hình máy/Docker, version commit, thời lượng và mỗi test chạy lại tối thiểu 3 lần; lấy median p95 và success rate, không lấy một lần chạy đẹp nhất.
+Kết quả được tách tại `k6/results/feign/` và `k6/results/rabbitmq/` và đã được Git ignore. Trong báo cáo, với mỗi kịch bản chỉ cần ghi: tải yêu cầu, throughput thực tế (`events_produced`/thời gian), p95 latency, success rate và backlog sau drain trong `runs.csv`.
 
-## Câu trả lời khi phản biện về VNPay lỗi và bất đồng bộ
+`task perf:payment-failure` là test phụ để tìm hiểu rủi ro VNPay: callback lỗi phải làm Payment và Order cùng thành `FAILED`. Không cần đưa kết quả này vào bảng hiệu năng chính. Callback là synthetic, không đo mạng VNPay thật.
 
-`task perf:payment-failure` gửi callback mã `24` vào transaction fixture. Kỳ vọng: Payment lưu `FAILED`, event `payment.status.updated` được RabbitMQ chuyển cho Order, rồi Order cũng thành `FAILED`; K6 đo thời gian đến trạng thái đó. Đây chứng minh được *đường lỗi hiện tại*, không chứng minh độ tin cậy của VNPay thật.
-
-Rủi ro thực tế đang còn:
-
-1. Callback hiện không kiểm tra `vnp_SecureHash`; request giả có thể đổi trạng thái payment.
-2. Payment commit xong rồi mới publish RabbitMQ (`AFTER_COMMIT`), nên broker/publish lỗi có thể làm Payment đổi trạng thái nhưng Order không đổi. Cần transactional outbox + retry/monitoring khi nâng mức tin cậy.
-3. Consumer không có idempotency/state-transition guard; callback/event lặp hoặc đến sai thứ tự có thể ghi đè trạng thái. Cần event id, unique processed-event và chuyển trạng thái hợp lệ.
-
-Vì vậy hãy nói đúng: “Kết quả xác nhận độ trễ, throughput và eventual consistency trong môi trường local với callback mô phỏng; các rủi ro delivery/duplicate/callback integrity đã được nhận diện, chưa tuyên bố exactly-once hay độ tin cậy của VNPay production.”
+Rủi ro cần biết khi phản biện: callback hiện chưa kiểm tra chữ ký; publish sau khi DB commit có thể mất event nếu RabbitMQ lỗi; consumer chưa có idempotency/state-transition guard. Giải pháp khi cần độ tin cậy production là kiểm tra chữ ký, transactional outbox và idempotent consumer.

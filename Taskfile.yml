@@ -111,30 +111,20 @@ tasks:
     cmds:
       - "{{.MVNW_CMD}} test"
 
-  perf:prepare:
-    desc: "Tạo fixture performance riêng"
+  perf:feign:
+    desc: "Đo luồng Feign đồng bộ khi tạo order"
     cmds:
-      - ./k6/performance/run.sh prepare
+      - ./k6/performance/run.sh feign
 
-  perf:capacity:
-    desc: "Tìm throughput bền vững của Payment, Order và checkout"
+  perf:rabbitmq:
+    desc: "Đo luồng RabbitMQ từ Payment sang Order"
     cmds:
-      - ./k6/performance/run.sh capacity
-
-  perf:spike:
-    desc: "Spike 1.000 user: 10 SKU và single-SKU contention"
-    cmds:
-      - ./k6/performance/run.sh spike
+      - ./k6/performance/run.sh rabbitmq
 
   perf:payment-failure:
     desc: "Mô phỏng VNPay từ chối thanh toán và kiểm tra đồng bộ RabbitMQ"
     cmds:
       - ./k6/performance/run.sh payment-failure
-
-  perf:all:
-    desc: "Chạy toàn bộ benchmark throughput"
-    cmds:
-      - ./k6/performance/run.sh all
 
   perf:reset:
     desc: "Xóa fixture performance và phục hồi stock seed"

@@ -2,9 +2,7 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-RESULTS="$ROOT/k6/results"
-RATES=(10 25 50 100 200)
-mkdir -p "$RESULTS"
+RESULTS_BASE="$ROOT/k6/results"
 
 env_value() { sed -n "s/^$1=//p" "$ROOT/.env" | tail -1; }
 export JWT_SECRET="${JWT_SECRET:-$(env_value JWT_SECRET)}"
@@ -47,6 +45,12 @@ run_k6() {
   return "$code"
 }
 
+start_results() {
+  RESULTS="$RESULTS_BASE/$1"
+  mkdir -p "$RESULTS"
+  echo 'run,rate,exit,observed_peak_backlog,backlog_at_producer_stop,backlog_after_drain,drain_seconds' > "$RESULTS/runs.csv"
+}
+
 queue_depth() {
   docker exec kyro-rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter csv 2>/dev/null \
     | awk -F, 'NR>1 {gsub(/"/,""); if($1 ~ /^(order-payment-status-queue|catalog-order-created-queue|cart-clear-queue|order-saga-queue)$/) n+=$2+$3} END {print n+0}'
@@ -67,66 +71,31 @@ verify() {
   } > "$RESULTS/$label-verify.csv"
 }
 
-capacity_suite() {
-  local script=$1 last_pass= first_fail=
+benchmark() {
+  local script=$1 label=$2
   prepare
-  run_k6 "$script" "${script}-smoke" 1 1s
+  run_k6 "$script" "$label-warmup" 10 10s || true
   prepare
-  run_k6 "$script" "${script}-warmup" 10 20s || true
-  for rate in "${RATES[@]}"; do
-    prepare
-    if run_k6 "$script" "${script}-${rate}rps" "$rate" 30s; then last_pass=$rate; else first_fail=$rate; break; fi
-  done
-  if [[ -n "$last_pass" && -n "$first_fail" ]]; then
-    local midpoint=$(((last_pass + first_fail) / 2))
-    prepare
-    if run_k6 "$script" "${script}-${midpoint}rps-refine" "$midpoint" 30s; then last_pass=$midpoint; fi
-  fi
-  if [[ -n "$last_pass" ]]; then
-    prepare
-    run_k6 "$script" "${script}-${last_pass}rps-confirm" "$last_pass" 60s || true
-  fi
-  verify "$script-capacity"
+  run_k6 "$script" "$label" "${PERF_RATE:-25}" "${PERF_DURATION:-30s}"
+  verify "$label"
 }
 
-spike() {
-  prepare
-  run_k6 checkout_e2e spike-smoke 1 1s
-  prepare
-  MODE=spike SKU_MODE=distributed run_k6 checkout_e2e spike-distributed-10-sku 0 0s || true
-  verify spike-distributed-10-sku
-  prepare
-  sql "$ROOT/k6/performance/contention.sql"
-  redis_cleanup
-  MODE=spike SKU_MODE=contention run_k6 checkout_e2e spike-single-sku-contention 0 0s || true
-  verify spike-single-sku-contention
-}
-
-case "${1:-all}" in
+case "${1:-}" in
   prepare) prepare ;;
   reset) reset ;;
-  capacity)
-    echo 'run,rate,exit,observed_peak_backlog,backlog_at_producer_stop,backlog_after_drain,drain_seconds' > "$RESULTS/runs.csv"
-    capacity_suite payment_async
-    capacity_suite order_async
-    capacity_suite checkout_e2e
+  feign)
+    start_results feign
+    benchmark order_async feign
     ;;
-  spike)
-    echo 'run,rate,exit,observed_peak_backlog,backlog_at_producer_stop,backlog_after_drain,drain_seconds' > "$RESULTS/runs.csv"
-    spike
+  rabbitmq)
+    start_results rabbitmq
+    benchmark payment_async rabbitmq
     ;;
   payment-failure)
-    echo 'run,rate,exit,observed_peak_backlog,backlog_at_producer_stop,backlog_after_drain,drain_seconds' > "$RESULTS/runs.csv"
+    start_results payment-failure
     prepare
-    RESPONSE_CODE=24 EXPECTED_PAYMENT_STATUS=FAILED run_k6 payment_async payment_async-failure-10rps 10 30s
-    verify payment_async-failure
+    RESPONSE_CODE=24 EXPECTED_PAYMENT_STATUS=FAILED run_k6 payment_async payment-failure "${PERF_RATE:-25}" "${PERF_DURATION:-30s}"
+    verify payment-failure
     ;;
-  all)
-    echo 'run,rate,exit,observed_peak_backlog,backlog_at_producer_stop,backlog_after_drain,drain_seconds' > "$RESULTS/runs.csv"
-    capacity_suite payment_async
-    capacity_suite order_async
-    capacity_suite checkout_e2e
-    spike
-    ;;
-  *) echo "Usage: $0 prepare|capacity|spike|payment-failure|all|reset" >&2; exit 2 ;;
+  *) echo "Usage: $0 feign|rabbitmq|payment-failure|prepare|reset" >&2; exit 2 ;;
 esac
