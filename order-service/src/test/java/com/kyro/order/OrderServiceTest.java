@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.kyro.enums.OrderStatus;
+import com.kyro.enums.PaymentMethod;
+import com.kyro.enums.PaymentStatus;
 import org.junit.jupiter.api.Test;
 
 class OrderServiceTest {
@@ -46,5 +48,36 @@ class OrderServiceTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> orderService.updateOrderStatus(1L, OrderStatus.PENDING));
+  }
+
+  @Test
+  void confirmsVnpayOnlyAfterStockAndNeverRevivesCancelledOrder() {
+    Order order = new Order();
+    order.setPaymentMethod(PaymentMethod.VNPAY);
+    order.setPaymentStatus(PaymentStatus.PENDING);
+    order.setOrderStatus(OrderStatus.PENDING);
+
+    OrderService.applyPaymentStatus(order, PaymentStatus.COMPLETED);
+    assertEquals(OrderStatus.PENDING, order.getOrderStatus());
+
+    order.setStockReserved(true);
+    OrderService.applyPaymentStatus(order, PaymentStatus.COMPLETED);
+    assertEquals(OrderStatus.CONFIRMED, order.getOrderStatus());
+
+    order.setOrderStatus(OrderStatus.CANCELLED);
+    OrderService.applyPaymentStatus(order, PaymentStatus.COMPLETED);
+    assertEquals(OrderStatus.CANCELLED, order.getOrderStatus());
+  }
+
+  @Test
+  void cancellingPaidVnpayOrderDoesNotClaimRefund() {
+    Order order = new Order();
+    order.setPaymentMethod(PaymentMethod.VNPAY);
+    order.setPaymentStatus(PaymentStatus.COMPLETED);
+    order.setOrderStatus(OrderStatus.PENDING);
+
+    OrderService.applyCancellationPaymentStatus(order);
+
+    assertEquals(PaymentStatus.COMPLETED, order.getPaymentStatus());
   }
 }

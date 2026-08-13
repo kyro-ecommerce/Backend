@@ -65,6 +65,9 @@ public class Order {
   @Enumerated(EnumType.STRING)
   private PaymentStatus paymentStatus;
 
+  @Column(name = "stock_reserved", nullable = false)
+  private boolean stockReserved;
+
   public Long getId() {
     return id;
   }
@@ -175,5 +178,13 @@ public class Order {
 
   public void setPaymentStatus(PaymentStatus paymentStatus) {
     this.paymentStatus = paymentStatus;
+  }
+
+  public boolean isStockReserved() {
+    return stockReserved;
+  }
+
+  public void setStockReserved(boolean stockReserved) {
+    this.stockReserved = stockReserved;
   }
 }

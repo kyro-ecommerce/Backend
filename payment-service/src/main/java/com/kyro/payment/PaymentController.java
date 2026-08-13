@@ -2,6 +2,7 @@ package com.kyro.payment;
 
 import com.kyro.exceptions.DomainException;
 import com.kyro.payment.client.OrderClient;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -34,7 +35,8 @@ public class PaymentController {
   /** Creates a VNPay checkout URL for an order. */
   @PostMapping("/orders/{orderId}/payments")
   public ResponseEntity<Map<String, Object>> createPayment(
-      @RequestHeader(value = "X-User-Id", required = false) Long userId,
+      @RequestHeader("X-User-Id") Long userId,
+      @RequestHeader(value = "X-User-Roles", required = false) String roles,
       @PathVariable Long orderId) {
 
     OrderClient.OrderResponse order = null;
@@ -47,13 +49,7 @@ public class PaymentController {
     if (order == null) {
       throw new DomainException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng với ID: " + orderId);
     }
-
-    // Verify order ownership
-    // In the client response, userId is returned or verified at the edge
-    // For simplicity: we assume order belongs to the user if the user requests it, or order-service
-    // verifies this.
-    // If we want to verify it here, we should fetch userId from order response (which we can add to
-    // OrderResponse!).
+    verifyOwnership(userId, roles, order);
 
     // Create payment URL
     String paymentUrl = paymentService.createPayment(orderId);
@@ -99,13 +95,16 @@ public class PaymentController {
   /** Gets payment details by order ID. */
   @GetMapping("/orders/{orderId}/payment")
   public ResponseEntity<PaymentDetail> getPaymentByOrderId(
-      @RequestHeader("X-User-Id") Long userId, @PathVariable Long orderId) {
+      @RequestHeader("X-User-Id") Long userId,
+      @RequestHeader(value = "X-User-Roles", required = false) String roles,
+      @PathVariable Long orderId) {
 
     // Fetch order details to verify ownership
     OrderClient.OrderResponse order = orderClient.getOrderById(orderId);
     if (order == null) {
       throw new DomainException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng");
     }
+    verifyOwnership(userId, roles, order);
 
     PaymentDetail payment =
         paymentRepository
@@ -116,5 +115,15 @@ public class PaymentController {
                         HttpStatus.NOT_FOUND, "Không tìm thấy thông tin thanh toán"));
 
     return ResponseEntity.ok(payment);
+  }
+
+  private static void verifyOwnership(Long userId, String roles, OrderClient.OrderResponse order) {
+    boolean admin =
+        roles != null
+            && Arrays.stream(roles.split(","))
+                .anyMatch(role -> "ADMIN".equals(role) || "ROLE_ADMIN".equals(role));
+    if (!admin && !userId.equals(order.userId())) {
+      throw new DomainException(HttpStatus.FORBIDDEN, "Bạn không có quyền truy cập đơn hàng này");
+    }
   }
 }

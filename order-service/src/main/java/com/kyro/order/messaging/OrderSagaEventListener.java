@@ -30,7 +30,15 @@ public class OrderSagaEventListener {
         .findById(event.orderId())
         .ifPresent(
             order -> {
+              if (order.getOrderStatus() != OrderStatus.PENDING) {
+                log.info(
+                    "Ignored stock result for terminal order {} in status {}",
+                    event.orderId(),
+                    order.getOrderStatus());
+                return;
+              }
               if (event.success()) {
+                order.setStockReserved(true);
                 if (canConfirm(order.getPaymentMethod(), order.getPaymentStatus())) {
                   order.setOrderStatus(OrderStatus.CONFIRMED);
                   log.info("Order ID {} successfully CONFIRMED via Saga.", event.orderId());
@@ -38,6 +46,7 @@ public class OrderSagaEventListener {
                   log.info("Order ID {} reserved stock and is awaiting payment.", event.orderId());
                 }
               } else {
+                order.setStockReserved(false);
                 order.setOrderStatus(OrderStatus.CANCELLED);
                 log.warn(
                     "Order ID {} CANCELLED due to stock deduction failure: {}",

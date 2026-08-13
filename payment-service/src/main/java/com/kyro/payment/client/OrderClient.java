@@ -18,5 +18,6 @@ public interface OrderClient {
       Long userId,
       Integer totalDiscountedPrice,
       String paymentStatus,
-      String paymentMethod) {}
+      String paymentMethod,
+      String orderStatus) {}
 }

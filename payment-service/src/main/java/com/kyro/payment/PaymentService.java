@@ -8,6 +8,7 @@ import com.kyro.payment.event.PaymentStatusChangedEvent;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -64,6 +65,12 @@ public class PaymentService {
       OrderClient.OrderResponse order = orderClient.getOrderById(orderId);
       if (order == null) {
         throw new RuntimeException("Không tìm thấy đơn hàng");
+      }
+      if (!"VNPAY".equals(order.paymentMethod())) {
+        throw new IllegalArgumentException("Đơn hàng không sử dụng phương thức thanh toán VNPAY");
+      }
+      if (!"PENDING".equals(order.orderStatus()) || "COMPLETED".equals(order.paymentStatus())) {
+        throw new IllegalArgumentException("Đơn hàng không còn ở trạng thái có thể thanh toán");
       }
 
       // Update payment method to VNPAY inside order-service
@@ -145,6 +152,9 @@ public class PaymentService {
       paymentRepository.save(paymentDetail);
 
       return vnp_PayUrl + "?" + queryUrl;
+    } catch (RuntimeException e) {
+      log.error("Failed to initiate VNPay payment request: {}", e.getMessage(), e);
+      throw e;
     } catch (Exception e) {
       log.error("Failed to initiate VNPay payment request: {}", e.getMessage(), e);
       throw new RuntimeException("Lỗi khi tạo yêu cầu thanh toán: " + e.getMessage());
@@ -160,38 +170,92 @@ public class PaymentService {
 
   @Transactional
   public PaymentDetail processPaymentCallback(Map<String, String> vnpParams) {
-    try {
-      String vnp_ResponseCode = vnpParams.get("vnp_ResponseCode");
-      String vnp_TxnRef = vnpParams.get("vnp_TxnRef");
+    String transactionRef = required(vnpParams, "vnp_TxnRef");
+    validateSignature(vnpParams);
 
-      PaymentDetail payment =
-          paymentRepository
-              .findByTransactionId(vnp_TxnRef)
-              .orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch: " + vnp_TxnRef));
+    PaymentDetail payment =
+        paymentRepository
+            .findByTransactionId(transactionRef)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Không tìm thấy giao dịch: " + transactionRef));
+    validateCallback(vnpParams, payment);
 
-      if ("00".equals(vnp_ResponseCode)) {
-        payment.setPaymentStatus(PaymentStatus.COMPLETED);
-        payment.setPaymentDate(LocalDateTime.now());
-        payment.setPaymentLog(new Gson().toJson(vnpParams));
-        payment.setVnp_ResponseCode(vnp_ResponseCode);
+    String responseCode = vnpParams.get("vnp_ResponseCode");
+    boolean completed =
+        "00".equals(responseCode) && "00".equals(vnpParams.get("vnp_TransactionStatus"));
+    PaymentStatus nextStatus = resolvedStatus(payment.getPaymentStatus(), completed);
 
-        return saveAndPublishStatus(payment);
-      } else {
-        payment.setPaymentStatus(PaymentStatus.FAILED);
-        payment.setPaymentLog(new Gson().toJson(vnpParams));
-
-        return saveAndPublishStatus(payment);
-      }
-    } catch (Exception e) {
-      log.error("Failed to process payment callback: {}", e.getMessage(), e);
-      throw new RuntimeException("Lỗi xử lý callback thanh toán: " + e.getMessage());
+    // A confirmed charge is monotonic; duplicate or late failure callbacks must not reverse it.
+    if (payment.getPaymentStatus() == nextStatus) {
+      return payment;
     }
+
+    payment.setPaymentStatus(nextStatus);
+    payment.setPaymentLog(new Gson().toJson(vnpParams));
+    payment.setVnp_ResponseCode(responseCode);
+    if (completed) payment.setPaymentDate(LocalDateTime.now());
+    return saveAndPublishStatus(payment);
+  }
+
+  void validateCallback(Map<String, String> params, PaymentDetail payment) {
+    if (!vnp_TmnCode.equals(required(params, "vnp_TmnCode"))) {
+      throw new IllegalArgumentException("Mã website VNPay không hợp lệ");
+    }
+    required(params, "vnp_ResponseCode");
+    required(params, "vnp_TransactionStatus");
+    long amount;
+    try {
+      amount = Long.parseLong(required(params, "vnp_Amount"));
+    } catch (NumberFormatException e) {
+      throw new IllegalArgumentException("Số tiền VNPay không hợp lệ");
+    }
+    if (amount != (long) payment.getTotalAmount() * 100L) {
+      throw new IllegalArgumentException("Số tiền VNPay không khớp đơn hàng");
+    }
+  }
+
+  void validateSignature(Map<String, String> params) {
+    String provided = required(params, "vnp_SecureHash").toLowerCase(Locale.ROOT);
+    String expected = hmacSHA512(vnp_HashSecret, callbackHashData(params));
+    if (!MessageDigest.isEqual(
+        expected.getBytes(StandardCharsets.US_ASCII),
+        provided.getBytes(StandardCharsets.US_ASCII))) {
+      throw new IllegalArgumentException("Chữ ký VNPay không hợp lệ");
+    }
+  }
+
+  private String callbackHashData(Map<String, String> params) {
+    return params.entrySet().stream()
+        .filter(e -> e.getKey().startsWith("vnp_"))
+        .filter(e -> !"vnp_SecureHash".equals(e.getKey()))
+        .filter(e -> !"vnp_SecureHashType".equals(e.getKey()))
+        .filter(e -> e.getValue() != null && !e.getValue().isEmpty())
+        .sorted(Map.Entry.comparingByKey())
+        .map(
+            e ->
+                URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8)
+                    + "="
+                    + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
+        .reduce((left, right) -> left + "&" + right)
+        .orElse("");
+  }
+
+  private static String required(Map<String, String> params, String name) {
+    String value = params.get(name);
+    if (value == null || value.isBlank()) throw new IllegalArgumentException("Thiếu " + name);
+    return value;
+  }
+
+  static PaymentStatus resolvedStatus(PaymentStatus current, boolean completed) {
+    if (current == PaymentStatus.COMPLETED) return current;
+    return completed ? PaymentStatus.COMPLETED : PaymentStatus.FAILED;
   }
 
   private PaymentDetail saveAndPublishStatus(PaymentDetail payment) {
     PaymentDetail savedPayment = paymentRepository.save(payment);
     eventPublisher.publishEvent(
-        new PaymentStatusChangedEvent(savedPayment.getOrderId(), savedPayment.getPaymentStatus().name()));
+        new PaymentStatusChangedEvent(
+            savedPayment.getOrderId(), savedPayment.getPaymentStatus().name()));
     return savedPayment;
   }
 
@@ -231,16 +295,17 @@ public class PaymentService {
   private String hmacSHA512(String key, String data) {
     try {
       Mac sha512_HMAC = Mac.getInstance("HmacSHA512");
-      SecretKeySpec secret_key = new SecretKeySpec(key.getBytes(), "HmacSHA512");
+      SecretKeySpec secret_key =
+          new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
       sha512_HMAC.init(secret_key);
-      byte[] hash = sha512_HMAC.doFinal(data.getBytes());
+      byte[] hash = sha512_HMAC.doFinal(data.getBytes(StandardCharsets.UTF_8));
       StringBuilder sb = new StringBuilder();
       for (byte b : hash) {
         sb.append(String.format("%02x", b));
       }
       return sb.toString();
     } catch (Exception ex) {
-      return "";
+      throw new IllegalStateException("Không thể tạo chữ ký VNPay", ex);
     }
   }
 }

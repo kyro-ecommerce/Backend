@@ -278,6 +278,7 @@ public class OrderService {
     order.setShippingAddress(shippingAddress);
     order.setOrderStatus(OrderStatus.PENDING);
     order.setPaymentStatus(PaymentStatus.PENDING);
+    order.setStockReserved(false);
     order.setPaymentMethod(paymentMethod != null ? paymentMethod : PaymentMethod.COD);
 
     order.setOriginalPrice(totalOriginalPrice);
@@ -356,6 +357,11 @@ public class OrderService {
       throw new RuntimeException(
           "Đơn hàng không thể xác nhận ở trạng thái hiện tại (" + order.getOrderStatus() + ")");
     }
+    if (!order.isStockReserved()
+        || (order.getPaymentMethod() == PaymentMethod.VNPAY
+            && order.getPaymentStatus() != PaymentStatus.COMPLETED)) {
+      throw new RuntimeException("Đơn hàng chưa hoàn tất giữ hàng hoặc thanh toán.");
+    }
     order.setOrderStatus(OrderStatus.CONFIRMED);
     log.info("Order ID {} confirmed.", orderId);
     return orderRepository.save(order);
@@ -399,8 +405,9 @@ public class OrderService {
       throw new RuntimeException("Không thể hủy đơn hàng ở trạng thái " + order.getOrderStatus());
     }
 
-    if (order.getOrderStatus() == OrderStatus.PENDING
-        || order.getOrderStatus() == OrderStatus.CONFIRMED) {
+    if (order.isStockReserved()
+        && (order.getOrderStatus() == OrderStatus.PENDING
+            || order.getOrderStatus() == OrderStatus.CONFIRMED)) {
       for (OrderItem orderItem : order.getOrderItems()) {
         // Restore stock in catalog-service via FeignClient
         catalogClient.adjustStock(
@@ -412,16 +419,18 @@ public class OrderService {
             orderItem.getSize(),
             orderItem.getQuantity());
       }
+      order.setStockReserved(false);
     }
 
     order.setOrderStatus(OrderStatus.CANCELLED);
 
-    if (order.getPaymentMethod() == PaymentMethod.VNPAY
-        && order.getPaymentStatus() == PaymentStatus.COMPLETED) {
-      order.setPaymentStatus(PaymentStatus.REFUNDED);
-      log.info("Order ID {} cancelled. Payment status set to REFUNDED for VNPAY.", orderId);
+    boolean paidVnpay =
+        order.getPaymentMethod() == PaymentMethod.VNPAY
+            && order.getPaymentStatus() == PaymentStatus.COMPLETED;
+    applyCancellationPaymentStatus(order);
+    if (paidVnpay) {
+      log.warn("Order ID {} cancelled after VNPAY completion; manual refund is required.", orderId);
     } else {
-      order.setPaymentStatus(PaymentStatus.CANCELLED);
       log.info("Order ID {} cancelled. Payment status set to CANCELLED.", orderId);
     }
 
@@ -575,11 +584,28 @@ public class OrderService {
   @Transactional
   public void updatePaymentStatus(Long orderId, PaymentStatus status) {
     Order order = findOrderById(orderId);
-    order.setPaymentStatus(status);
-    if (status == PaymentStatus.COMPLETED) {
-      order.setOrderStatus(OrderStatus.CONFIRMED);
+    if (order.getPaymentStatus() == PaymentStatus.COMPLETED && status != PaymentStatus.COMPLETED) {
+      log.info("Ignored payment status regression {} for completed order {}", status, orderId);
+      return;
     }
+    applyPaymentStatus(order, status);
     orderRepository.save(order);
     log.info("Successfully updated payment status for order ID {} to {}", orderId, status);
+  }
+
+  static void applyPaymentStatus(Order order, PaymentStatus status) {
+    order.setPaymentStatus(status);
+    if (status == PaymentStatus.COMPLETED
+        && order.isStockReserved()
+        && order.getOrderStatus() == OrderStatus.PENDING) {
+      order.setOrderStatus(OrderStatus.CONFIRMED);
+    }
+  }
+
+  static void applyCancellationPaymentStatus(Order order) {
+    if (order.getPaymentMethod() != PaymentMethod.VNPAY
+        || order.getPaymentStatus() != PaymentStatus.COMPLETED) {
+      order.setPaymentStatus(PaymentStatus.CANCELLED);
+    }
   }
 }
