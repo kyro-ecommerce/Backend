@@ -10,10 +10,20 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -42,6 +52,44 @@ public class GlobalExceptionHandler {
             .toList();
     problem.setProperty("errors", errors);
     return problem;
+  }
+
+  @ExceptionHandler({
+    HttpMessageNotReadableException.class,
+    MissingServletRequestParameterException.class,
+    MissingRequestHeaderException.class,
+    MethodArgumentTypeMismatchException.class,
+    BindException.class
+  })
+  public ProblemDetail handleInvalidRequest(Exception ex) {
+    return problem(HttpStatus.BAD_REQUEST, "INVALID_ARGUMENT", "Invalid request");
+  }
+
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ProblemDetail handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
+    return problem(HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED", "HTTP method not allowed");
+  }
+
+  @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+  public ProblemDetail handleNotAcceptable(HttpMediaTypeNotAcceptableException ex) {
+    return problem(HttpStatus.NOT_ACCEPTABLE, "NOT_ACCEPTABLE", "Response type not acceptable");
+  }
+
+  @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+  public ProblemDetail handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex) {
+    return problem(
+        HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE", "Media type not supported");
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ProblemDetail handlePayloadTooLarge(MaxUploadSizeExceededException ex) {
+    return problem(
+        HttpStatus.PAYLOAD_TOO_LARGE, "PAYLOAD_TOO_LARGE", "Payload exceeds allowed size");
+  }
+
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ProblemDetail handleNoResourceFound(NoResourceFoundException ex) {
+    return problem(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", "Requested resource not found");
   }
 
   @ExceptionHandler(Exception.class)

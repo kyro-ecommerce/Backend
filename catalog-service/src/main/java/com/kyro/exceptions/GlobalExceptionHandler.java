@@ -16,10 +16,18 @@ import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Order(Ordered.LOWEST_PRECEDENCE)
@@ -114,6 +122,47 @@ public class GlobalExceptionHandler {
     return buildResponse(
         new AppException(
             GlobalErrorCode.INVALID_ARGUMENT, "Invalid value for parameter: " + ex.getName()));
+  }
+
+  @ExceptionHandler({
+    HttpMessageNotReadableException.class,
+    MissingServletRequestParameterException.class,
+    MissingRequestHeaderException.class,
+    BindException.class
+  })
+  public ProblemDetail handleInvalidRequest(Exception ex) {
+    return buildResponse(
+        new AppException(HttpStatus.BAD_REQUEST, "INVALID_ARGUMENT", "Invalid request"));
+  }
+
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ProblemDetail handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
+    return buildResponse(
+        new AppException(
+            HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED", "HTTP method not allowed"));
+  }
+
+  @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+  public ProblemDetail handleNotAcceptable(HttpMediaTypeNotAcceptableException ex) {
+    return buildResponse(
+        new AppException(
+            HttpStatus.NOT_ACCEPTABLE, "NOT_ACCEPTABLE", "Response type not acceptable"));
+  }
+
+  @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+  public ProblemDetail handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex) {
+    return buildResponse(
+        new AppException(
+            HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+            "UNSUPPORTED_MEDIA_TYPE",
+            "Media type not supported"));
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ProblemDetail handlePayloadTooLarge(MaxUploadSizeExceededException ex) {
+    return buildResponse(
+        new AppException(
+            HttpStatus.PAYLOAD_TOO_LARGE, "PAYLOAD_TOO_LARGE", "Payload exceeds allowed size"));
   }
 
   // Helper to build a standard ProblemDetail response

@@ -5,10 +5,12 @@ import com.kyro.auth.dto.ChangeRoleRequest;
 import com.kyro.auth.dto.UpdateUserRequest;
 import com.kyro.auth.dto.UpdateUserStatusRequest;
 import com.kyro.enums.UserRole;
+import com.kyro.exceptions.DomainException;
 import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -76,7 +78,7 @@ public class AdminUserController {
       @PathVariable Long userId, @RequestBody UpdateUserStatusRequest request) {
     User user = userService.getUserById(userId);
     if (request.getActive() == null && request.getBanned() == null) {
-      return ResponseEntity.badRequest().body(Map.of("message", "Trạng thái không hợp lệ"));
+      throw new DomainException(HttpStatus.BAD_REQUEST, "Trạng thái không hợp lệ");
     }
     if (request.getActive() != null) user.setActive(request.getActive());
     if (request.getBanned() != null) user.setBanned(request.getBanned());
