@@ -9,8 +9,8 @@ import com.kyro.order.client.CatalogClient;
 import com.kyro.order.client.UserClient;
 import com.kyro.order.dto.OrderDTO;
 import com.kyro.order.dto.OrderDetailDTO;
-import com.kyro.order.dto.TopSellingProductResponse;
 import com.kyro.order.dto.ProductRevenueResponse;
+import com.kyro.order.dto.TopSellingProductResponse;
 import feign.FeignException;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -74,7 +74,10 @@ public class OrderService {
         .orElseThrow(
             () -> {
               log.warn("Order not found with ID: {}", orderId);
-              return new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId);
+              return new DomainException(
+                  org.springframework.http.HttpStatus.NOT_FOUND,
+                  "ORDER_NOT_FOUND",
+                  "Không tìm thấy đơn hàng với ID: " + orderId);
             });
   }
 
@@ -234,11 +237,12 @@ public class OrderService {
     }
     if (cart == null || cart.items() == null || cart.items().isEmpty()) {
       log.warn("Attempted to place order with an empty cart for user ID: {}", userId);
-      throw new RuntimeException(
+      throw new DomainException(
+          org.springframework.http.HttpStatus.CONFLICT,
+          "EMPTY_CART",
           "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi đặt hàng.");
     }
-    if (cart.version() != cartVersion
-        || cart.totalSalePrice() != expectedTotalDiscountedPrice) {
+    if (cart.version() != cartVersion || cart.totalSalePrice() != expectedTotalDiscountedPrice) {
       throw new DomainException(
           org.springframework.http.HttpStatus.CONFLICT,
           "CART_CHANGED",
@@ -249,7 +253,10 @@ public class OrderService {
     UserClient.AddressResponse addrResp = userClient.getAddressById(userId, addressId);
     if (addrResp == null) {
       log.warn("Address not found with ID: {} for user ID: {}", addressId, userId);
-      throw new RuntimeException("Địa chỉ giao hàng không hợp lệ.");
+      throw new DomainException(
+          org.springframework.http.HttpStatus.NOT_FOUND,
+          "ADDRESS_NOT_FOUND",
+          "Địa chỉ giao hàng không hợp lệ.");
     }
 
     Address shippingAddress = new Address();
@@ -301,7 +308,8 @@ public class OrderService {
       OrderItem orderItem = new OrderItem();
       orderItem.setOrder(savedOrderIntermediate);
       orderItem.setProductId(cartItem.productId());
-      orderItem.setVariantId(cartItem.variantId()); orderItem.setSku(cartItem.sku());
+      orderItem.setVariantId(cartItem.variantId());
+      orderItem.setSku(cartItem.sku());
       orderItem.setProductName(cartItem.productName());
       orderItem.setProductImageUrl(cartItem.productImageUrl());
       orderItem.setQuantity(cartItem.quantity());
@@ -337,13 +345,13 @@ public class OrderService {
   public Order confirmedOrder(Long orderId) {
     Order order = findOrderByIdForUpdate(orderId);
     if (order.getOrderStatus() != OrderStatus.PENDING) {
-      throw new RuntimeException(
+      throw invalidOrderState(
           "Đơn hàng không thể xác nhận ở trạng thái hiện tại (" + order.getOrderStatus() + ")");
     }
     if (!order.isStockReserved()
         || (order.getPaymentMethod() == PaymentMethod.VNPAY
             && order.getPaymentStatus() != PaymentStatus.COMPLETED)) {
-      throw new RuntimeException("Đơn hàng chưa hoàn tất giữ hàng hoặc thanh toán.");
+      throw invalidOrderState("Đơn hàng chưa hoàn tất giữ hàng hoặc thanh toán.");
     }
     order.setOrderStatus(OrderStatus.CONFIRMED);
     log.info("Order ID {} confirmed.", orderId);
@@ -354,7 +362,7 @@ public class OrderService {
   public Order shippedOrder(Long orderId) {
     Order order = findOrderByIdForUpdate(orderId);
     if (order.getOrderStatus() != OrderStatus.CONFIRMED) {
-      throw new RuntimeException(
+      throw invalidOrderState(
           "Đơn hàng phải được xác nhận trước khi gửi (trạng thái hiện tại: "
               + order.getOrderStatus()
               + ")");
@@ -368,7 +376,7 @@ public class OrderService {
   public Order deliveredOrder(Long orderId) {
     Order order = findOrderByIdForUpdate(orderId);
     if (order.getOrderStatus() != OrderStatus.SHIPPED) {
-      throw new RuntimeException(
+      throw invalidOrderState(
           "Đơn hàng phải được gửi trước khi giao (trạng thái hiện tại: "
               + order.getOrderStatus()
               + ")");
@@ -385,7 +393,7 @@ public class OrderService {
     Order order = findOrderByIdForUpdate(orderId);
     if (order.getOrderStatus() == OrderStatus.DELIVERED
         || order.getOrderStatus() == OrderStatus.CANCELLED) {
-      throw new RuntimeException("Không thể hủy đơn hàng ở trạng thái " + order.getOrderStatus());
+      throw invalidOrderState("Không thể hủy đơn hàng ở trạng thái " + order.getOrderStatus());
     }
 
     if (!order.isStockReserved() && order.getOrderStatus() == OrderStatus.PENDING) {
@@ -426,7 +434,7 @@ public class OrderService {
       case SHIPPED -> shippedOrder(orderId);
       case DELIVERED -> deliveredOrder(orderId);
       case CANCELLED -> cancelOrder(orderId);
-      case PENDING -> throw new IllegalArgumentException("Không thể chuyển đơn hàng về PENDING.");
+      case PENDING -> throw invalidOrderState("Không thể chuyển đơn hàng về PENDING.");
     };
   }
 
@@ -517,6 +525,7 @@ public class OrderService {
     return orderItemRepository.findTopSellingProducts(
         OrderStatus.DELIVERED, PageRequest.of(0, limit));
   }
+
   @Transactional(readOnly = true)
   public List<ProductRevenueResponse> getProductRevenue() {
     return orderItemRepository.findProductRevenue(OrderStatus.DELIVERED);
@@ -638,7 +647,17 @@ public class OrderService {
   private Order findOrderByIdForUpdate(Long orderId) {
     return orderRepository
         .findByIdForUpdate(orderId)
-        .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
+        .orElseThrow(
+            () ->
+                new DomainException(
+                    org.springframework.http.HttpStatus.NOT_FOUND,
+                    "ORDER_NOT_FOUND",
+                    "Không tìm thấy đơn hàng với ID: " + orderId));
+  }
+
+  private static DomainException invalidOrderState(String message) {
+    return new DomainException(
+        org.springframework.http.HttpStatus.CONFLICT, "INVALID_ORDER_STATE", message);
   }
 
   private void restoreStock(Order order) {

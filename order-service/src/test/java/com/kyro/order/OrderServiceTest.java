@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.kyro.enums.OrderStatus;
 import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
+import com.kyro.exceptions.DomainException;
 import org.junit.jupiter.api.Test;
 
 class OrderServiceTest {
@@ -46,9 +47,11 @@ class OrderServiceTest {
     assertEquals(
         OrderStatus.CONFIRMED,
         orderService.updateOrderStatus(1L, OrderStatus.CONFIRMED).getOrderStatus());
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> orderService.updateOrderStatus(1L, OrderStatus.PENDING));
+    DomainException exception =
+        assertThrows(
+            DomainException.class, () -> orderService.updateOrderStatus(1L, OrderStatus.PENDING));
+    assertEquals(409, exception.getStatus().value());
+    assertEquals("INVALID_ORDER_STATE", exception.getErrorCode());
   }
 
   @Test

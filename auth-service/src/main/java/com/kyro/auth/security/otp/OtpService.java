@@ -3,6 +3,7 @@ package com.kyro.auth.security.otp;
 import com.kyro.auth.User;
 import com.kyro.auth.UserRepository;
 import com.kyro.config.RabbitMQConfig;
+import com.kyro.exceptions.DomainException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 /** Service for generating, validating, and publishing OTP requests to RabbitMQ. */
@@ -78,7 +80,7 @@ public class OtpService {
       User user = userRepository.findByEmail(email);
 
       if (user != null && user.isBanned()) {
-        throw new RuntimeException("Your account is banned");
+        throw new DomainException(HttpStatus.FORBIDDEN, "ACCOUNT_BANNED", "Your account is banned");
       }
 
       if (user != null && !user.isActive() && !user.isBanned()) {

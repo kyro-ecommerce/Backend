@@ -66,13 +66,20 @@ public class PaymentService {
       // Get order info from order-service via FeignClient
       OrderClient.OrderResponse order = orderClient.getOrderById(orderId);
       if (order == null) {
-        throw new RuntimeException("Không tìm thấy đơn hàng");
+        throw new DomainException(
+            HttpStatus.NOT_FOUND, "ORDER_NOT_FOUND", "Không tìm thấy đơn hàng");
       }
       if (!"VNPAY".equals(order.paymentMethod())) {
-        throw new IllegalArgumentException("Đơn hàng không sử dụng phương thức thanh toán VNPAY");
+        throw new DomainException(
+            HttpStatus.CONFLICT,
+            "INVALID_PAYMENT_METHOD",
+            "Đơn hàng không sử dụng phương thức thanh toán VNPAY");
       }
       if (!"PENDING".equals(order.orderStatus()) || "COMPLETED".equals(order.paymentStatus())) {
-        throw new IllegalArgumentException("Đơn hàng không còn ở trạng thái có thể thanh toán");
+        throw new DomainException(
+            HttpStatus.CONFLICT,
+            "INVALID_PAYMENT_STATE",
+            "Đơn hàng không còn ở trạng thái có thể thanh toán");
       }
 
       // Update payment method to VNPAY inside order-service
@@ -163,7 +170,8 @@ public class PaymentService {
       throw e;
     } catch (Exception e) {
       log.error("Failed to initiate VNPay payment request: {}", e.getMessage(), e);
-      throw new RuntimeException("Lỗi khi tạo yêu cầu thanh toán: " + e.getMessage());
+      throw new DomainException(
+          HttpStatus.BAD_GATEWAY, "DEPENDENCY_ERROR", "Không thể tạo yêu cầu thanh toán lúc này");
     }
   }
 
@@ -171,7 +179,11 @@ public class PaymentService {
     return paymentRepository
         .findById(paymentId)
         .orElseThrow(
-            () -> new RuntimeException("Không tìm thấy thông tin thanh toán: " + paymentId));
+            () ->
+                new DomainException(
+                    HttpStatus.NOT_FOUND,
+                    "PAYMENT_NOT_FOUND",
+                    "Không tìm thấy thông tin thanh toán: " + paymentId));
   }
 
   @Transactional
@@ -183,7 +195,11 @@ public class PaymentService {
         paymentRepository
             .findByTransactionId(transactionRef)
             .orElseThrow(
-                () -> new IllegalArgumentException("Không tìm thấy giao dịch: " + transactionRef));
+                () ->
+                    new DomainException(
+                        HttpStatus.NOT_FOUND,
+                        "TRANSACTION_NOT_FOUND",
+                        "Không tìm thấy giao dịch: " + transactionRef));
     validateCallback(vnpParams, payment);
 
     String responseCode = vnpParams.get("vnp_ResponseCode");

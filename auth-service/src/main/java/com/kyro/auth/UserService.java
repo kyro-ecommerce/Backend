@@ -123,7 +123,7 @@ public class UserService {
   public void registerUser(RegisterRequest request) {
     // Check if email already exists
     if (userRepository.existsByEmail(request.getEmail())) {
-      throw new RuntimeException("Email already exists");
+      throw new EntityExistsException("Email already exists");
     }
 
     User user = new User();

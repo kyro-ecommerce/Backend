@@ -2,6 +2,7 @@ package com.kyro.payment;
 
 import com.kyro.exceptions.DomainException;
 import com.kyro.payment.client.OrderClient;
+import feign.FeignException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,12 +40,19 @@ public class PaymentController {
       @RequestHeader(value = "X-User-Roles", required = false) String roles,
       @PathVariable Long orderId) {
 
-    OrderClient.OrderResponse order = null;
+    OrderClient.OrderResponse order;
     try {
       order = orderClient.getOrderById(orderId);
-    } catch (Exception e) {
+    } catch (FeignException e) {
       log.error("Lỗi khi lấy thông tin đơn hàng từ order-service cho orderId {}: ", orderId, e);
-      throw new DomainException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng với ID: " + orderId);
+      if (e.status() == HttpStatus.NOT_FOUND.value()) {
+        throw new DomainException(
+            HttpStatus.NOT_FOUND, "ORDER_NOT_FOUND", "Không tìm thấy đơn hàng với ID: " + orderId);
+      }
+      throw new DomainException(
+          HttpStatus.SERVICE_UNAVAILABLE,
+          "DEPENDENCY_UNAVAILABLE",
+          "Không thể truy cập dịch vụ đơn hàng");
     }
     if (order == null) {
       throw new DomainException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng với ID: " + orderId);
