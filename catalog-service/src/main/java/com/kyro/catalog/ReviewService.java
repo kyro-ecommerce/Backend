@@ -2,9 +2,11 @@ package com.kyro.catalog;
 
 import com.kyro.catalog.client.OrderClient;
 import com.kyro.catalog.dto.ReviewRequest;
+import com.kyro.exceptions.DomainException;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 /** Service class for managing product reviews. */
@@ -80,14 +82,7 @@ public class ReviewService {
    */
   @Transactional
   public Review updateReview(Long reviewId, ReviewRequest reviewRequest, Long userId) {
-    Review review =
-        reviewRepository
-            .findById(reviewId)
-            .orElseThrow(() -> new RuntimeException("Review not found with id: " + reviewId));
-
-    if (!review.getUserId().equals(userId)) {
-      throw new RuntimeException("User not authorized to update this review");
-    }
+    Review review = findOwnedReview(reviewId, userId);
 
     review.setRating(reviewRequest.getRating());
     review.setContent(reviewRequest.getContent());
@@ -106,14 +101,7 @@ public class ReviewService {
    */
   @Transactional
   public void deleteReview(Long reviewId, Long userId) {
-    Review review =
-        reviewRepository
-            .findById(reviewId)
-            .orElseThrow(() -> new RuntimeException("Review not found with id: " + reviewId));
-
-    if (!review.getUserId().equals(userId)) {
-      throw new RuntimeException("User not authorized to delete this review");
-    }
+    Review review = findOwnedReview(reviewId, userId);
 
     Long productId = review.getProduct().getId();
     reviewRepository.delete(review);
@@ -127,9 +115,7 @@ public class ReviewService {
    * @return Review entity
    */
   public Review getReviewById(Long reviewId) {
-    return reviewRepository
-        .findById(reviewId)
-        .orElseThrow(() -> new RuntimeException("Review not found with id: " + reviewId));
+    return findReview(reviewId);
   }
 
   /**
@@ -164,5 +150,22 @@ public class ReviewService {
     product.setAverageRating(newAverageRating != null ? newAverageRating : 0.0);
 
     productRepository.save(product);
+  }
+
+  private Review findOwnedReview(Long reviewId, Long userId) {
+    Review review = findReview(reviewId);
+    if (!review.getUserId().equals(userId)) {
+      throw new DomainException(
+          HttpStatus.FORBIDDEN, "REVIEW_FORBIDDEN", "You can only modify your own review");
+    }
+    return review;
+  }
+
+  private Review findReview(Long reviewId) {
+    return reviewRepository
+        .findById(reviewId)
+        .orElseThrow(
+            () ->
+                new DomainException(HttpStatus.NOT_FOUND, "REVIEW_NOT_FOUND", "Review not found"));
   }
 }

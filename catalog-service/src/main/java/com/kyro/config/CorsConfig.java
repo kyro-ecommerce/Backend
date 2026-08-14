@@ -18,7 +18,7 @@ public class CorsConfig implements WebMvcConfigurer {
     registry
         .addMapping(API + "/**")
         .allowedOrigins(allowedOrigins.split(","))
-        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
         .allowedHeaders("*")
         .exposedHeaders(
             "CF-IPCountry",

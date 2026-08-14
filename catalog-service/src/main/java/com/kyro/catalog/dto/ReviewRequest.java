@@ -3,6 +3,7 @@ package com.kyro.catalog.dto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 public class ReviewRequest {
   @Max(value = 5, message = "Rating must be between 1 and 5")
@@ -10,7 +11,7 @@ public class ReviewRequest {
   @NotNull(message = "Rating is required")
   private Integer rating;
 
-  @Max(value = 500, message = "Content must be less than 500 characters")
+  @Size(max = 500, message = "Content must be at most 500 characters")
   private String content;
 
   public ReviewRequest() {}
