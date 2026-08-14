@@ -16,6 +16,10 @@ spring:
   threads:
     virtual:
       enabled: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
 
 feign:
   client:
@@ -23,18 +27,6 @@ feign:
       default:
         connectTimeout: 2000
         readTimeout: 3000
-  flyway:
-    baseline-on-migrate: true
-    baseline-version: 0
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: validate
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        globally_quoted_identifiers: false
 
 logging:
   pattern:
@@ -42,7 +34,6 @@ logging:
   level:
     com.kyro: INFO
     org.springframework.web: INFO
-    org.hibernate.SQL: WARN
 
 auth:
   token:

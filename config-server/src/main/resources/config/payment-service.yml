@@ -11,14 +11,6 @@ spring:
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:postgres_password}
     driver-class-name: org.postgresql.Driver
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: validate
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -31,4 +23,3 @@ vnpay:
   url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
   apiUrl: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/merchant_webapi/api.html}
   returnUrl: ${VNPAY_RETURN_URL:http://localhost:5173/checkout?step=4}
-
