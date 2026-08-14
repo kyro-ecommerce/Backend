@@ -123,10 +123,10 @@ Hệ thống kết hợp 2 mô hình giao tiếp song song:
 
 ### 🅰️ Giao Tiếp Đồng Bộ (Synchronous Feign REST)
 Sử dụng **Spring Cloud OpenFeign** cho các giao dịch cần phản hồi tức thì:
-- **Order Service -> Catalog Service**: Lấy chi tiết thông tin sản phẩm và kiểm tra giá/tồn kho khi đặt hàng.
-- **Order Service -> Cart Service**: Lấy giỏ hàng của người dùng và xóa giỏ hàng sau khi đặt thành công.
+- **Order Service -> Catalog Service**: Hoàn tồn kho theo `variantId` khi hủy đơn hợp lệ.
+- **Order Service -> Cart Service**: Lấy selection đã được cart revalidate để snapshot SKU, variant và giá khi đặt hàng.
 - **Order Service -> Auth Service**: Xác thực thông tin địa chỉ giao hàng (`Address`).
-- **Cart Service -> Catalog Service**: Kiểm tra sự tồn tại và tồn kho sản phẩm khi người dùng thêm vào giỏ.
+- **Cart Service -> Catalog Service**: Batch revalidate active variant, tồn kho và giá backend khi thêm, cập nhật hoặc checkout.
 - **Payment Service -> Order Service**: Kiểm tra trạng thái và số tiền của đơn hàng trước khi tạo link VNPay.
 
 ### 🅱️ Giao Tiếp Bất Đồng Bộ (Asynchronous Event-Driven Messaging)
@@ -144,10 +144,10 @@ Mỗi dịch vụ sở hữu cơ sở dữ liệu riêng độc lập, không tr
 | Microservice | Loại CSDL / Engine | Tên Database / Namespace | Nhiệm Vụ |
 | :--- | :--- | :--- | :--- |
 | **Auth Service** | PostgreSQL 16 | `kyro_auth` | Lưu Role, User, Address |
-| **Catalog Service** | PostgreSQL 16 | `kyro_catalog` | Lưu Category, Product, Image metadata, Size/Stock, Review |
+| **Catalog Service** | PostgreSQL 16 | `kyro_catalog` | Lưu Category, Product, ProductVariant/SKU, ProductAttribute, Image và Review |
 | **Order Service** | PostgreSQL 16 | `kyro_order` | Lưu Orders, OrderItems và snapshot địa chỉ giao hàng |
 | **Payment Service** | PostgreSQL 16 | `kyro_payment` | Lưu transaction và VNPay callback data |
-| **Cart Service** | Redis 7 | `kyro-redis` (Key-Value) | Cache giỏ hàng tạm thời với TTL 30 ngày |
+| **Cart Service** | PostgreSQL 16 + Redis 7 | `kyro_cart` + `kyro-redis` | PostgreSQL là source of truth; Redis cache snapshot giỏ hàng với TTL 30 phút |
 | **AI Service** | PostgreSQL 16 | `pgvector` (`postgres`) | Vector embeddings 768 chiều & Product Index |
 
 ---

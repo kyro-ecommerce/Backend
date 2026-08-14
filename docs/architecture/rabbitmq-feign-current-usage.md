@@ -42,11 +42,10 @@ sequenceDiagram
     Order->>Cart: Feign POST /internal/carts/{userId}/selection
     Cart->>Catalog: Feign POST /internal/products/lookup
     Cart-->>Order: Các item đã chọn và tổng tiền hiện tại
-    Order->>Catalog: Feign GET /internal/products/{productId}
-    Order->>Order: Lưu order PENDING
+    Order->>Order: Snapshot SKU, variant, giá và lưu order PENDING
     Order->>Rabbit: order-exchange / order.created
     Rabbit-->>Catalog: catalog-order-created-queue
-    Catalog->>Catalog: decreaseStock cho từng item
+    Catalog->>Catalog: decreaseStock theo variantId cho từng item
     alt Giữ tồn kho thành công
         Catalog->>Rabbit: order-exchange / stock.reserved
         Rabbit-->>Order: order-saga-queue
@@ -130,15 +129,15 @@ Payload có envelope `event_id`, `event_type`, `occurred_at`, `data`; phần `da
 
 | Caller | Feign client / API đích | Nơi gọi và mục đích |
 | --- | --- | --- |
-| `cart-service` | `CatalogClient.getProductById` — `GET /api/v1/internal/products/{productId}` | [`CartService`](../../cart-service/src/main/java/com/kyro/cart/service/CartService.java) xác minh sản phẩm, giá và tồn kho khi thêm/cập nhật cart item |
-| `cart-service` | `CatalogClient.getProducts` — `POST /api/v1/internal/products/lookup` | Refresh nhiều sản phẩm trong một lần khi đọc cart hoặc lấy selection cho checkout |
+| `cart-service` | `CatalogClient.getProductById` — `GET /api/v1/internal/products/{productId}` | [`CartService`](../../cart-service/src/main/java/com/kyro/cart/service/CartService.java) xác minh `variantId`, active, giá và tồn kho khi thêm/cập nhật cart item |
+| `cart-service` | `CatalogClient.getProducts` — `POST /api/v1/internal/products/lookup` | Batch refresh variant và snapshot giá cho cả cart hoặc selection, tránh N+1 |
 | `catalog-service` | `UserClient.getUserById` — `GET /api/v1/internal/users/{userId}` | [`ReviewController`](../../catalog-service/src/main/java/com/kyro/catalog/ReviewController.java) lấy tên người dùng khi tạo review |
 | `catalog-service` | `OrderClient.hasPurchasedAndDelivered` — `GET /api/v1/internal/orders/purchases` | [`ReviewService`](../../catalog-service/src/main/java/com/kyro/catalog/ReviewService.java) kiểm tra user đã nhận sản phẩm trước khi review |
 | `catalog-service` | `OrderClient.getTopSellingProducts` — `GET /api/v1/internal/orders/top-selling` | [`ProductService`](../../catalog-service/src/main/java/com/kyro/catalog/ProductService.java) lấy số lượng bán rồi ghép với dữ liệu catalog cho admin analytics |
+| `catalog-service` | `OrderClient.getProductRevenue` — `GET /api/v1/internal/orders/product-revenue` | Lấy aggregate doanh thu của toàn bộ product bằng một batch call cho analytics category |
 | `order-service` | `CartClient.getSelection` — `POST /api/v1/internal/carts/{userId}/selection` | Lấy đúng các cart item user chọn, version và tổng tiền để kiểm tra checkout |
 | `order-service` | `UserClient.getAddressById` — `GET /api/v1/internal/users/{userId}/addresses/{addressId}` | Xác minh địa chỉ thuộc user và snapshot địa chỉ vào order |
-| `order-service` | `CatalogClient.getProductById` — `GET /api/v1/internal/products/{productId}` | Bổ sung tên/ảnh sản phẩm khi tạo `OrderItem`; việc trừ stock không diễn ra ở call này |
-| `order-service` | `CatalogClient.adjustStock` — `PATCH /api/v1/internal/products/{productId}/stock` | Hoàn lại tồn kho khi hủy order `PENDING` hoặc `CONFIRMED` |
+| `order-service` | `CatalogClient.adjustStock` — `PATCH /api/v1/internal/products/variants/{variantId}/stock` | Hoàn lại tồn kho đúng SKU khi hủy order `PENDING` hoặc `CONFIRMED` |
 | `payment-service` | `OrderClient.getOrderById` — `GET /api/v1/internal/orders/{id}` | Lấy tổng tiền khi tạo URL VNPay và kiểm tra order khi đọc payment; endpoint tạo payment hiện gọi API này hai lần (controller rồi service) |
 
 Interface tương ứng nằm tại:
