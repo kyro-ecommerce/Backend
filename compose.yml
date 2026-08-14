@@ -1,5 +1,12 @@
 name: kyro-backend
 
+x-java-healthcheck: &java-healthcheck
+  interval: 15s
+  timeout: 5s
+  retries: 3
+  start_interval: 2s
+  start_period: 35s
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -51,28 +58,24 @@ services:
   eureka-server:
     build:
       context: .
-      dockerfile: eureka-server/Dockerfile
+      args:
+        SERVICE: eureka-server
     container_name: kyro-eureka-server
     ports:
       - "8761:8761"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8761/actuator/health || exit 1"]
-      interval: 3s
-      timeout: 5s
-      retries: 15
-      start_period: 10s
+      <<: *java-healthcheck
     restart: always
 
   config-server:
     build:
       context: .
-      dockerfile: config-server/Dockerfile
+      args:
+        SERVICE: config-server
     container_name: kyro-config-server
     ports:
       - "8888:8888"
-    depends_on:
-      eureka-server:
-        condition: service_healthy
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
@@ -81,16 +84,14 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD:?MAIL_PASSWORD must be set}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8888/actuator/health || exit 1"]
-      interval: 3s
-      timeout: 5s
-      retries: 15
-      start_period: 10s
+      <<: *java-healthcheck
     restart: always
 
   api-gateway:
     build:
       context: .
-      dockerfile: api-gateway/Dockerfile
+      args:
+        SERVICE: api-gateway
     container_name: kyro-api-gateway
     ports:
       - "8080:8080"
@@ -108,18 +109,18 @@ services:
       AI_SERVICE_URI: ${AI_SERVICE_URI:-http://host.docker.internal:8000}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
-      interval: 3s
-      timeout: 5s
-      retries: 15
-      start_period: 10s
+      <<: *java-healthcheck
     restart: always
 
   auth-service:
     build:
       context: .
-      dockerfile: auth-service/Dockerfile
+      args:
+        SERVICE: auth-service
     container_name: kyro-auth-service
     depends_on:
+      eureka-server:
+        condition: service_healthy
       config-server:
         condition: service_healthy
       postgres:
@@ -144,18 +145,18 @@ services:
       OAUTH2_FAILURE_REDIRECT_URI: ${OAUTH2_FAILURE_REDIRECT_URI:-http://localhost:5173/login?error=true}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
-      interval: 3s
-      timeout: 5s
-      retries: 15
-      start_period: 10s
+      <<: *java-healthcheck
     restart: always
 
   catalog-service:
     build:
       context: .
-      dockerfile: catalog-service/Dockerfile
+      args:
+        SERVICE: catalog-service
     container_name: kyro-catalog-service
     depends_on:
+      eureka-server:
+        condition: service_healthy
       config-server:
         condition: service_healthy
       postgres:
@@ -175,18 +176,18 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:?CLOUDINARY_API_SECRET must be set}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1"]
-      interval: 3s
-      timeout: 5s
-      retries: 15
-      start_period: 10s
+      <<: *java-healthcheck
     restart: always
 
   cart-service:
     build:
       context: .
-      dockerfile: cart-service/Dockerfile
+      args:
+        SERVICE: cart-service
     container_name: kyro-cart-service
     depends_on:
+      eureka-server:
+        condition: service_healthy
       config-server:
         condition: service_healthy
       postgres:
@@ -206,18 +207,18 @@ services:
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN must be set}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1"]
-      interval: 3s
-      timeout: 5s
-      retries: 15
-      start_period: 10s
+      <<: *java-healthcheck
     restart: always
 
   notification-service:
     build:
       context: .
-      dockerfile: notification-service/Dockerfile
+      args:
+        SERVICE: notification-service
     container_name: kyro-notification-service
     depends_on:
+      eureka-server:
+        condition: service_healthy
       config-server:
         condition: service_healthy
       rabbitmq:
@@ -232,18 +233,18 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD:?MAIL_PASSWORD must be set}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health || exit 1"]
-      interval: 3s
-      timeout: 5s
-      retries: 15
-      start_period: 10s
+      <<: *java-healthcheck
     restart: always
 
   order-service:
     build:
       context: .
-      dockerfile: order-service/Dockerfile
+      args:
+        SERVICE: order-service
     container_name: kyro-order-service
     depends_on:
+      eureka-server:
+        condition: service_healthy
       config-server:
         condition: service_healthy
       postgres:
@@ -260,18 +261,18 @@ services:
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN must be set}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8085/actuator/health || exit 1"]
-      interval: 3s
-      timeout: 5s
-      retries: 15
-      start_period: 10s
+      <<: *java-healthcheck
     restart: always
 
   payment-service:
     build:
       context: .
-      dockerfile: payment-service/Dockerfile
+      args:
+        SERVICE: payment-service
     container_name: kyro-payment-service
     depends_on:
+      eureka-server:
+        condition: service_healthy
       config-server:
         condition: service_healthy
       postgres:
@@ -292,10 +293,7 @@ services:
       VNPAY_RETURN_URL: ${VNPAY_RETURN_URL}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8086/actuator/health || exit 1"]
-      interval: 3s
-      timeout: 5s
-      retries: 15
-      start_period: 10s
+      <<: *java-healthcheck
     restart: always
 
   dozzle:
