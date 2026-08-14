@@ -119,8 +119,7 @@ class CategoryServiceTest {
     Category category = new Category();
     category.setId(id);
     category.setName(name);
-    category.setLevel(level);
-    category.setParent(level == 1);
+    if (level == 2) category.setParentCategory(new Category("Parent"));
     return category;
   }
 }

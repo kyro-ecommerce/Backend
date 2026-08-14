@@ -157,12 +157,6 @@ public class ReviewService {
             .findById(productId)
             .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
 
-    Integer newNumRatings = reviewRepository.countByProductId(productId);
-    Double newAverageRating = reviewRepository.calculateAverageRatingByProductId(productId);
-
-    product.setNumRatings(newNumRatings != null ? newNumRatings : 0);
-    product.setAverageRating(newAverageRating != null ? newAverageRating : 0.0);
-
-    productRepository.save(product);
+    // Rating and count are derived from review rows by Product formulas.
   }
 }

@@ -11,6 +11,8 @@ public interface OrderClient {
 
   @GetMapping("/api/v1/internal/orders/top-selling")
   List<TopSellingProductResponse> getTopSellingProducts(@RequestParam("limit") int limit);
+  @GetMapping("/api/v1/internal/orders/product-revenue")
+  List<ProductRevenueResponse> getProductRevenue();
 
   /**
    * Verifies if a user has purchased a product and it was successfully delivered.
@@ -24,4 +26,5 @@ public interface OrderClient {
       @RequestParam("userId") Long userId, @RequestParam("productId") Long productId);
 
   record TopSellingProductResponse(Long productId, Long quantitySold) {}
+  record ProductRevenueResponse(Long productId, Long revenue) {}
 }

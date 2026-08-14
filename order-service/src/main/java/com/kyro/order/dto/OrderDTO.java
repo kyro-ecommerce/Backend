@@ -13,8 +13,8 @@ import java.util.List;
 public class OrderDTO {
   private Long id;
   private OrderStatus orderStatus;
-  private Integer totalDiscountedPrice;
-  private int discount;
+  private Long totalDiscountedPrice;
+  private long discount;
   private int totalItems;
 
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -23,7 +23,7 @@ public class OrderDTO {
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime deliveryDate;
 
-  private Integer originalPrice;
+  private Long originalPrice;
   private AddressDTO shippingAddress;
   private PaymentStatus paymentStatus;
   private List<OrderItemDTO> orderItems;
@@ -74,19 +74,19 @@ public class OrderDTO {
     this.orderStatus = orderStatus;
   }
 
-  public Integer getTotalDiscountedPrice() {
+  public Long getTotalDiscountedPrice() {
     return totalDiscountedPrice;
   }
 
-  public void setTotalDiscountedPrice(Integer totalDiscountedPrice) {
+  public void setTotalDiscountedPrice(Long totalDiscountedPrice) {
     this.totalDiscountedPrice = totalDiscountedPrice;
   }
 
-  public int getDiscount() {
+  public long getDiscount() {
     return discount;
   }
 
-  public void setDiscount(int discount) {
+  public void setDiscount(long discount) {
     this.discount = discount;
   }
 
@@ -114,11 +114,11 @@ public class OrderDTO {
     this.deliveryDate = deliveryDate;
   }
 
-  public Integer getOriginalPrice() {
+  public Long getOriginalPrice() {
     return originalPrice;
   }
 
-  public void setOriginalPrice(Integer originalPrice) {
+  public void setOriginalPrice(Long originalPrice) {
     this.originalPrice = originalPrice;
   }
 

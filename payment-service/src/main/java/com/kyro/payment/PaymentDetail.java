@@ -35,7 +35,7 @@ public class PaymentDetail {
   private String transactionId;
 
   @Column(name = "total_amount")
-  private int totalAmount;
+  private long totalAmount;
 
   @Column(name = "payment_log", columnDefinition = "TEXT")
   private String paymentLog;
@@ -61,7 +61,7 @@ public class PaymentDetail {
       PaymentStatus paymentStatus,
       LocalDateTime paymentDate,
       String transactionId,
-      int totalAmount,
+      long totalAmount,
       String paymentLog,
       LocalDateTime createdAt,
       LocalDateTime updatedAt,
@@ -140,11 +140,11 @@ public class PaymentDetail {
     this.transactionId = transactionId;
   }
 
-  public int getTotalAmount() {
+  public long getTotalAmount() {
     return totalAmount;
   }
 
-  public void setTotalAmount(int totalAmount) {
+  public void setTotalAmount(long totalAmount) {
     this.totalAmount = totalAmount;
   }
 

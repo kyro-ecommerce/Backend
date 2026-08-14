@@ -10,6 +10,7 @@ import com.kyro.order.client.UserClient;
 import com.kyro.order.dto.OrderDTO;
 import com.kyro.order.dto.OrderDetailDTO;
 import com.kyro.order.dto.TopSellingProductResponse;
+import com.kyro.order.dto.ProductRevenueResponse;
 import feign.FeignException;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -202,7 +203,7 @@ public class OrderService {
       PaymentMethod paymentMethod,
       List<Long> cartItemIds,
       long cartVersion,
-      int expectedTotalDiscountedPrice) {
+      long expectedTotalDiscountedPrice) {
     if (userId == null) {
       log.error("User ID is null when placing order.");
       throw new IllegalArgumentException("Thông tin người dùng không hợp lệ.");
@@ -237,7 +238,7 @@ public class OrderService {
           "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi đặt hàng.");
     }
     if (cart.version() != cartVersion
-        || cart.totalDiscountedPrice() != expectedTotalDiscountedPrice) {
+        || cart.totalSalePrice() != expectedTotalDiscountedPrice) {
       throw new DomainException(
           org.springframework.http.HttpStatus.CONFLICT,
           "CART_CHANGED",
@@ -263,16 +264,16 @@ public class OrderService {
     List<Order> createdOrders = new ArrayList<>();
 
     // Calculate pricing
-    int totalOriginalPrice = 0;
-    int totalDiscountedPrice = 0;
+    long totalOriginalPrice = 0;
+    long totalDiscountedPrice = 0;
     int totalItemsCount = 0;
 
     for (CartClient.CartItemResponse item : cart.items()) {
       totalOriginalPrice += item.price() * item.quantity();
-      totalDiscountedPrice += item.discountedPrice() * item.quantity();
+      totalDiscountedPrice += item.salePrice() * item.quantity();
       totalItemsCount += item.quantity();
     }
-    int totalDiscount = totalOriginalPrice - totalDiscountedPrice;
+    long totalDiscount = totalOriginalPrice - totalDiscountedPrice;
 
     // Create Order Entity
     Order order = new Order();
@@ -297,23 +298,17 @@ public class OrderService {
     List<com.kyro.order.event.OrderCreatedEvent.OrderItemEvent> eventItems = new ArrayList<>();
 
     for (CartClient.CartItemResponse cartItem : cart.items()) {
-      CatalogClient.ProductResponse product = catalogClient.getProductById(cartItem.productId());
-      String productTitle = product != null ? product.title() : cartItem.productName();
-      String imageUrl =
-          (product != null && product.images() != null && !product.images().isEmpty())
-              ? product.images().get(0).downloadUrl()
-              : cartItem.productImageUrl();
-
       OrderItem orderItem = new OrderItem();
       orderItem.setOrder(savedOrderIntermediate);
       orderItem.setProductId(cartItem.productId());
-      orderItem.setProductName(productTitle);
-      orderItem.setProductImageUrl(imageUrl);
+      orderItem.setVariantId(cartItem.variantId()); orderItem.setSku(cartItem.sku());
+      orderItem.setProductName(cartItem.productName());
+      orderItem.setProductImageUrl(cartItem.productImageUrl());
       orderItem.setQuantity(cartItem.quantity());
       orderItem.setPrice(cartItem.price());
-      orderItem.setSize(cartItem.size());
+      orderItem.setVariantName(cartItem.variantName());
       orderItem.setDiscountPercent(cartItem.discountPercent());
-      orderItem.setDiscountedPrice(cartItem.discountedPrice());
+      orderItem.setDiscountedPrice(cartItem.salePrice());
       orderItem.setDeliveryDate(LocalDateTime.now().plusDays(7));
       orderItems.add(orderItem);
 
@@ -321,7 +316,7 @@ public class OrderService {
           new com.kyro.order.event.OrderCreatedEvent.OrderItemEvent(
               cartItem.id(),
               cartItem.productId(),
-              cartItem.size(),
+              cartItem.variantId(),
               cartItem.quantity(),
               cartItem.price()));
     }
@@ -522,6 +517,10 @@ public class OrderService {
     return orderItemRepository.findTopSellingProducts(
         OrderStatus.DELIVERED, PageRequest.of(0, limit));
   }
+  @Transactional(readOnly = true)
+  public List<ProductRevenueResponse> getProductRevenue() {
+    return orderItemRepository.findProductRevenue(OrderStatus.DELIVERED);
+  }
 
   private void sendOrderConfirmationEmail(String email, Order order) {
     try {
@@ -645,8 +644,8 @@ public class OrderService {
   private void restoreStock(Order order) {
     for (OrderItem item : order.getOrderItems()) {
       catalogClient.adjustStock(
-          item.getProductId(),
-          new CatalogClient.StockAdjustmentRequest(item.getSize(), item.getQuantity()));
+          item.getVariantId(),
+          new CatalogClient.StockAdjustmentRequest(item.getVariantId(), item.getQuantity()));
     }
     order.setStockReserved(false);
   }

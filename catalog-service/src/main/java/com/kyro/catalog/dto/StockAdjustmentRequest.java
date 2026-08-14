@@ -1,3 +1,5 @@
 package com.kyro.catalog.dto;
 
-public record StockAdjustmentRequest(String sizeName, int quantityDelta) {}
+import jakarta.validation.constraints.NotNull;
+
+public record StockAdjustmentRequest(@NotNull Long variantId, int quantityDelta) {}

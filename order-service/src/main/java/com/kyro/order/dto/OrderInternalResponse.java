@@ -8,7 +8,7 @@ import com.kyro.order.Order;
 public record OrderInternalResponse(
     Long id,
     Long userId,
-    Integer totalDiscountedPrice,
+    Long totalDiscountedPrice,
     PaymentStatus paymentStatus,
     PaymentMethod paymentMethod,
     OrderStatus orderStatus) {

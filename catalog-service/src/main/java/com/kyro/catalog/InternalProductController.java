@@ -34,17 +34,17 @@ public class InternalProductController {
 
   public record ProductLookupRequest(List<Long> productIds) {}
 
-  @PatchMapping("/{productId}/stock")
+  @PatchMapping("/variants/{variantId}/stock")
   @Transactional
   public ResponseEntity<Void> adjustStock(
-      @PathVariable Long productId, @RequestBody StockAdjustmentRequest request) {
+      @PathVariable Long variantId, @RequestBody StockAdjustmentRequest request) {
     if (request.quantityDelta() == 0) {
       throw new IllegalArgumentException("Stock adjustment cannot be zero");
     }
     if (request.quantityDelta() < 0) {
-      productService.decreaseStock(productId, request.sizeName(), -request.quantityDelta());
+      productService.adjustStock(variantId, request.quantityDelta());
     } else {
-      productService.increaseStock(productId, request.sizeName(), request.quantityDelta());
+      productService.adjustStock(variantId, request.quantityDelta());
     }
     return ResponseEntity.noContent().build();
   }

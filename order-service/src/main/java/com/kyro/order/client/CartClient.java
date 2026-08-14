@@ -23,19 +23,21 @@ public interface CartClient {
   void clearCart(@PathVariable("userId") Long userId);
 
   record CartResponse(
-      String userId, long version, List<CartItemResponse> items, int totalPrice, int totalDiscountedPrice) {}
+      String userId, long version, List<CartItemResponse> items, long totalPrice, long totalSalePrice) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   record CartItemResponse(
       Long id,
       Long productId,
+      Long variantId,
       String productName,
+      String sku,
+      String variantName,
       String productImageUrl,
       int quantity,
-      int price,
-      String size,
+      long price,
       Integer discountPercent,
-      Integer discountedPrice) {}
+      long salePrice) {}
 
   record CartSelectionRequest(List<Long> cartItemIds) {}
 }

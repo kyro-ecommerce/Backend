@@ -94,7 +94,7 @@ public class OrderController {
     response.put(
         "totalAmountForAllOrders",
         orders.stream()
-            .mapToInt(
+            .mapToLong(
                 order ->
                     order.getTotalDiscountedPrice() != null ? order.getTotalDiscountedPrice() : 0)
             .sum());

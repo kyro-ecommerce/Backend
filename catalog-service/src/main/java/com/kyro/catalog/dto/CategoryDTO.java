@@ -18,8 +18,8 @@ public class CategoryDTO {
   public CategoryDTO(Category category, long productCount) {
     this.categoryId = category.getId();
     this.name = category.getName();
-    this.level = category.getLevel();
-    this.isParent = category.isParent();
+    this.level = category.getParentCategory() == null ? 1 : 2;
+    this.isParent = category.getParentCategory() == null;
     this.parentId =
         category.getParentCategory() == null ? null : category.getParentCategory().getId();
     this.productCount = productCount;

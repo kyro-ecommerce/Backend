@@ -1,6 +1,7 @@
 package com.kyro.catalog.messaging;
 
 import com.kyro.catalog.Product;
+import com.kyro.catalog.Pricing;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -92,10 +93,9 @@ public class ProductEventPublisher {
     data.put("product_id", product.getId()); // AI AliasChoices: "id"
     data.put("title", product.getTitle());
     data.put("brand", product.getBrand());
-    data.put("original_price", product.getPrice()); // AI AliasChoices: "price"
-    data.put("discounted_price", product.getDiscountedPrice());
-    data.put(
-        "discount_percent", product.getDiscountPersent()); // AI AliasChoices: "discount_persent"
+    data.put("original_price", product.getMinPrice());
+    data.put("discounted_price", Pricing.salePrice(product.getMinPrice(), product.getDiscountPercent()));
+    data.put("discount_percent", product.getDiscountPercent());
     data.put("average_rating", product.getAverageRating());
     data.put("num_ratings", product.getNumRatings());
     data.put("is_active", true);

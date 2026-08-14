@@ -37,7 +37,7 @@ public class ProductController {
     return ResponseEntity.ok(
         PageResponse.from(
             productService.getProductsWithFilter(
-                ProductService.productPageable(page, size, sort, false), filter)));
+                ProductService.productPageable(page, size, sort, false), filter, false)));
   }
 
   @GetMapping("/{productId}")

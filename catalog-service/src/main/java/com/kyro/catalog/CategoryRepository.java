@@ -38,7 +38,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
   Optional<Category> findByNameAndParentCategory(String name, Category parentCategory);
 
   @EntityGraph(attributePaths = {"subCategories"})
-  List<Category> findByLevel(int level);
+  List<Category> findByParentCategoryIsNull();
 
   List<Category> findByParentCategoryId(Long parentId);
 

@@ -6,7 +6,7 @@ CREATE TABLE payment_details (
   payment_log text,
   payment_method varchar(255) DEFAULT NULL,
   payment_status varchar(255) DEFAULT NULL,
-  total_amount int DEFAULT NULL,
+  total_amount bigint DEFAULT NULL,
   transaction_id varchar(100) DEFAULT NULL,
   updated_at timestamp(6) DEFAULT NULL,
   vnp_response_code varchar(255) DEFAULT NULL,
