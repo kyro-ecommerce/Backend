@@ -34,42 +34,22 @@ public class Category {
       fetch = FetchType.LAZY)
   private List<Category> subCategories = new ArrayList<>();
 
-  // Flag to determine if this is a level 1 or level 2 category
-  @Column(name = "is_parent", nullable = false)
-  private boolean isParent = true;
-
   @JsonIgnore
   @OneToMany(mappedBy = "category")
   List<Product> products;
 
   public Category(String name) {
     this.name = name;
-    this.isParent = true;
-    this.level = 1;
   }
 
   public Category(String name, Category parentCategory) {
-    if (parentCategory != null && parentCategory.getLevel() != 1) {
-      throw new IllegalArgumentException("Parent category must be level 1.");
-    }
     this.name = name;
     this.parentCategory = parentCategory;
-    this.isParent = false;
-    this.level = 2;
   }
 
-  // Limit level to 1 or 2 only
-  @Column(name = "level", nullable = false)
-  private int level;
-
   public void addSubCategory(Category subCategory) {
-    // Allow subcategories only if the current category is level 1
-    if (this.level == 1) {
-      subCategories.add(subCategory);
-      subCategory.setParentCategory(this);
-      subCategory.setLevel(2);
-      subCategory.setParent(false);
-    }
+    subCategories.add(subCategory);
+    subCategory.setParentCategory(this);
   }
 
   public void removeSubCategory(Category subCategory) {
@@ -109,14 +89,6 @@ public class Category {
     this.subCategories = subCategories;
   }
 
-  public boolean isParent() {
-    return isParent;
-  }
-
-  public void setParent(boolean isParent) {
-    this.isParent = isParent;
-  }
-
   public List<Product> getProducts() {
     return products;
   }
@@ -125,11 +97,4 @@ public class Category {
     this.products = products;
   }
 
-  public int getLevel() {
-    return level;
-  }
-
-  public void setLevel(int level) {
-    this.level = level;
-  }
 }

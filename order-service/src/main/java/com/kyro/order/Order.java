@@ -31,7 +31,7 @@ public class Order {
   private LocalDateTime orderDate;
 
   @Column(name = "original_price", precision = 19, scale = 2)
-  private int originalPrice;
+  private long originalPrice;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "order_status")
@@ -48,10 +48,10 @@ public class Order {
   private LocalDateTime deliveryDate;
 
   @Column(name = "total_discounted_price")
-  private Integer totalDiscountedPrice;
+  private Long totalDiscountedPrice;
 
   @Column(name = "discount")
-  private int discount;
+  private long discount;
 
   @Column(name = "total_items")
   private int totalItems;
@@ -100,11 +100,11 @@ public class Order {
     this.orderDate = orderDate;
   }
 
-  public int getOriginalPrice() {
+  public long getOriginalPrice() {
     return originalPrice;
   }
 
-  public void setOriginalPrice(int originalPrice) {
+  public void setOriginalPrice(long originalPrice) {
     this.originalPrice = originalPrice;
   }
 
@@ -140,19 +140,19 @@ public class Order {
     this.deliveryDate = deliveryDate;
   }
 
-  public Integer getTotalDiscountedPrice() {
+  public Long getTotalDiscountedPrice() {
     return totalDiscountedPrice;
   }
 
-  public void setTotalDiscountedPrice(Integer totalDiscountedPrice) {
+  public void setTotalDiscountedPrice(Long totalDiscountedPrice) {
     this.totalDiscountedPrice = totalDiscountedPrice;
   }
 
-  public int getDiscount() {
+  public long getDiscount() {
     return discount;
   }
 
-  public void setDiscount(int discount) {
+  public void setDiscount(long discount) {
     this.discount = discount;
   }
 

@@ -16,7 +16,7 @@ public interface OrderClient {
   record OrderResponse(
       Long id,
       Long userId,
-      Integer totalDiscountedPrice,
+      Long totalDiscountedPrice,
       String paymentStatus,
       String paymentMethod,
       String orderStatus) {}

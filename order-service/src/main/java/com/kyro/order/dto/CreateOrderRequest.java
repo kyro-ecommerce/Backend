@@ -12,7 +12,7 @@ public record CreateOrderRequest(
     PaymentMethod paymentMethod,
     @NotEmpty List<@NotNull @Positive Long> cartItemIds,
     @PositiveOrZero long cartVersion,
-    @PositiveOrZero int expectedTotalDiscountedPrice) {
+    @PositiveOrZero long expectedTotalDiscountedPrice) {
   public CreateOrderRequest {
     paymentMethod = paymentMethod == null ? PaymentMethod.COD : paymentMethod;
   }

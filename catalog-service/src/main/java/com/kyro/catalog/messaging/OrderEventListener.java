@@ -37,7 +37,7 @@ public class OrderEventListener {
     try {
       List<Map<String, Object>> items = (List<Map<String, Object>>) event.get("items");
       if (items != null) {
-        productService.decreaseStock(items);
+        productService.reserveStock(items);
       }
 
       // Publish stock.reserved success event

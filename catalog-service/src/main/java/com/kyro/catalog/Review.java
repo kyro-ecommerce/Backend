@@ -3,6 +3,7 @@ package com.kyro.catalog;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
@@ -39,6 +40,7 @@ public class Review {
 
   @Column(name = "rating")
   @Max(value = 5, message = "Rating must be at most 5")
+  @Min(value = 1, message = "Rating must be at least 1")
   @NotNull(message = "Rating is required")
   private Integer rating;
 

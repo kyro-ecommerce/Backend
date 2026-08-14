@@ -22,26 +22,20 @@ public class CategoryService {
   @Transactional
   public CategoryDTO addCategory(CategoryRequest request) {
     String name = validatedName(request.name(), null);
-    int level = request.level() == null ? 1 : request.level();
-    if (level != 1 && level != 2) {
-      throw new IllegalArgumentException("Category level must be 1 or 2");
+    if (request.level() != null && request.level() == 2 && request.parentId() == null) {
+      throw new IllegalArgumentException("Parent category is required for a child category");
     }
-
+    if (request.level() != null && request.level() == 1 && request.parentId() != null) {
+      throw new IllegalArgumentException("Top-level category cannot have a parent");
+    }
     Category category = new Category();
     category.setName(name);
-    category.setLevel(level);
-    category.setParent(level == 1);
-    if (level == 2) {
-      if (request.parentId() == null) {
-        throw new IllegalArgumentException("Parent category is required for level 2");
-      }
+    if (request.parentId() != null) {
       Category parent = findCategoryById(request.parentId());
-      if (parent.getLevel() != 1) {
+      if (parent.getParentCategory() != null) {
         throw new IllegalArgumentException("Parent category must be level 1");
       }
       category.setParentCategory(parent);
-    } else if (request.parentId() != null) {
-      throw new IllegalArgumentException("Level 1 category cannot have a parent");
     }
     return toDTO(categoryRepository.save(category));
   }
@@ -57,7 +51,7 @@ public class CategoryService {
   public void deleteCategory(Long id) {
     Category category = findCategoryById(id);
     List<Category> tree =
-        category.getLevel() == 1
+        category.getParentCategory() == null
             ? java.util.stream.Stream.concat(
                     java.util.stream.Stream.of(category), category.getSubCategories().stream())
                 .toList()
@@ -91,12 +85,12 @@ public class CategoryService {
   }
 
   public List<Category> getAllParentCategories() {
-    return categoryRepository.findByLevel(1);
+    return categoryRepository.findByParentCategoryIsNull();
   }
 
   @Transactional(readOnly = true)
   public List<CategoryDTO> getCategoryTree() {
-    return categoryRepository.findByLevel(1).stream()
+    return categoryRepository.findByParentCategoryIsNull().stream()
         .map(
             parent -> {
               CategoryDTO dto = toDTO(parent);

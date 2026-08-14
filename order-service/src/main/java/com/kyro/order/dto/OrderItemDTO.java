@@ -8,12 +8,14 @@ import java.time.LocalDateTime;
 public class OrderItemDTO {
   private Long id;
   private Long productId;
+  private Long variantId;
+  private String sku;
   private String productTitle;
   private String imageUrl;
   private int quantity;
   private String size;
-  private int price;
-  private Integer discountedPrice;
+  private long price;
+  private Long discountedPrice;
   private Integer discountPercent;
 
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -24,6 +26,7 @@ public class OrderItemDTO {
   public OrderItemDTO(OrderItem orderItem) {
     this.id = orderItem.getId();
     this.productId = orderItem.getProductId();
+    this.variantId = orderItem.getVariantId(); this.sku = orderItem.getSku();
     this.productTitle = orderItem.getProductName();
     this.imageUrl = orderItem.getProductImageUrl();
     this.quantity = orderItem.getQuantity();
@@ -82,21 +85,25 @@ public class OrderItemDTO {
     this.size = size;
   }
 
-  public int getPrice() {
+  public long getPrice() {
     return price;
   }
 
-  public void setPrice(int price) {
+  public void setPrice(long price) {
     this.price = price;
   }
 
-  public Integer getDiscountedPrice() {
+  public Long getDiscountedPrice() {
     return discountedPrice;
   }
 
-  public void setDiscountedPrice(Integer discountedPrice) {
+  public void setDiscountedPrice(Long discountedPrice) {
     this.discountedPrice = discountedPrice;
   }
+  public Long getVariantId() { return variantId; }
+  public void setVariantId(Long value) { variantId = value; }
+  public String getSku() { return sku; }
+  public void setSku(String value) { sku = value; }
 
   public Integer getDiscountPercent() {
     return discountPercent;

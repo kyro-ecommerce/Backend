@@ -60,7 +60,7 @@ public class AdminProductController {
     return ResponseEntity.ok(
         PageResponse.from(
             productService.getProductsWithFilter(
-                ProductService.productPageable(page, size, sort, true), filter)));
+                ProductService.productPageable(page, size, sort, true), filter, true)));
   }
 
   @PatchMapping("/{productId}")

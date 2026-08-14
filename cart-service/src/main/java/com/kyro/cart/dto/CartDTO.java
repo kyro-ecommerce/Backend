@@ -7,17 +7,17 @@ public class CartDTO {
   private String userId;
   private long version;
   private List<CartItemDTO> items = new ArrayList<>();
-  private int totalPrice = 0;
-  private int totalDiscountedPrice = 0;
+  private long totalPrice = 0;
+  private long totalSalePrice = 0;
 
   public CartDTO() {}
 
-  public CartDTO(String userId, long version, List<CartItemDTO> items, int totalPrice, int totalDiscountedPrice) {
+  public CartDTO(String userId, long version, List<CartItemDTO> items, long totalPrice, long totalSalePrice) {
     this.userId = userId;
     this.version = version;
     this.items = items != null ? items : new ArrayList<>();
     this.totalPrice = totalPrice;
-    this.totalDiscountedPrice = totalDiscountedPrice;
+    this.totalSalePrice = totalSalePrice;
   }
 
   public String getUserId() {
@@ -39,32 +39,24 @@ public class CartDTO {
     this.items = items;
   }
 
-  public int getTotalPrice() {
+  public long getTotalPrice() {
     return totalPrice;
   }
 
-  public void setTotalPrice(int totalPrice) {
+  public void setTotalPrice(long totalPrice) {
     this.totalPrice = totalPrice;
   }
 
-  public int getTotalDiscountedPrice() {
-    return totalDiscountedPrice;
+  public long getTotalSalePrice() {
+    return totalSalePrice;
   }
 
-  public void setTotalDiscountedPrice(int totalDiscountedPrice) {
-    this.totalDiscountedPrice = totalDiscountedPrice;
+  public void setTotalSalePrice(long totalSalePrice) {
+    this.totalSalePrice = totalSalePrice;
   }
 
   public void calculateTotalAmount() {
-    this.totalPrice = items.stream().mapToInt(item -> item.getPrice() * item.getQuantity()).sum();
-    this.totalDiscountedPrice =
-        items.stream()
-            .mapToInt(
-                item ->
-                    (item.getDiscountedPrice() != null
-                            ? item.getDiscountedPrice()
-                            : item.getPrice())
-                        * item.getQuantity())
-            .sum();
+    this.totalPrice = items.stream().mapToLong(item -> item.getPrice() * item.getQuantity()).sum();
+    this.totalSalePrice = items.stream().mapToLong(item -> item.getSalePrice() * item.getQuantity()).sum();
   }
 }

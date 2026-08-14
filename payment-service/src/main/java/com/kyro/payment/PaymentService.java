@@ -82,8 +82,8 @@ public class PaymentService {
       String vnp_OrderInfo = "Thanh toan don hang #" + orderId;
       String vnp_OrderType = "other";
       String vnp_IpAddr = getIpAddress();
-      int totalAmount = order.totalDiscountedPrice() != null ? order.totalDiscountedPrice() : 0;
-      long amount = (long) totalAmount * 100L;
+      long totalAmount = order.totalDiscountedPrice() != null ? order.totalDiscountedPrice() : 0;
+      long amount = Math.multiplyExact(totalAmount, 100L);
 
       Map<String, String> vnp_Params = new HashMap<>();
       vnp_Params.put("vnp_Version", "2.1.0");

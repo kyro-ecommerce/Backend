@@ -102,15 +102,23 @@ graph LR
 ### 3.3. Product Sync Event (`ai.product.sync.queue`)
 ```json
 {
-  "eventId": "evt_88192301",
-  "eventType": "PRODUCT_UPDATED",
-  "productId": 42,
-  "title": "Giày Sneaker Kyro Runner Pro",
-  "description": "Giày chạy bộ êm ái, thoáng khí, thiết kế thể thao trẻ trung",
-  "categoryName": "Thời Trang Nam",
-  "price": 1200000.00,
-  "inStock": true,
-  "updatedAt": "2026-08-02T21:05:00Z"
+  "event_id": "evt-88192301",
+  "event_type": "ProductUpdated",
+  "occurred_at": "2026-08-02T21:05:00Z",
+  "data": {
+    "product_id": 42,
+    "title": "Laptop Kyro Pro",
+    "brand": "Kyro",
+    "category_id": 11,
+    "category_name": "Laptop",
+    "original_price": 1200000,
+    "discounted_price": 1080000,
+    "discount_percent": 10,
+    "average_rating": 4.5,
+    "num_ratings": 12,
+    "image_url": "https://example.com/product.jpg",
+    "is_active": true
+  }
 }
 ```
 

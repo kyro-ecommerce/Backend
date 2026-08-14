@@ -122,10 +122,11 @@ The repository contains nine Maven modules and a Docker Compose environment with
 
 1. Clients send public and authenticated requests through the API Gateway.
 2. The Gateway validates JWTs, enforces route-level roles, removes untrusted identity headers, and forwards verified `X-User-*` headers to downstream services.
-3. During checkout, Order publishes `order.created`; Catalog reserves stock and publishes `stock.reserved` or `stock.failed`.
-4. A successful reservation updates the order and removes only the purchased cart items. A failed reservation cancels the order.
-5. Payment publishes `payment.status.updated` after its database transaction commits; Order consumes the event and updates payment state.
-6. Auth and Order publish email events consumed by Notification. Catalog publishes product lifecycle events for the external AI index.
+3. Cart revalidates the selected `variantId`, active status, stock, and backend-calculated price; Order stores immutable item snapshots and publishes `order.created`.
+4. Catalog reserves stock by `variantId` and publishes `stock.reserved` or `stock.failed`.
+5. A successful reservation updates the order and removes only the purchased cart items. A failed reservation cancels the order.
+6. Payment publishes `payment.status.updated` after its database transaction commits; Order consumes the event and updates payment state.
+7. Auth and Order publish email events consumed by Notification. Catalog publishes product lifecycle events for the external AI index.
 
 ### Checkout saga
 
@@ -146,7 +147,7 @@ sequenceDiagram
     Broker-->>Catalog: Reserve product stock
 
     alt Stock is available
-        Catalog->>Catalog: Decrease inventory
+        Catalog->>Catalog: Decrease inventory by variantId
         Catalog-->>Broker: stock.reserved
         par Update order
             Broker-->>Order: Confirm or await online payment
@@ -165,7 +166,7 @@ sequenceDiagram
 | --- | ---: | --- | --- |
 | API Gateway | `8080` | Routing, JWT validation, role checks, rate limiting | Redis |
 | Auth | `8081` | Accounts, JWT, OAuth2, OTP | PostgreSQL |
-| Catalog | `8082` | Products, categories, inventory, reviews, images | PostgreSQL, Cloudinary |
+| Catalog | `8082` | Products, variants, attributes, inventory, reviews, images | PostgreSQL, Cloudinary |
 | Cart | `8083` | Persistent carts and product validation | PostgreSQL, Redis |
 | Notification | `8084` | Asynchronous email delivery | RabbitMQ |
 | Order | `8085` | Checkout and order lifecycle | PostgreSQL |

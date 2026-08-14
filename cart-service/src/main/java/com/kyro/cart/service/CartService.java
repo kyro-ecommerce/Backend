@@ -45,24 +45,24 @@ public class CartService {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sản phẩm và số lượng hợp lệ là bắt buộc.");
     }
     CatalogClient.ProductResponse product = getProduct(request.getProductId());
-    requireAvailable(product, request.getSize(), request.getQuantity());
+    CatalogClient.VariantResponse variant = requireAvailable(product, request.getVariantId(), request.getQuantity());
     Cart cart = lockedCart(Long.valueOf(userId));
     CartItem item =
         cart.getItems().stream()
-            .filter(i -> i.getProductId().equals(request.getProductId()) && Objects.equals(i.getSize(), request.getSize()))
+            .filter(i -> i.getVariantId().equals(request.getVariantId()))
             .findFirst()
             .orElseGet(
                 () -> {
                   CartItem created = new CartItem();
                   created.setCart(cart);
                   created.setProductId(request.getProductId());
-                  created.setSize(request.getSize());
+                  created.setVariantId(request.getVariantId());
                   cart.getItems().add(created);
                   return created;
                 });
     int quantity = item.getQuantity() + request.getQuantity();
-    requireAvailable(product, request.getSize(), quantity);
-    applyProduct(item, product);
+    variant = requireAvailable(product, request.getVariantId(), quantity);
+    applyProduct(item, product, variant);
     item.setQuantity(quantity);
     cart.touch();
     cartRepository.saveAndFlush(cart);
@@ -76,8 +76,8 @@ public class CartService {
     Cart cart = lockedCart(Long.valueOf(userId));
     CartItem item = findItem(cart, itemId);
     CatalogClient.ProductResponse product = getProduct(item.getProductId());
-    requireAvailable(product, item.getSize(), quantity);
-    applyProduct(item, product);
+    CatalogClient.VariantResponse variant = requireAvailable(product, item.getVariantId(), quantity);
+    applyProduct(item, product, variant);
     item.setQuantity(quantity);
     cart.touch();
     cartRepository.saveAndFlush(cart);
@@ -153,13 +153,6 @@ public class CartService {
     return toDto(cartRepository.findWithItemsByUserId(userId).orElseGet(() -> createCart(userId)));
   }
 
-  private CartItem findItem(Cart cart, Long productId, String size) {
-    return cart.getItems().stream()
-        .filter(i -> i.getProductId().equals(productId) && Objects.equals(i.getSize(), size))
-        .findFirst()
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy item trong giỏ."));
-  }
-
   private CartItem findItem(Cart cart, Long itemId) {
     return cart.getItems().stream()
         .filter(i -> i.getId().equals(itemId))
@@ -182,17 +175,16 @@ public class CartService {
       if (product == null) {
         item.setAvailable(false); item.setUnavailableReason("PRODUCT_NOT_FOUND"); continue;
       }
-      int oldPrice = item.getDiscountedPrice() != null ? item.getDiscountedPrice() : item.getPrice();
-      int newPrice = product.discountedPrice();
+      CatalogClient.VariantResponse variant = product.variants().stream().filter(v -> v.id().equals(item.getVariantId())).findFirst().orElse(null);
+      if (variant == null || !variant.active()) { item.setAvailable(false); item.setUnavailableReason("VARIANT_UNAVAILABLE"); continue; }
+      long oldPrice = item.getSalePrice();
+      long newPrice = variant.salePrice();
       item.setPriceChanged(oldPrice != newPrice);
       item.setProductName(product.title());
-      item.setPrice(product.price());
-      item.setDiscountPercent(product.discountPersent());
-      item.setDiscountedPrice(product.discountedPrice());
+      item.setPrice(variant.price()); item.setSalePrice(variant.salePrice()); item.setDiscountPercent(product.discountPercent());
+      item.setSku(variant.sku()); item.setVariantName(variant.variantName());
       if (product.images() != null && !product.images().isEmpty()) item.setProductImageUrl(product.images().get(0).downloadUrl());
-      CatalogClient.SizeResponse size = product.sizes() == null ? null : product.sizes().stream()
-          .filter(s -> Objects.equals(s.name(), item.getSize())).findFirst().orElse(null);
-      item.setAvailable(size != null && size.quantity() != null && size.quantity() >= item.getQuantity());
+      item.setAvailable(variant.stock() >= item.getQuantity());
       item.setUnavailableReason(item.isAvailable() ? null : "INSUFFICIENT_STOCK");
     }
     cart.calculateTotalAmount();
@@ -206,24 +198,25 @@ public class CartService {
       CartItemDTO out = new CartItemDTO();
       out.setId(item.getId()); out.setProductId(item.getProductId()); out.setProductName(item.getProductName());
       out.setProductImageUrl(item.getProductImageUrl()); out.setQuantity(item.getQuantity()); out.setPrice(item.getPrice());
-      out.setSize(item.getSize()); out.setDiscountPercent(item.getDiscountPercent()); out.setDiscountedPrice(item.getDiscountedPrice());
+      out.setVariantId(item.getVariantId()); out.setSku(item.getSku()); out.setVariantName(item.getVariantName());
+      out.setDiscountPercent(item.getDiscountPercent()); out.setSalePrice(item.getSalePrice());
       dto.getItems().add(out);
     }
     dto.calculateTotalAmount();
     return dto;
   }
 
-  private void applyProduct(CartItem item, CatalogClient.ProductResponse product) {
-    item.setProductName(product.title()); item.setPrice(product.price()); item.setDiscountPercent(product.discountPersent());
-    item.setDiscountedPrice(product.discountedPrice());
+  private void applyProduct(CartItem item, CatalogClient.ProductResponse product, CatalogClient.VariantResponse variant) {
+    item.setProductName(product.title()); item.setPrice(variant.price()); item.setSalePrice(variant.salePrice()); item.setDiscountPercent(product.discountPercent());
+    item.setSku(variant.sku()); item.setVariantName(variant.variantName());
     if (product.images() != null && !product.images().isEmpty()) item.setProductImageUrl(product.images().get(0).downloadUrl());
   }
 
-  private void requireAvailable(CatalogClient.ProductResponse product, String size, int quantity) {
+  private CatalogClient.VariantResponse requireAvailable(CatalogClient.ProductResponse product, Long variantId, int quantity) {
     if (product == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Sản phẩm không tồn tại.");
-    boolean available = product.sizes() != null && product.sizes().stream()
-        .anyMatch(s -> Objects.equals(s.name(), size) && s.quantity() != null && s.quantity() >= quantity);
-    if (!available) throw new ResponseStatusException(HttpStatus.CONFLICT, "Sản phẩm không đủ tồn kho.");
+    CatalogClient.VariantResponse variant = product.variants().stream().filter(v -> v.id().equals(variantId)).findFirst().orElse(null);
+    if (variant == null || !variant.active() || variant.stock() < quantity) throw new ResponseStatusException(HttpStatus.CONFLICT, "Biến thể không khả dụng hoặc không đủ tồn kho.");
+    return variant;
   }
 
   private CatalogClient.ProductResponse getProduct(Long productId) {

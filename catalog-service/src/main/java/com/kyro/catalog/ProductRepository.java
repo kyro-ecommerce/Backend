@@ -48,20 +48,20 @@ public interface ProductRepository
   // Get distinct top-level categories for all products (admin)
   @Query(
       "SELECT DISTINCT CASE "
-          + "WHEN p.category.level = 1 THEN p.category.name "
-          + "WHEN p.category.level = 2 THEN p.category.parentCategory.name "
+          + "WHEN p.category.parentCategory IS NULL THEN p.category.name "
+          + "ELSE p.category.parentCategory.name "
           + "END "
           + "FROM Product p WHERE p.category IS NOT NULL "
           + "ORDER BY CASE "
-          + "WHEN p.category.level = 1 THEN p.category.name "
-          + "WHEN p.category.level = 2 THEN p.category.parentCategory.name "
+          + "WHEN p.category.parentCategory IS NULL THEN p.category.name "
+          + "ELSE p.category.parentCategory.name "
           + "END")
   List<String> findDistinctTopLevelCategories();
 
   // Get distinct second-level categories by top-level category (admin)
   @Query(
       "SELECT DISTINCT p.category.name "
-          + "FROM Product p WHERE p.category.level = 2 "
+          + "FROM Product p WHERE p.category.parentCategory IS NOT NULL "
           + "AND LOWER(p.category.parentCategory.name) = LOWER(:topLevelCategory) "
           + "ORDER BY p.category.name")
   List<String> findDistinctSecondLevelCategoriesByTopLevel(
