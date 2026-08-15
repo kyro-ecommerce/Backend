@@ -6,10 +6,13 @@ import com.kyro.auth.dto.UpdateUserRequest;
 import com.kyro.auth.dto.UpdateUserStatusRequest;
 import com.kyro.enums.UserRole;
 import com.kyro.exceptions.DomainException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,9 +37,11 @@ public class AdminUserController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size,
       @RequestParam(required = false) String search,
-      @RequestParam(required = false) String role) {
+      @RequestParam(required = false) String role,
+      @RequestParam(defaultValue = "all") String status,
+      @RequestParam(required = false) List<String> sort) {
 
-    Pageable pageable = PageRequest.of(page, size);
+    Pageable pageable = userPageable(page, size, sort);
     String cleanSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
     UserRole userRoleEnum = null;
     if (role != null && !role.trim().isEmpty() && !role.equalsIgnoreCase("all")) {
@@ -46,11 +51,50 @@ public class AdminUserController {
       }
     }
 
+    Boolean banned =
+        switch (status.trim().toLowerCase()) {
+          case "all", "" -> null;
+          case "active" -> false;
+          case "banned" -> true;
+          default -> throw new IllegalArgumentException("Unsupported user status: " + status);
+        };
     Page<User> usersPage =
-        userRepository.findAdminUsersWithFilters(cleanSearch, userRoleEnum, pageable);
+        userRepository.findAdminUsersWithFilters(cleanSearch, userRoleEnum, banned, pageable);
     Page<BasicUserDTO> dtoList = usersPage.map(userService::convertToBasicDto);
 
     return ResponseEntity.ok(dtoList);
+  }
+
+  static Pageable userPageable(int page, int size, List<String> values) {
+    if (page < 0 || size < 1 || size > 100)
+      throw new IllegalArgumentException("Invalid page or size");
+    List<String> tokens =
+        values == null
+            ? List.of()
+            : values.stream()
+                .flatMap(value -> java.util.Arrays.stream(value.split(",")))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .toList();
+    if (tokens.size() % 2 != 0)
+      throw new IllegalArgumentException("sort must use field,direction pairs");
+    Map<String, String> fields =
+        Map.of("id", "id", "email", "email", "name", "firstName", "createdAt", "createdAt");
+    List<Sort.Order> orders = new ArrayList<>();
+    for (int i = 0; i < tokens.size(); i += 2) {
+      String field = fields.get(tokens.get(i));
+      if (field == null)
+        throw new IllegalArgumentException("Unsupported user sort: " + tokens.get(i));
+      Sort.Direction direction = Sort.Direction.fromString(tokens.get(i + 1));
+      Sort.Order order = new Sort.Order(direction, field);
+      orders.add(("email".equals(tokens.get(i)) || "name".equals(tokens.get(i))) ? order.ignoreCase() : order);
+      if ("name".equals(tokens.get(i)))
+        orders.add(new Sort.Order(direction, "lastName").ignoreCase());
+    }
+    if (orders.isEmpty()) orders.add(Sort.Order.asc("id"));
+    if (orders.stream().noneMatch(order -> order.getProperty().equals("id")))
+      orders.add(new Sort.Order(orders.getFirst().getDirection(), "id"));
+    return PageRequest.of(page, size, Sort.by(orders));
   }
 
   @GetMapping("/{userId}")
