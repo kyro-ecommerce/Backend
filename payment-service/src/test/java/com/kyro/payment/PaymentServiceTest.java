@@ -2,13 +2,16 @@ package com.kyro.payment;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.kyro.enums.PaymentStatus;
+import com.kyro.exceptions.DomainException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -51,6 +54,20 @@ class PaymentServiceTest {
         PaymentStatus.COMPLETED, PaymentService.resolvedStatus(PaymentStatus.FAILED, true));
     assertEquals(
         PaymentStatus.COMPLETED, PaymentService.resolvedStatus(PaymentStatus.COMPLETED, false));
+  }
+
+  @Test
+  void reusesRetryablePaymentButRejectsCompletedPayment() {
+    PaymentDetail pending = new PaymentDetail();
+    pending.setPaymentStatus(PaymentStatus.PENDING);
+    assertSame(pending, PaymentService.reusablePayment(Optional.of(pending)));
+
+    pending.setPaymentStatus(PaymentStatus.COMPLETED);
+    DomainException exception =
+        assertThrows(
+            DomainException.class, () -> PaymentService.reusablePayment(Optional.of(pending)));
+    assertEquals(409, exception.getStatus().value());
+    assertEquals("PAYMENT_ALREADY_COMPLETED", exception.getErrorCode());
   }
 
   private static PaymentDetail payment() {

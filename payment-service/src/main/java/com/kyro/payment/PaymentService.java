@@ -118,11 +118,7 @@ public class PaymentService {
       // Find existing PaymentDetail or create a new record to avoid unique order_id constraint
       // violation
       Optional<PaymentDetail> existingPayment = paymentRepository.findByOrderId(orderId);
-      if (existingPayment.isPresent()) {
-        throw new DomainException(
-            HttpStatus.CONFLICT, "Đơn hàng này đã có một yêu cầu thanh toán.");
-      }
-      PaymentDetail paymentDetail = existingPayment.orElseGet(PaymentDetail::new);
+      PaymentDetail paymentDetail = reusablePayment(existingPayment);
 
       paymentDetail.setOrderId(orderId);
       paymentDetail.setPaymentMethod(PaymentMethod.VNPAY);
@@ -271,6 +267,15 @@ public class PaymentService {
   static PaymentStatus resolvedStatus(PaymentStatus current, boolean completed) {
     if (current == PaymentStatus.COMPLETED) return current;
     return completed ? PaymentStatus.COMPLETED : PaymentStatus.FAILED;
+  }
+
+  static PaymentDetail reusablePayment(Optional<PaymentDetail> existingPayment) {
+    if (existingPayment.isPresent()
+        && existingPayment.get().getPaymentStatus() == PaymentStatus.COMPLETED) {
+      throw new DomainException(
+          HttpStatus.CONFLICT, "PAYMENT_ALREADY_COMPLETED", "Đơn hàng này đã được thanh toán.");
+    }
+    return existingPayment.orElseGet(PaymentDetail::new);
   }
 
   private PaymentDetail saveAndPublishStatus(PaymentDetail payment) {
