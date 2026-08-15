@@ -12,6 +12,7 @@ public class RabbitMQConfig {
 
   public static final String ORDER_EXCHANGE = "order-exchange";
   public static final String PAYMENT_EXCHANGE = "payment-exchange";
+  public static final String NOTIFICATION_EXCHANGE = "notification-exchange";
 
   public static final String ORDER_CREATED_ROUTING_KEY = "order.created";
   public static final String ORDER_DELIVERED_ROUTING_KEY = "order.delivered";
@@ -21,6 +22,7 @@ public class RabbitMQConfig {
   public static final String ORDER_SAGA_QUEUE = "order-saga-queue";
   public static final String PAYMENT_STATUS_QUEUE = "order-payment-status-queue";
   public static final String PAYMENT_STATUS_UPDATED_ROUTING_KEY = "payment.status.updated";
+  public static final String ORDER_NOTIFICATION_ROUTING_KEY = "notification.order";
 
   @Bean
   public TopicExchange orderExchange() {

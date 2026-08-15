@@ -50,6 +50,10 @@ public class NotificationListener {
     try {
       String email = (String) payload.get("email");
       Map<String, Object> orderData = (Map<String, Object>) payload.get("order");
+      if (!"CONFIRMED".equals(orderData.get("status"))) {
+        log.warn("Ignored order confirmation payload with status {}", orderData.get("status"));
+        return;
+      }
 
       emailService.sendOrderMail(email, orderData);
     } catch (Exception e) {

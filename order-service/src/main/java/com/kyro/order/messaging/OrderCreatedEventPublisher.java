@@ -1,6 +1,7 @@
 package com.kyro.order.messaging;
 
 import com.kyro.order.config.RabbitMQConfig;
+import com.kyro.order.event.OrderConfirmedEvent;
 import com.kyro.order.event.OrderCreatedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,18 @@ public class OrderCreatedEventPublisher {
           RabbitMQConfig.ORDER_EXCHANGE, RabbitMQConfig.ORDER_CREATED_ROUTING_KEY, event);
     } catch (RuntimeException e) {
       log.error("Failed to publish OrderCreatedEvent for order {}", event.orderId(), e);
+    }
+  }
+
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  public void publishConfirmation(OrderConfirmedEvent event) {
+    try {
+      rabbitTemplate.convertAndSend(
+          RabbitMQConfig.NOTIFICATION_EXCHANGE,
+          RabbitMQConfig.ORDER_NOTIFICATION_ROUTING_KEY,
+          event.payload());
+    } catch (RuntimeException e) {
+      log.error("Failed to publish order confirmation email event", e);
     }
   }
 }

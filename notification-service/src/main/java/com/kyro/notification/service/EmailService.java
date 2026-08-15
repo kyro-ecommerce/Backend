@@ -28,6 +28,9 @@ public class EmailService {
   @Value("${app.company.logo.url:https://kyro.com/logo.png}")
   private String companyLogoUrl;
 
+  @Value("${app.contact.email:contact@kyro.com}")
+  private String contactEmail;
+
   /**
    * Sends verification OTP code email.
    *
@@ -44,6 +47,7 @@ public class EmailService {
       context.setVariable("otpCode", otp);
       context.setVariable("otpExpirationMinutes", otpExpirationMinutes);
       context.setVariable("companyLogoUrl", companyLogoUrl);
+      context.setVariable("contactEmail", contactEmail);
 
       String htmlContent = templateEngine.process("mail/otp-verification-email", context);
 
@@ -73,12 +77,13 @@ public class EmailService {
       Context context = new Context();
       context.setVariable("order", orderData);
       context.setVariable("companyLogoUrl", companyLogoUrl);
+      context.setVariable("contactEmail", contactEmail);
 
       String htmlContent = templateEngine.process("mail/order-confirmation-email", context);
 
       Object orderId = orderData.get("id");
       helper.setTo(email);
-      helper.setSubject("Xác nhận đơn hàng TechShop #" + orderId);
+      helper.setSubject("Xác nhận đơn hàng Kyro #" + orderId);
       helper.setText(htmlContent, true);
 
       mailSender.send(mimeMessage);
