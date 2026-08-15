@@ -23,14 +23,14 @@
         <h1 th:text="|Đơn hàng #${order.id} đã được đặt thành công!|">Đặt hàng thành công!</h1>
     </div>
     <div class="content">
-        <p>Chào <strong th:text="${order.user.firstName} + ' ' + ${order.user.lastName}">Khách hàng</strong>,</p>
-        <p>Cảm ơn bạn đã đặt hàng tại TechShop. Dưới đây là chi tiết đơn hàng của bạn:</p>
+        <p>Chào <strong th:text="${order.recipientName}">Khách hàng</strong>,</p>
+        <p>Cảm ơn bạn đã đặt hàng tại Kyro. Dưới đây là chi tiết đơn hàng của bạn:</p>
 
         <div class="order-details">
             <p><strong>Mã đơn hàng:</strong> <span th:text="${order.id}">#ORDER_ID</span></p>
-            <p><strong>Ngày đặt:</strong> <span th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm')}">ORDER_DATE</span></p>
-            <p><strong>Trạng thái đơn hàng:</strong> <span th:text="${order.orderStatus.toString()}">ORDER_STATUS</span></p>
-            <p><strong>Phương thức thanh toán:</strong> <span th:text="${order.paymentMethod != null ? order.paymentMethod.toString() : 'COD'}">PAYMENT_METHOD</span></p>
+            <p><strong>Ngày đặt:</strong> <span th:text="${order.orderDate}">ORDER_DATE</span></p>
+            <p><strong>Trạng thái đơn hàng:</strong> <span th:text="${order.status}">ORDER_STATUS</span></p>
+            <p><strong>Phương thức thanh toán:</strong> <span th:text="${order.paymentMethod}">PAYMENT_METHOD</span></p>
             <p><strong>Địa chỉ giao hàng:</strong>
                 <span th:if="${order.shippingAddress}"
                       th:text="${order.shippingAddress.street + ', ' + order.shippingAddress.ward + ', ' + order.shippingAddress.district + ', ' + order.shippingAddress.province}">
@@ -49,8 +49,11 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="item : ${order.orderItems}">
-                    <td th:text="${item.product.title}">Tên sản phẩm</td>
+                <tr th:each="item : ${order.items}">
+                    <td>
+                        <span th:text="${item.productName}">Tên sản phẩm</span>
+                        <small th:if="${item.variantName}" th:text="|' - ' + ${item.variantName}|">Biến thể</small>
+                    </td>
                     <td th:text="${item.quantity}">Số lượng</td>
                     <td th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">Đơn giá</td>
                     <td th:text="${#numbers.formatDecimal(item.discountedPrice * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' đ'">Thành tiền</td>
@@ -60,15 +63,15 @@
 
             <h3 style="text-align: right; margin-top: 20px;">
                 Tổng cộng: <span style="color: #d9534f; font-weight: bold;"
-                                 th:text="${#numbers.formatDecimal(order.totalDiscountedPrice, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                                 th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">
                         TOTAL_PRICE
                     </span>
             </h3>
         </div>
     </div>
     <div class="footer">
-        <p>Cảm ơn bạn đã tin tưởng và mua sắm tại TechShop!</p>
-        <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua email: techshopprojectteam@gmail.com</p>
+        <p>Cảm ơn bạn đã tin tưởng và mua sắm tại Kyro!</p>
+        <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua email: <span th:text="${contactEmail}">contact@kyro.com</span></p>
         <p>*Đây là email tự động, vui lòng không trả lời trực tiếp email này.*</p>
     </div>
 </div>

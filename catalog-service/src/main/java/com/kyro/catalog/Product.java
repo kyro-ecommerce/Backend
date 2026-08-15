@@ -15,6 +15,7 @@ public class Product {
   @Column(name = "detailed_review", columnDefinition = "TEXT") private String detailedReview;
   @NotBlank @Size(max = 50) @Column(nullable = false, length = 50) private String brand;
   @Min(0) @Max(100) @Column(name = "discount_percent", nullable = false) private int discountPercent;
+  @Column(name = "quantity_sold", nullable = false) private long quantitySold;
   @ManyToOne @JoinColumn(name = "category_id", nullable = false) private Category category;
   @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<ProductVariant> variants = new ArrayList<>();
@@ -49,6 +50,7 @@ public class Product {
   public void setBrand(String value) { brand = value; }
   public int getDiscountPercent() { return discountPercent; }
   public void setDiscountPercent(int value) { discountPercent = value; }
+  public long getQuantitySold() { return quantitySold; }
   public Category getCategory() { return category; }
   public void setCategory(Category value) { category = value; }
   public List<ProductVariant> getVariants() { return variants; }

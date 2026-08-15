@@ -15,6 +15,10 @@ class ProductServiceTest {
   @Test void rejectsAdminStockSortForCustomer() {
     assertThrows(IllegalArgumentException.class,()->ProductService.productPageable(0,20,List.of("quantity,asc"),false));
   }
+  @Test void adminCanSortByQuantitySold() {
+    Pageable p=ProductService.productPageable(0,20,List.of("quantitySold,desc"),true);
+    assertEquals(Sort.Direction.DESC,p.getSort().getOrderFor("quantitySold").getDirection());
+  }
   @Test void topSellingRemainsBatchOrdered() {
     Product p=new Product();p.setId(1L);p.setTitle("Phone");p.setBrand("Kyro");
     var result=ProductService.mapTopSellingProducts(List.of(new OrderClient.TopSellingProductResponse(1L,7L)),List.of(p));

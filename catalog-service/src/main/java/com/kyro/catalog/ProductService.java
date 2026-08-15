@@ -87,6 +87,7 @@ public class ProductService {
         "price","minPrice", "minPrice","minPrice", "discountPercent","discountPercent",
         "createdAt","createdAt", "averageRating","averageRating"));
     if (admin) fields.put("quantity", "totalStock");
+    if (admin) fields.put("quantitySold", "quantitySold");
     List<String> tokens = sortTokens(values); List<Sort.Order> sort = new ArrayList<>();
     for (int i=0;i<tokens.size();i+=2) {
       String field = fields.get(tokens.get(i));

@@ -11,8 +11,10 @@ public class RabbitMQConfig {
 
   public static final String ORDER_EXCHANGE = "order-exchange";
   public static final String ORDER_CREATED_ROUTING_KEY = "order.created";
+  public static final String ORDER_DELIVERED_ROUTING_KEY = "order.delivered";
 
   public static final String CATALOG_ORDER_QUEUE = "catalog-order-created-queue";
+  public static final String CATALOG_ORDER_DELIVERED_QUEUE = "catalog-order-delivered-queue";
 
   @Bean
   public TopicExchange orderExchange() {
@@ -29,6 +31,18 @@ public class RabbitMQConfig {
     return BindingBuilder.bind(catalogOrderQueue())
         .to(orderExchange())
         .with(ORDER_CREATED_ROUTING_KEY);
+  }
+
+  @Bean
+  public Queue catalogOrderDeliveredQueue() {
+    return new Queue(CATALOG_ORDER_DELIVERED_QUEUE, true);
+  }
+
+  @Bean
+  public Binding catalogOrderDeliveredBinding() {
+    return BindingBuilder.bind(catalogOrderDeliveredQueue())
+        .to(orderExchange())
+        .with(ORDER_DELIVERED_ROUTING_KEY);
   }
 
   @Bean

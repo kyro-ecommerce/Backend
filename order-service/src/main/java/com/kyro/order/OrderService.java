@@ -16,11 +16,11 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -44,7 +44,6 @@ public class OrderService {
   private final CatalogClient catalogClient;
   private final CartClient cartClient;
   private final UserClient userClient;
-  private final RabbitTemplate rabbitTemplate;
   private final ApplicationEventPublisher eventPublisher;
 
   public OrderService(
@@ -53,14 +52,12 @@ public class OrderService {
       CatalogClient catalogClient,
       CartClient cartClient,
       UserClient userClient,
-      RabbitTemplate rabbitTemplate,
       ApplicationEventPublisher eventPublisher) {
     this.orderRepository = orderRepository;
     this.orderItemRepository = orderItemRepository;
     this.catalogClient = catalogClient;
     this.cartClient = cartClient;
     this.userClient = userClient;
-    this.rabbitTemplate = rabbitTemplate;
     this.eventPublisher = eventPublisher;
   }
 
@@ -348,14 +345,13 @@ public class OrderService {
       throw invalidOrderState(
           "Đơn hàng không thể xác nhận ở trạng thái hiện tại (" + order.getOrderStatus() + ")");
     }
-    if (!order.isStockReserved()
-        || (order.getPaymentMethod() == PaymentMethod.VNPAY
-            && order.getPaymentStatus() != PaymentStatus.COMPLETED)) {
+    if (!confirmOrderIfReady(order)) {
       throw invalidOrderState("Đơn hàng chưa hoàn tất giữ hàng hoặc thanh toán.");
     }
-    order.setOrderStatus(OrderStatus.CONFIRMED);
     log.info("Order ID {} confirmed.", orderId);
-    return orderRepository.save(order);
+    Order savedOrder = orderRepository.save(order);
+    publishOrderConfirmation(savedOrder);
+    return savedOrder;
   }
 
   @Transactional
@@ -384,6 +380,19 @@ public class OrderService {
     order.setOrderStatus(OrderStatus.DELIVERED);
     order.setPaymentStatus(PaymentStatus.COMPLETED);
     order.setDeliveryDate(LocalDateTime.now());
+    Map<Long, Integer> quantities = new LinkedHashMap<>();
+    order
+        .getOrderItems()
+        .forEach(item -> quantities.merge(item.getProductId(), item.getQuantity(), Integer::sum));
+    eventPublisher.publishEvent(
+        new com.kyro.order.event.OrderDeliveredEvent(
+            orderId,
+            quantities.entrySet().stream()
+                .map(
+                    entry ->
+                        new com.kyro.order.event.OrderDeliveredEvent.Item(
+                            entry.getKey(), entry.getValue()))
+                .toList()));
     log.info("Order ID {} delivered.", orderId);
     return orderRepository.save(order);
   }
@@ -531,57 +540,10 @@ public class OrderService {
     return orderItemRepository.findProductRevenue(OrderStatus.DELIVERED);
   }
 
-  private void sendOrderConfirmationEmail(String email, Order order) {
-    try {
-      // Build simple order detail map representation for email template context
-      Map<String, Object> orderMap = new HashMap<>();
-      orderMap.put("id", order.getId());
-      orderMap.put("totalDiscountedPrice", order.getTotalDiscountedPrice());
-      orderMap.put("paymentMethod", order.getPaymentMethod().name());
-      orderMap.put("orderDate", order.getOrderDate().toString());
-
-      Map<String, Object> addressMap = new HashMap<>();
-      addressMap.put("fullName", order.getShippingAddress().getFullName());
-      addressMap.put("phoneNumber", order.getShippingAddress().getPhoneNumber());
-      addressMap.put("street", order.getShippingAddress().getStreet());
-      addressMap.put("ward", order.getShippingAddress().getWard());
-      addressMap.put("district", order.getShippingAddress().getDistrict());
-      addressMap.put("province", order.getShippingAddress().getProvince());
-      orderMap.put("shippingAddress", addressMap);
-
-      List<Map<String, Object>> itemsList =
-          order.getOrderItems().stream()
-              .map(
-                  item -> {
-                    Map<String, Object> itemMap = new HashMap<>();
-                    itemMap.put("productName", item.getProductName());
-                    itemMap.put("size", item.getSize());
-                    itemMap.put("quantity", item.getQuantity());
-                    itemMap.put("price", item.getPrice());
-                    itemMap.put("discountedPrice", item.getDiscountedPrice());
-                    itemMap.put("productImageUrl", item.getProductImageUrl());
-                    return itemMap;
-                  })
-              .collect(Collectors.toList());
-      orderMap.put("orderItems", itemsList);
-
-      Map<String, Object> payload =
-          Map.of(
-              "email", email,
-              "order", orderMap);
-
-      rabbitTemplate.convertAndSend("notification-exchange", "notification.order", payload);
-      log.info(
-          "Published order confirmation notification event to RabbitMQ for order #{}",
-          order.getId());
-    } catch (Exception e) {
-      log.error("Failed to publish order confirmation notification event: {}", e.getMessage(), e);
-    }
-  }
-
   @Transactional
   public void updatePaymentStatus(Long orderId, PaymentStatus status) {
     Order order = findOrderByIdForUpdate(orderId);
+    boolean wasPending = order.getOrderStatus() == OrderStatus.PENDING;
     if (order.getPaymentStatus() == PaymentStatus.COMPLETED && status != PaymentStatus.COMPLETED) {
       log.info("Ignored payment status regression {} for completed order {}", status, orderId);
       return;
@@ -591,16 +553,13 @@ public class OrderService {
       order.setOrderStatus(OrderStatus.CANCELLED);
     }
     orderRepository.save(order);
+    publishOrderConfirmationIfNewlyConfirmed(wasPending, order);
     log.info("Successfully updated payment status for order ID {} to {}", orderId, status);
   }
 
   static boolean applyPaymentStatus(Order order, PaymentStatus status) {
     order.setPaymentStatus(status);
-    if (status == PaymentStatus.COMPLETED
-        && order.isStockReserved()
-        && order.getOrderStatus() == OrderStatus.PENDING) {
-      order.setOrderStatus(OrderStatus.CONFIRMED);
-    }
+    confirmOrderIfReady(order);
     return status == PaymentStatus.FAILED
         && order.isStockReserved()
         && order.getOrderStatus() == OrderStatus.PENDING;
@@ -616,10 +575,12 @@ public class OrderService {
   @Transactional
   public void handleStockResult(com.kyro.order.event.StockResultEvent event) {
     Order order = findOrderByIdForUpdate(event.orderId());
+    boolean wasPending = order.getOrderStatus() == OrderStatus.PENDING;
     if (applyStockResult(order, event.success())) {
       restoreStock(order);
     }
     orderRepository.save(order);
+    publishOrderConfirmationIfNewlyConfirmed(wasPending, order);
   }
 
   static boolean applyStockResult(Order order, boolean success) {
@@ -637,11 +598,71 @@ public class OrderService {
       order.setOrderStatus(OrderStatus.CANCELLED);
       return true;
     }
-    if (order.getPaymentMethod() == PaymentMethod.COD
-        || order.getPaymentStatus() == PaymentStatus.COMPLETED) {
-      order.setOrderStatus(OrderStatus.CONFIRMED);
-    }
+    confirmOrderIfReady(order);
     return false;
+  }
+
+  static boolean confirmOrderIfReady(Order order) {
+    if (order.getOrderStatus() != OrderStatus.PENDING
+        || !order.isStockReserved()
+        || (order.getPaymentMethod() == PaymentMethod.VNPAY
+            && order.getPaymentStatus() != PaymentStatus.COMPLETED)) {
+      return false;
+    }
+    order.setOrderStatus(OrderStatus.CONFIRMED);
+    return true;
+  }
+
+  private void publishOrderConfirmationIfNewlyConfirmed(boolean wasPending, Order order) {
+    if (isNewlyConfirmed(wasPending, order)) {
+      publishOrderConfirmation(order);
+    }
+  }
+
+  static boolean isNewlyConfirmed(boolean wasPending, Order order) {
+    return wasPending && order.getOrderStatus() == OrderStatus.CONFIRMED;
+  }
+
+  private void publishOrderConfirmation(Order order) {
+    Address address = order.getShippingAddress();
+    Map<String, Object> addressMap = new HashMap<>();
+    addressMap.put("fullName", address.getFullName());
+    addressMap.put("phoneNumber", address.getPhoneNumber());
+    addressMap.put("street", address.getStreet());
+    addressMap.put("ward", address.getWard());
+    addressMap.put("district", address.getDistrict());
+    addressMap.put("province", address.getProvince());
+
+    List<Map<String, Object>> items =
+        order.getOrderItems().stream()
+            .map(
+                item -> {
+                  Map<String, Object> value = new HashMap<>();
+                  value.put("productName", item.getProductName());
+                  value.put("variantName", item.getVariantName());
+                  value.put("quantity", item.getQuantity());
+                  value.put("price", item.getPrice());
+                  value.put("discountedPrice", item.getDiscountedPrice());
+                  value.put("productImageUrl", item.getProductImageUrl());
+                  return value;
+                })
+            .toList();
+
+    Map<String, Object> orderMap = new HashMap<>();
+    orderMap.put("id", order.getId());
+    orderMap.put("status", order.getOrderStatus().name());
+    orderMap.put("recipientName", address.getFullName());
+    orderMap.put(
+        "orderDate", order.getOrderDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+    orderMap.put("paymentMethod", order.getPaymentMethod().name());
+    orderMap.put("totalAmount", order.getTotalDiscountedPrice());
+    orderMap.put("shippingAddress", addressMap);
+    orderMap.put("items", items);
+
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("email", order.getUserEmail());
+    payload.put("order", orderMap);
+    eventPublisher.publishEvent(new com.kyro.order.event.OrderConfirmedEvent(payload));
   }
 
   private Order findOrderByIdForUpdate(Long orderId) {

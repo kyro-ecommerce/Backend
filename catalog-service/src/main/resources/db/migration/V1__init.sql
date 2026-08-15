@@ -11,6 +11,7 @@ CREATE TABLE product (
   detailed_review text,
   brand varchar(50) NOT NULL,
   discount_percent integer NOT NULL DEFAULT 0 CHECK (discount_percent BETWEEN 0 AND 100),
+  quantity_sold bigint NOT NULL DEFAULT 0 CHECK (quantity_sold >= 0),
   category_id bigint NOT NULL REFERENCES category(id),
   created_at timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -53,6 +54,10 @@ CREATE TABLE review (
   user_first_name varchar(255),
   user_last_name varchar(255),
   UNIQUE (product_id, user_id)
+);
+
+CREATE TABLE processed_order_delivery (
+  order_id bigint PRIMARY KEY
 );
 
 -- Demo seed normalized directly; intentionally omits obsolete derived fields.

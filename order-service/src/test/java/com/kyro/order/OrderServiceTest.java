@@ -16,7 +16,7 @@ class OrderServiceTest {
   @Test
   void purchaseCheckDelegatesWithoutLoadingOrderItems() {
     OrderService orderService =
-        new OrderService(null, null, null, null, null, null, null) {
+        new OrderService(null, null, null, null, null, null) {
           @Override
           public boolean hasPurchasedAndDelivered(Long userId, Long productId) {
             return userId.equals(16L) && productId.equals(20L);
@@ -31,7 +31,7 @@ class OrderServiceTest {
     Order order = new Order();
     order.setOrderStatus(OrderStatus.PENDING);
     OrderService orderService =
-        new OrderService(null, null, null, null, null, null, null) {
+        new OrderService(null, null, null, null, null, null) {
           @Override
           public Order findOrderById(Long orderId) {
             return order;
@@ -111,6 +111,44 @@ class OrderServiceTest {
     stockFirst.setOrderStatus(OrderStatus.CANCELLED);
     OrderService.applyStockResult(stockFirst, true);
     assertEquals(OrderStatus.CANCELLED, stockFirst.getOrderStatus());
+  }
+
+  @Test
+  void vnpayPublishesOnceForEitherSuccessEventOrder() {
+    Order paymentFirst = order(PaymentStatus.PENDING, false);
+    boolean wasPending = paymentFirst.getOrderStatus() == OrderStatus.PENDING;
+    OrderService.applyPaymentStatus(paymentFirst, PaymentStatus.COMPLETED);
+    assertFalse(OrderService.isNewlyConfirmed(wasPending, paymentFirst));
+    OrderService.applyStockResult(paymentFirst, true);
+    assertTrue(OrderService.isNewlyConfirmed(wasPending, paymentFirst));
+
+    Order stockFirst = order(PaymentStatus.PENDING, false);
+    wasPending = stockFirst.getOrderStatus() == OrderStatus.PENDING;
+    OrderService.applyStockResult(stockFirst, true);
+    assertFalse(OrderService.isNewlyConfirmed(wasPending, stockFirst));
+    OrderService.applyPaymentStatus(stockFirst, PaymentStatus.COMPLETED);
+    assertTrue(OrderService.isNewlyConfirmed(wasPending, stockFirst));
+  }
+
+  @Test
+  void duplicateCodStockEventDoesNotPublishTwice() {
+    Order order = order(PaymentStatus.PENDING, false);
+    order.setPaymentMethod(PaymentMethod.COD);
+    boolean firstWasPending = order.getOrderStatus() == OrderStatus.PENDING;
+    OrderService.applyStockResult(order, true);
+    assertTrue(OrderService.isNewlyConfirmed(firstWasPending, order));
+
+    boolean duplicateWasPending = order.getOrderStatus() == OrderStatus.PENDING;
+    OrderService.applyStockResult(order, true);
+    assertFalse(OrderService.isNewlyConfirmed(duplicateWasPending, order));
+  }
+
+  @Test
+  void failuresDoNotPublishConfirmation() {
+    Order order = order(PaymentStatus.PENDING, false);
+    boolean wasPending = order.getOrderStatus() == OrderStatus.PENDING;
+    OrderService.applyStockResult(order, false);
+    assertFalse(OrderService.isNewlyConfirmed(wasPending, order));
   }
 
   private static Order order(PaymentStatus paymentStatus, boolean stockReserved) {
