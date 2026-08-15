@@ -384,6 +384,19 @@ public class OrderService {
     order.setOrderStatus(OrderStatus.DELIVERED);
     order.setPaymentStatus(PaymentStatus.COMPLETED);
     order.setDeliveryDate(LocalDateTime.now());
+    Map<Long, Integer> quantities = new LinkedHashMap<>();
+    order
+        .getOrderItems()
+        .forEach(item -> quantities.merge(item.getProductId(), item.getQuantity(), Integer::sum));
+    eventPublisher.publishEvent(
+        new com.kyro.order.event.OrderDeliveredEvent(
+            orderId,
+            quantities.entrySet().stream()
+                .map(
+                    entry ->
+                        new com.kyro.order.event.OrderDeliveredEvent.Item(
+                            entry.getKey(), entry.getValue()))
+                .toList()));
     log.info("Order ID {} delivered.", orderId);
     return orderRepository.save(order);
   }

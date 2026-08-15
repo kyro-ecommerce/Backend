@@ -14,6 +14,7 @@ public class RabbitMQConfig {
   public static final String PAYMENT_EXCHANGE = "payment-exchange";
 
   public static final String ORDER_CREATED_ROUTING_KEY = "order.created";
+  public static final String ORDER_DELIVERED_ROUTING_KEY = "order.delivered";
   public static final String STOCK_RESERVED_ROUTING_KEY = "stock.reserved";
   public static final String STOCK_FAILED_ROUTING_KEY = "stock.failed";
 

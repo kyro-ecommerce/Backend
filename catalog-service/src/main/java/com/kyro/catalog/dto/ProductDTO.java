@@ -6,7 +6,7 @@ import java.util.List;
 
 public record ProductDTO(
     Long id, String title, String description, String detailedReview, String brand,
-    int discountPercent, long minPrice, long minSalePrice, int totalStock,
+    int discountPercent, long minPrice, long minSalePrice, int totalStock, long quantitySold,
     List<VariantDTO> variants, List<AttributeDTO> attributes, List<ImageDTO> imageUrls,
     double averageRating, long numRatings, String topLevelCategory,
     String secondLevelCategory, LocalDateTime createdAt) {
@@ -16,7 +16,7 @@ public record ProductDTO(
         product.getId(), product.getTitle(), product.getDescription(), product.getDetailedReview(),
         product.getBrand(), product.getDiscountPercent(), minPrice(product),
         Pricing.salePrice(minPrice(product), product.getDiscountPercent()),
-        product.getTotalStock(),
+        product.getTotalStock(), product.getQuantitySold(),
         product.getVariants().stream().map(v -> new VariantDTO(v, product.getDiscountPercent())).toList(),
         product.getAttributes().stream().map(AttributeDTO::new).toList(),
         product.getImages().stream().map(ImageDTO::new).toList(), Math.round(product.getAverageRating() * 10) / 10.0,
