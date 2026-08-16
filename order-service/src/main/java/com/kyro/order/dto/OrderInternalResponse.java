@@ -8,6 +8,7 @@ import java.time.Instant;
 
 public record OrderInternalResponse(
     Long id,
+    String orderCode,
     Long userId,
     Long totalDiscountedPrice,
     PaymentStatus paymentStatus,
@@ -17,6 +18,7 @@ public record OrderInternalResponse(
   public OrderInternalResponse(Order order) {
     this(
         order.getId(),
+        order.getOrderCode(),
         order.getUserId(),
         order.getTotalDiscountedPrice(),
         order.getPaymentStatus(),

@@ -179,6 +179,19 @@ class OrderServiceTest {
   }
 
   @Test
+  void assignsCustomerFacingOrderCode() {
+    Order first = new Order();
+    Order second = new Order();
+
+    first.assignOrderCode();
+    second.assignOrderCode();
+
+    assertTrue(first.getOrderCode().matches("^KYR-[0-9A-F]{12}$"));
+    assertFalse(first.getOrderCode().equals(second.getOrderCode()));
+    assertEquals(first.getOrderCode(), new OrderDTO(first).getOrderCode());
+  }
+
+  @Test
   void expiresReservedVnpayOrderAfterGraceCutoff() {
     Instant expiration = Instant.parse("2026-08-16T08:15:00Z");
     Order order = order(PaymentStatus.PENDING, true);

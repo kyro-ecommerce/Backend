@@ -12,8 +12,10 @@ class NotificationListenerTest {
   void sendsConfirmedOrderOnly() {
     RecordingEmailService emailService = new RecordingEmailService();
     NotificationListener listener = new NotificationListener(emailService);
-    Map<String, Object> confirmed = Map.of("id", 1L, "status", "CONFIRMED");
-    Map<String, Object> pending = Map.of("id", 2L, "status", "PENDING");
+    Map<String, Object> confirmed =
+        Map.of("id", 1L, "orderCode", "KYR-A1B2C3D4E5F6", "status", "CONFIRMED");
+    Map<String, Object> pending =
+        Map.of("id", 2L, "orderCode", "KYR-ABCDEF123456", "status", "PENDING");
 
     listener.receiveOrderNotification(Map.of("email", "customer@example.com", "order", confirmed));
     listener.receiveOrderNotification(Map.of("email", "customer@example.com", "order", pending));

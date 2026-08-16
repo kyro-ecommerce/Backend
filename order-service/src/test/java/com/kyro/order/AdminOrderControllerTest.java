@@ -28,6 +28,13 @@ class AdminOrderControllerTest {
   }
 
   @Test
+  void supportsSortingByDisplayedOrderCode() {
+    Pageable pageable = OrderService.orderPageable(0, 20, List.of("orderCode,asc"));
+
+    assertEquals(Sort.Direction.ASC, pageable.getSort().getOrderFor("orderCode").getDirection());
+  }
+
+  @Test
   void parsesFiltersCaseInsensitively() {
     OrderFilter filter =
         OrderFilter.from(

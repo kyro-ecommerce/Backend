@@ -58,6 +58,8 @@ class OrderEmailTemplateTest {
         Map.of(
             "id",
             1L,
+            "orderCode",
+            "KYR-A1B2C3D4E5F6",
             "status",
             "CONFIRMED",
             "recipientName",
@@ -80,6 +82,7 @@ class OrderEmailTemplateTest {
     assertTrue(html.contains("Laptop"));
     assertTrue(html.contains("Mouse"));
     assertTrue(html.contains("Ky Ro"));
+    assertTrue(html.contains("KYR-A1B2C3D4E5F6"));
     assertTrue(html.contains("Kyro"));
     assertTrue(html.contains("contact@kyro.com"));
   }

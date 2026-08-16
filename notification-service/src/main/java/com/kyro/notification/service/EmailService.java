@@ -2,6 +2,7 @@ package com.kyro.notification.service;
 
 import jakarta.mail.internet.MimeMessage;
 import java.util.Map;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -73,6 +74,7 @@ public class EmailService {
     MimeMessage mimeMessage = mailSender.createMimeMessage();
     try {
       MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+      String orderCode = Objects.requireNonNull((String) orderData.get("orderCode"));
 
       Context context = new Context();
       context.setVariable("order", orderData);
@@ -81,13 +83,12 @@ public class EmailService {
 
       String htmlContent = templateEngine.process("mail/order-confirmation-email", context);
 
-      Object orderId = orderData.get("id");
       helper.setTo(email);
-      helper.setSubject("Xác nhận đơn hàng Kyro #" + orderId);
+      helper.setSubject("Xác nhận đơn hàng Kyro " + orderCode);
       helper.setText(htmlContent, true);
 
       mailSender.send(mimeMessage);
-      log.info("Successfully sent order confirmation email to {} for order #{}", email, orderId);
+      log.info("Successfully sent order confirmation email to {} for order {}", email, orderCode);
 
     } catch (Exception e) {
       log.error(

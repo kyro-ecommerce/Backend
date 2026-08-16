@@ -95,7 +95,8 @@ class PaymentServiceTest {
     Instant expiresAt = Instant.now().plusSeconds(15 * 60);
     OrderClient orderClient =
         ignored ->
-            new OrderClient.OrderResponse(42L, 7L, 100L, "FAILED", "VNPAY", "PENDING", expiresAt);
+            new OrderClient.OrderResponse(
+                42L, "KYR-A1B2C3D4E5F6", 7L, 100L, "FAILED", "VNPAY", "PENDING", expiresAt);
     PaymentRepository repository = repositoryFor(failedPayment);
     List<Object> events = new ArrayList<>();
     PaymentService retryService = new PaymentService(orderClient, repository, events::add);
@@ -107,6 +108,7 @@ class PaymentServiceTest {
     String paymentUrl = retryService.createPayment(42L);
 
     assertTrue(paymentUrl.startsWith("https://sandbox.vnpayment.vn/pay?"));
+    assertTrue(paymentUrl.contains("Thanh+toan+don+hang+KYR-A1B2C3D4E5F6"));
     assertEquals(PaymentStatus.PENDING, failedPayment.getPaymentStatus());
     assertNotEquals("42_old", failedPayment.getTransactionId());
     PaymentStatusChangedEvent event = (PaymentStatusChangedEvent) events.getFirst();
