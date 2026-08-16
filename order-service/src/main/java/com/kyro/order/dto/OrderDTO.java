@@ -29,6 +29,7 @@ public class OrderDTO {
   private PaymentStatus paymentStatus;
   private List<OrderItemDTO> orderItems;
   private PaymentMethod paymentMethod;
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
   private Instant expiresAt;
 
   public OrderDTO() {}

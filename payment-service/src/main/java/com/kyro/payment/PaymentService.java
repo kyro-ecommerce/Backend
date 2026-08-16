@@ -163,7 +163,7 @@ public class PaymentService {
       queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
 
       paymentDetail.setVnp_SecureHash(vnp_SecureHash);
-      paymentRepository.save(paymentDetail);
+      saveAndPublishStatus(paymentDetail);
 
       return vnp_PayUrl + "?" + queryUrl;
     } catch (RuntimeException e) {

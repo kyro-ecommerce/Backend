@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.kyro.enums.OrderStatus;
 import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
 import com.kyro.exceptions.DomainException;
 import com.kyro.order.client.CatalogClient;
+import com.kyro.order.dto.OrderDTO;
 import java.lang.reflect.Proxy;
 import java.time.Instant;
 import java.util.Optional;
@@ -90,14 +93,14 @@ class OrderServiceTest {
   }
 
   @Test
-  void paymentFailureWaitsForStockThenRestoresExactlyOnce() {
+  void failedVnpayAttemptKeepsOrderAndReservedStockUntilExpiration() {
     Order order = order(PaymentStatus.PENDING, false);
-    assertFalse(OrderService.applyPaymentStatus(order, PaymentStatus.FAILED));
+    OrderService.applyPaymentStatus(order, PaymentStatus.FAILED);
     assertEquals(OrderStatus.PENDING, order.getOrderStatus());
-    assertTrue(OrderService.applyStockResult(order, true));
-    assertEquals(OrderStatus.CANCELLED, order.getOrderStatus());
+    OrderService.applyStockResult(order, true);
+    assertEquals(OrderStatus.PENDING, order.getOrderStatus());
     assertEquals(PaymentStatus.FAILED, order.getPaymentStatus());
-    assertFalse(OrderService.applyStockResult(order, true));
+    assertTrue(order.isStockReserved());
   }
 
   @Test
@@ -163,6 +166,16 @@ class OrderServiceTest {
         createdAt.plusSeconds(15 * 60),
         OrderService.expirationFor(PaymentMethod.VNPAY, createdAt));
     assertEquals(null, OrderService.expirationFor(PaymentMethod.COD, createdAt));
+  }
+
+  @Test
+  void serializesExpirationAsIsoInstant() throws Exception {
+    OrderDTO order = new OrderDTO();
+    order.setExpiresAt(Instant.parse("2026-08-16T14:51:38Z"));
+
+    String json = new ObjectMapper().registerModule(new JavaTimeModule()).writeValueAsString(order);
+
+    assertTrue(json.contains("\"expiresAt\":\"2026-08-16T14:51:38Z\""));
   }
 
   @Test

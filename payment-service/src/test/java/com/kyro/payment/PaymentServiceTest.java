@@ -2,15 +2,21 @@ package com.kyro.payment;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.kyro.enums.PaymentStatus;
 import com.kyro.exceptions.DomainException;
+import com.kyro.payment.client.OrderClient;
+import com.kyro.payment.event.PaymentStatusChangedEvent;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -80,6 +86,34 @@ class PaymentServiceTest {
     assertEquals(true, PaymentService.isExpired(expiration, expiration));
   }
 
+  @Test
+  void retryResetsPaymentToPendingAndPublishesProjectionUpdate() {
+    PaymentDetail failedPayment = new PaymentDetail();
+    failedPayment.setOrderId(42L);
+    failedPayment.setPaymentStatus(PaymentStatus.FAILED);
+    failedPayment.setTransactionId("42_old");
+    Instant expiresAt = Instant.now().plusSeconds(15 * 60);
+    OrderClient orderClient =
+        ignored ->
+            new OrderClient.OrderResponse(42L, 7L, 100L, "FAILED", "VNPAY", "PENDING", expiresAt);
+    PaymentRepository repository = repositoryFor(failedPayment);
+    List<Object> events = new ArrayList<>();
+    PaymentService retryService = new PaymentService(orderClient, repository, events::add);
+    ReflectionTestUtils.setField(retryService, "vnp_TmnCode", "TESTCODE");
+    ReflectionTestUtils.setField(retryService, "vnp_HashSecret", SECRET);
+    ReflectionTestUtils.setField(retryService, "vnp_PayUrl", "https://sandbox.vnpayment.vn/pay");
+    ReflectionTestUtils.setField(retryService, "vnp_Returnurl", "https://kyro.test/callback");
+
+    String paymentUrl = retryService.createPayment(42L);
+
+    assertTrue(paymentUrl.startsWith("https://sandbox.vnpayment.vn/pay?"));
+    assertEquals(PaymentStatus.PENDING, failedPayment.getPaymentStatus());
+    assertNotEquals("42_old", failedPayment.getTransactionId());
+    PaymentStatusChangedEvent event = (PaymentStatusChangedEvent) events.getFirst();
+    assertEquals(42L, event.orderId());
+    assertEquals("PENDING", event.status());
+  }
+
   private static PaymentDetail payment() {
     PaymentDetail payment = new PaymentDetail();
     payment.setTotalAmount(100);
@@ -95,6 +129,19 @@ class PaymentServiceTest {
     params.put("vnp_TransactionStatus", "00");
     params.put("vnp_SecureHash", sign(params));
     return params;
+  }
+
+  private static PaymentRepository repositoryFor(PaymentDetail payment) {
+    return (PaymentRepository)
+        java.lang.reflect.Proxy.newProxyInstance(
+            PaymentRepository.class.getClassLoader(),
+            new Class<?>[] {PaymentRepository.class},
+            (proxy, method, args) ->
+                switch (method.getName()) {
+                  case "findByOrderId" -> Optional.of(payment);
+                  case "save" -> args[0];
+                  default -> throw new UnsupportedOperationException(method.getName());
+                });
   }
 
   private static String sign(Map<String, String> params) {

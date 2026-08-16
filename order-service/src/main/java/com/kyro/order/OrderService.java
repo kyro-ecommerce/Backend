@@ -560,21 +560,15 @@ public class OrderService {
       log.info("Ignored payment status regression {} for completed order {}", status, orderId);
       return;
     }
-    if (applyPaymentStatus(order, status)) {
-      restoreStock(order);
-      order.setOrderStatus(OrderStatus.CANCELLED);
-    }
+    applyPaymentStatus(order, status);
     orderRepository.save(order);
     publishOrderConfirmationIfNewlyConfirmed(wasPending, order);
     log.info("Successfully updated payment status for order ID {} to {}", orderId, status);
   }
 
-  static boolean applyPaymentStatus(Order order, PaymentStatus status) {
+  static void applyPaymentStatus(Order order, PaymentStatus status) {
     order.setPaymentStatus(status);
     confirmOrderIfReady(order);
-    return status == PaymentStatus.FAILED
-        && order.isStockReserved()
-        && order.getOrderStatus() == OrderStatus.PENDING;
   }
 
   static boolean isLateCompletedPayment(Order order, PaymentStatus status) {
@@ -620,30 +614,23 @@ public class OrderService {
   public void handleStockResult(com.kyro.order.event.StockResultEvent event) {
     Order order = findOrderByIdForUpdate(event.orderId());
     boolean wasPending = order.getOrderStatus() == OrderStatus.PENDING;
-    if (applyStockResult(order, event.success())) {
-      restoreStock(order);
-    }
+    applyStockResult(order, event.success());
     orderRepository.save(order);
     publishOrderConfirmationIfNewlyConfirmed(wasPending, order);
   }
 
-  static boolean applyStockResult(Order order, boolean success) {
+  static void applyStockResult(Order order, boolean success) {
     if (order.getOrderStatus() != OrderStatus.PENDING) {
-      return false;
+      return;
     }
     if (!success) {
       order.setStockReserved(false);
       order.setOrderStatus(OrderStatus.CANCELLED);
       applyCancellationPaymentStatus(order);
-      return false;
+      return;
     }
     order.setStockReserved(true);
-    if (order.getPaymentStatus() == PaymentStatus.FAILED) {
-      order.setOrderStatus(OrderStatus.CANCELLED);
-      return true;
-    }
     confirmOrderIfReady(order);
-    return false;
   }
 
   static boolean confirmOrderIfReady(Order order) {
