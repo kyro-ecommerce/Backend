@@ -5,6 +5,7 @@ import com.kyro.enums.OrderStatus;
 import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
 import com.kyro.order.Order;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,8 @@ public class OrderDTO {
   private PaymentStatus paymentStatus;
   private List<OrderItemDTO> orderItems;
   private PaymentMethod paymentMethod;
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
+  private Instant expiresAt;
 
   public OrderDTO() {}
 
@@ -46,6 +49,7 @@ public class OrderDTO {
     this.paymentStatus = order.getPaymentStatus();
     this.orderItems = new ArrayList<>();
     this.paymentMethod = order.getPaymentMethod();
+    this.expiresAt = order.getExpiresAt();
     if (order.getOrderItems() != null) {
       order
           .getOrderItems()
@@ -152,5 +156,13 @@ public class OrderDTO {
 
   public void setPaymentMethod(PaymentMethod paymentMethod) {
     this.paymentMethod = paymentMethod;
+  }
+
+  public Instant getExpiresAt() {
+    return expiresAt;
+  }
+
+  public void setExpiresAt(Instant expiresAt) {
+    this.expiresAt = expiresAt;
   }
 }

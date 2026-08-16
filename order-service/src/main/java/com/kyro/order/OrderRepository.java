@@ -2,9 +2,11 @@ package com.kyro.order;
 
 import com.kyro.enums.OrderStatus;
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -21,6 +23,15 @@ public interface OrderRepository
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT o FROM Order o WHERE o.id = :id")
   Optional<Order> findByIdForUpdate(@Param("id") Long id);
+
+  @Query(
+      value =
+          "SELECT id FROM orders WHERE order_status = 'PENDING'"
+              + " AND payment_method = 'VNPAY'"
+              + " AND payment_status IS DISTINCT FROM 'COMPLETED'"
+              + " AND expires_at <= :cutoff ORDER BY expires_at, id",
+      nativeQuery = true)
+  List<Long> findExpiredVnpayOrderIds(@Param("cutoff") Instant cutoff, Pageable pageable);
 
   List<Order> findByOrderDateBetweenAndOrderStatus(
       LocalDateTime startDate, LocalDateTime endDate, OrderStatus status);
