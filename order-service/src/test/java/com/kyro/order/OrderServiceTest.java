@@ -13,8 +13,13 @@ import com.kyro.enums.PaymentStatus;
 import com.kyro.exceptions.DomainException;
 import com.kyro.order.client.CatalogClient;
 import com.kyro.order.dto.OrderDTO;
+import com.kyro.order.event.OrderConfirmedEvent;
 import java.lang.reflect.Proxy;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -189,6 +194,35 @@ class OrderServiceTest {
     assertTrue(first.getOrderCode().matches("^KYR-[0-9A-F]{12}$"));
     assertFalse(first.getOrderCode().equals(second.getOrderCode()));
     assertEquals(first.getOrderCode(), new OrderDTO(first).getOrderCode());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void confirmationPayloadIncludesSku() {
+    Order order = order(PaymentStatus.PENDING, true);
+    order.setId(42L);
+    order.assignOrderCode();
+    order.setPaymentMethod(PaymentMethod.COD);
+    order.setUserEmail("customer@example.com");
+    order.setOrderDate(LocalDateTime.parse("2026-08-16T15:35:00"));
+    order.setTotalDiscountedPrice(496_290L);
+    order.setShippingAddress(new Address(1L, "Customer", "Province", "District", "Ward", "Street", null, "0123"));
+    OrderItem item = order.getOrderItems().iterator().next();
+    item.setSku("POWERBANK-20K");
+    item.setProductName("Power Bank");
+    item.setVariantName("20000mAh");
+    item.setPrice(699_000L);
+    item.setDiscountedPrice(496_290L);
+    List<Object> events = new ArrayList<>();
+    OrderService service =
+        new OrderService(repositoryFor(order), null, null, null, null, events::add);
+
+    service.confirmedOrder(42L);
+
+    OrderConfirmedEvent event = (OrderConfirmedEvent) events.getFirst();
+    Map<String, Object> orderData = (Map<String, Object>) event.payload().get("order");
+    List<Map<String, Object>> items = (List<Map<String, Object>>) orderData.get("items");
+    assertEquals("POWERBANK-20K", items.getFirst().get("sku"));
   }
 
   @Test

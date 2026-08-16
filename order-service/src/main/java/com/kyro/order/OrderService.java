@@ -685,6 +685,7 @@ public class OrderService {
                   Map<String, Object> value = new HashMap<>();
                   value.put("productName", item.getProductName());
                   value.put("variantName", item.getVariantName());
+                  value.put("sku", item.getSku());
                   value.put("quantity", item.getQuantity());
                   value.put("price", item.getPrice());
                   value.put("discountedPrice", item.getDiscountedPrice());

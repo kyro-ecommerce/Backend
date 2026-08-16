@@ -29,7 +29,7 @@ public class EmailService {
   @Value("${app.company.logo.url:https://kyro.com/logo.png}")
   private String companyLogoUrl;
 
-  @Value("${app.contact.email:contact@kyro.com}")
+  @Value("${contact.info.email:contact@kyro.com}")
   private String contactEmail;
 
   /**
