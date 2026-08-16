@@ -98,12 +98,20 @@ public class OrderService {
           if (search != null) {
             String pattern = "%" + search.toLowerCase(Locale.ROOT) + "%";
             var address = root.join("shippingAddress", JoinType.LEFT);
+            var itemSubquery = query.subquery(Integer.class);
+            var item = itemSubquery.from(OrderItem.class);
+            itemSubquery
+                .select(cb.literal(1))
+                .where(
+                    cb.equal(item.get("order"), root),
+                    cb.like(cb.lower(item.get("productName")), pattern));
             predicates.add(
                 cb.or(
+                    cb.like(cb.lower(root.get("orderCode")), pattern),
                     cb.like(cb.lower(root.get("userEmail")), pattern),
                     cb.like(cb.lower(address.get("fullName")), pattern),
                     cb.like(address.get("phoneNumber"), "%" + search + "%"),
-                    cb.like(root.get("id").as(String.class), "%" + search + "%")));
+                    cb.exists(itemSubquery)));
           }
           if (filter.status() != null) {
             predicates.add(cb.equal(root.get("orderStatus"), filter.status()));
@@ -136,7 +144,13 @@ public class OrderService {
       throw new IllegalArgumentException("page must be >= 0 and size must be between 1 and 100");
     }
     Set<String> fields =
-        Set.of("id", "orderDate", "deliveryDate", "totalDiscountedPrice", "totalItems");
+        Set.of(
+            "id",
+            "orderCode",
+            "orderDate",
+            "deliveryDate",
+            "totalDiscountedPrice",
+            "totalItems");
     List<String> sortTokens = sortTokens(sortValues);
     List<Sort.Order> orders = new ArrayList<>();
     for (int index = 0; index < sortTokens.size(); index += 2) {
@@ -671,6 +685,7 @@ public class OrderService {
                   Map<String, Object> value = new HashMap<>();
                   value.put("productName", item.getProductName());
                   value.put("variantName", item.getVariantName());
+                  value.put("sku", item.getSku());
                   value.put("quantity", item.getQuantity());
                   value.put("price", item.getPrice());
                   value.put("discountedPrice", item.getDiscountedPrice());
@@ -681,6 +696,7 @@ public class OrderService {
 
     Map<String, Object> orderMap = new HashMap<>();
     orderMap.put("id", order.getId());
+    orderMap.put("orderCode", order.getOrderCode());
     orderMap.put("status", order.getOrderStatus().name());
     orderMap.put("recipientName", address.getFullName());
     orderMap.put(

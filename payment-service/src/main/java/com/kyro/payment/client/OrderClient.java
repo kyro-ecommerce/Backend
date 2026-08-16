@@ -16,6 +16,7 @@ public interface OrderClient {
   @JsonIgnoreProperties(ignoreUnknown = true)
   record OrderResponse(
       Long id,
+      String orderCode,
       Long userId,
       Long totalDiscountedPrice,
       String paymentStatus,

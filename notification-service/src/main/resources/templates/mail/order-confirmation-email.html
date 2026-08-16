@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title th:text="|Xác nhận đơn hàng #${order.id}|">Xác nhận đơn hàng</title>
+    <title th:text="|Xác nhận đơn hàng ${order.orderCode}|">Xác nhận đơn hàng</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; color: #333; }
         .container { background-color: #fff; padding: 20px; border-radius: 5px; max-width: 600px; margin: auto; }
@@ -13,6 +13,7 @@
         .order-details table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .order-details th, .order-details td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .order-details th { background-color: #f0f0f0; }
+        .order-details .sku { display: block; margin-top: 4px; color: #777; }
         .footer { text-align: center; margin-top: 20px; font-size: 0.9em; color: #777; }
     </style>
 </head>
@@ -20,14 +21,14 @@
 <div class="container">
     <div class="header">
         <img th:src="${companyLogoUrl}" alt="Company Logo" />
-        <h1 th:text="|Đơn hàng #${order.id} đã được đặt thành công!|">Đặt hàng thành công!</h1>
+        <h1 th:text="|Đơn hàng ${order.orderCode} đã được đặt thành công!|">Đặt hàng thành công!</h1>
     </div>
     <div class="content">
         <p>Chào <strong th:text="${order.recipientName}">Khách hàng</strong>,</p>
         <p>Cảm ơn bạn đã đặt hàng tại Kyro. Dưới đây là chi tiết đơn hàng của bạn:</p>
 
         <div class="order-details">
-            <p><strong>Mã đơn hàng:</strong> <span th:text="${order.id}">#ORDER_ID</span></p>
+            <p><strong>Mã đơn hàng:</strong> <span th:text="${order.orderCode}">ORDER_CODE</span></p>
             <p><strong>Ngày đặt:</strong> <span th:text="${order.orderDate}">ORDER_DATE</span></p>
             <p><strong>Trạng thái đơn hàng:</strong> <span th:text="${order.status}">ORDER_STATUS</span></p>
             <p><strong>Phương thức thanh toán:</strong> <span th:text="${order.paymentMethod}">PAYMENT_METHOD</span></p>
@@ -52,7 +53,8 @@
                 <tr th:each="item : ${order.items}">
                     <td>
                         <span th:text="${item.productName}">Tên sản phẩm</span>
-                        <small th:if="${item.variantName}" th:text="|' - ' + ${item.variantName}|">Biến thể</small>
+                        <small th:if="${item.variantName}" th:text="| - ${item.variantName}|">Biến thể</small>
+                        <small class="sku" th:text="|SKU: ${item.sku}|">SKU</small>
                     </td>
                     <td th:text="${item.quantity}">Số lượng</td>
                     <td th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">Đơn giá</td>

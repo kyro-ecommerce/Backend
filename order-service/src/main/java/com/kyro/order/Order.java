@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.UUID;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.DynamicInsert;
 
@@ -21,6 +22,9 @@ public class Order {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+
+  @Column(name = "order_code", nullable = false, unique = true, updatable = false, length = 16)
+  private String orderCode;
 
   @Column(name = "user_id", nullable = false)
   private Long userId;
@@ -72,12 +76,22 @@ public class Order {
   @Column(name = "expires_at")
   private Instant expiresAt;
 
+  @PrePersist
+  void assignOrderCode() {
+    orderCode =
+        "KYR-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+  }
+
   public Long getId() {
     return id;
   }
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  public String getOrderCode() {
+    return orderCode;
   }
 
   public Long getUserId() {

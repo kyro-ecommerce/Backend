@@ -76,7 +76,7 @@ graph LR
 ```json
 {
   "orderId": 1052,
-  "orderNumber": "ORD-20260802-9912",
+  "orderCode": "KYR-A1B2C3D4E5F6",
   "userEmail": "customer@example.com",
   "customerName": "Nguyen Van A",
   "totalAmount": 1450000.00,

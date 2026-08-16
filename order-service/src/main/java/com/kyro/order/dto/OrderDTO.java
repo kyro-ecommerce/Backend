@@ -13,6 +13,7 @@ import java.util.List;
 /** Data Transfer Object representing order details. */
 public class OrderDTO {
   private Long id;
+  private String orderCode;
   private OrderStatus orderStatus;
   private Long totalDiscountedPrice;
   private long discount;
@@ -36,6 +37,7 @@ public class OrderDTO {
 
   public OrderDTO(Order order) {
     this.id = order.getId();
+    this.orderCode = order.getOrderCode();
     this.originalPrice = order.getOriginalPrice();
     this.orderStatus = order.getOrderStatus();
     this.totalDiscountedPrice =
@@ -68,6 +70,14 @@ public class OrderDTO {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  public String getOrderCode() {
+    return orderCode;
+  }
+
+  public void setOrderCode(String orderCode) {
+    this.orderCode = orderCode;
   }
 
   public OrderStatus getOrderStatus() {

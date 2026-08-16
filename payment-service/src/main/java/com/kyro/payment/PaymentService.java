@@ -95,7 +95,8 @@ public class PaymentService {
       // (Standard payment flow updates payment method locally or during checkout)
 
       String vnp_TxnRef = orderId + "_" + getRandomNumber(8);
-      String vnp_OrderInfo = "Thanh toan don hang #" + orderId;
+      String vnp_OrderInfo =
+          "Thanh toan don hang " + Objects.requireNonNull(order.orderCode(), "orderCode");
       String vnp_OrderType = "other";
       String vnp_IpAddr = getIpAddress();
       long totalAmount = order.totalDiscountedPrice() != null ? order.totalDiscountedPrice() : 0;

@@ -231,6 +231,8 @@ services:
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:?MAIL_USERNAME must be set}
       MAIL_PASSWORD: ${MAIL_PASSWORD:?MAIL_PASSWORD must be set}
+      COMPANY_LOGO_URL: ${COMPANY_LOGO_URL:?COMPANY_LOGO_URL must be set}
+      CONTACT_EMAIL: ${CONTACT_EMAIL:-contact@kyro.com}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health || exit 1"]
       <<: *java-healthcheck
