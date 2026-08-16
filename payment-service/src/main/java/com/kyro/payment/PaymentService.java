@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -34,6 +35,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class PaymentService {
 
   private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
+  private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+  private static final DateTimeFormatter VNPAY_DATE_FORMAT =
+      DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(VIETNAM_ZONE);
 
   @Value("${vnpay.tmnCode}")
   private String vnp_TmnCode;
@@ -81,6 +85,11 @@ public class PaymentService {
             "INVALID_PAYMENT_STATE",
             "Đơn hàng không còn ở trạng thái có thể thanh toán");
       }
+      Instant now = Instant.now();
+      if (isExpired(order.expiresAt(), now)) {
+        throw new DomainException(
+            HttpStatus.CONFLICT, "ORDER_EXPIRED", "Đơn hàng đã hết thời gian thanh toán");
+      }
 
       // Update payment method to VNPAY inside order-service
       // (Standard payment flow updates payment method locally or during checkout)
@@ -105,12 +114,8 @@ public class PaymentService {
       vnp_Params.put("vnp_ReturnUrl", vnp_Returnurl);
       vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
-      ZoneId vietnamZoneId = ZoneId.of("Asia/Ho_Chi_Minh");
-      LocalDateTime now = LocalDateTime.now(vietnamZoneId);
-      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-
-      String vnp_CreateDate = now.format(formatter);
-      String vnp_ExpireDate = now.plusMinutes(15).format(formatter);
+      String vnp_CreateDate = formatVnpayDate(now);
+      String vnp_ExpireDate = formatVnpayDate(order.expiresAt());
 
       vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
       vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
@@ -267,6 +272,14 @@ public class PaymentService {
   static PaymentStatus resolvedStatus(PaymentStatus current, boolean completed) {
     if (current == PaymentStatus.COMPLETED) return current;
     return completed ? PaymentStatus.COMPLETED : PaymentStatus.FAILED;
+  }
+
+  static boolean isExpired(Instant expiresAt, Instant now) {
+    return expiresAt == null || !now.isBefore(expiresAt);
+  }
+
+  static String formatVnpayDate(Instant instant) {
+    return VNPAY_DATE_FORMAT.format(instant);
   }
 
   static PaymentDetail reusablePayment(Optional<PaymentDetail> existingPayment) {

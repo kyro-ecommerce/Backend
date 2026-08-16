@@ -1,6 +1,7 @@
 package com.kyro.payment.client;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.time.Instant;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,5 +20,6 @@ public interface OrderClient {
       Long totalDiscountedPrice,
       String paymentStatus,
       String paymentMethod,
-      String orderStatus) {}
+      String orderStatus,
+      Instant expiresAt) {}
 }

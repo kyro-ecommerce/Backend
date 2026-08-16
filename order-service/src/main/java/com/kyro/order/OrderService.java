@@ -14,6 +14,8 @@ import com.kyro.order.dto.TopSellingProductResponse;
 import feign.FeignException;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -38,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
   private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+  static final Duration VNPAY_TTL = Duration.ofMinutes(15);
 
   private final OrderRepository orderRepository;
   private final OrderItemRepository orderItemRepository;
@@ -288,7 +291,10 @@ public class OrderService {
     order.setOrderStatus(OrderStatus.PENDING);
     order.setPaymentStatus(PaymentStatus.PENDING);
     order.setStockReserved(false);
-    order.setPaymentMethod(paymentMethod != null ? paymentMethod : PaymentMethod.COD);
+    PaymentMethod selectedPaymentMethod =
+        paymentMethod != null ? paymentMethod : PaymentMethod.COD;
+    order.setPaymentMethod(selectedPaymentMethod);
+    order.setExpiresAt(expirationFor(selectedPaymentMethod, Instant.now()));
 
     order.setOriginalPrice(totalOriginalPrice);
     order.setTotalItems(totalItemsCount);
@@ -544,6 +550,12 @@ public class OrderService {
   public void updatePaymentStatus(Long orderId, PaymentStatus status) {
     Order order = findOrderByIdForUpdate(orderId);
     boolean wasPending = order.getOrderStatus() == OrderStatus.PENDING;
+    if (isLateCompletedPayment(order, status)) {
+      log.warn(
+          "Ignored late successful payment for cancelled order {}; manual refund may be required.",
+          orderId);
+      return;
+    }
     if (order.getPaymentStatus() == PaymentStatus.COMPLETED && status != PaymentStatus.COMPLETED) {
       log.info("Ignored payment status regression {} for completed order {}", status, orderId);
       return;
@@ -563,6 +575,38 @@ public class OrderService {
     return status == PaymentStatus.FAILED
         && order.isStockReserved()
         && order.getOrderStatus() == OrderStatus.PENDING;
+  }
+
+  static boolean isLateCompletedPayment(Order order, PaymentStatus status) {
+    return order.getOrderStatus() == OrderStatus.CANCELLED && status == PaymentStatus.COMPLETED;
+  }
+
+  static Instant expirationFor(PaymentMethod paymentMethod, Instant createdAt) {
+    return paymentMethod == PaymentMethod.VNPAY ? createdAt.plus(VNPAY_TTL) : null;
+  }
+
+  @Transactional
+  public boolean expireVnpayOrder(Long orderId, Instant cutoff) {
+    Order order = findOrderByIdForUpdate(orderId);
+    if (!isExpiredVnpayOrder(order, cutoff)) {
+      return false;
+    }
+    if (order.isStockReserved()) {
+      restoreStock(order);
+    }
+    order.setOrderStatus(OrderStatus.CANCELLED);
+    order.setPaymentStatus(PaymentStatus.CANCELLED);
+    orderRepository.save(order);
+    log.info("Cancelled expired unpaid VNPAY order {}.", orderId);
+    return true;
+  }
+
+  static boolean isExpiredVnpayOrder(Order order, Instant cutoff) {
+    return order.getOrderStatus() == OrderStatus.PENDING
+        && order.getPaymentMethod() == PaymentMethod.VNPAY
+        && order.getPaymentStatus() != PaymentStatus.COMPLETED
+        && order.getExpiresAt() != null
+        && !order.getExpiresAt().isAfter(cutoff);
   }
 
   static void applyCancellationPaymentStatus(Order order) {

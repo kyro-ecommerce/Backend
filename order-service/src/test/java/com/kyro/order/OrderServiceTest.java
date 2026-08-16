@@ -9,6 +9,10 @@ import com.kyro.enums.OrderStatus;
 import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
 import com.kyro.exceptions.DomainException;
+import com.kyro.order.client.CatalogClient;
+import java.lang.reflect.Proxy;
+import java.time.Instant;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class OrderServiceTest {
@@ -149,6 +153,135 @@ class OrderServiceTest {
     boolean wasPending = order.getOrderStatus() == OrderStatus.PENDING;
     OrderService.applyStockResult(order, false);
     assertFalse(OrderService.isNewlyConfirmed(wasPending, order));
+  }
+
+  @Test
+  void assignsExpirationOnlyToVnpayOrders() {
+    Instant createdAt = Instant.parse("2026-08-16T08:00:00Z");
+
+    assertEquals(
+        createdAt.plusSeconds(15 * 60),
+        OrderService.expirationFor(PaymentMethod.VNPAY, createdAt));
+    assertEquals(null, OrderService.expirationFor(PaymentMethod.COD, createdAt));
+  }
+
+  @Test
+  void expiresReservedVnpayOrderAfterGraceCutoff() {
+    Instant expiration = Instant.parse("2026-08-16T08:15:00Z");
+    Order order = order(PaymentStatus.PENDING, true);
+    order.setId(42L);
+    order.setExpiresAt(expiration);
+    order.getOrderItems().iterator().next().setVariantId(7L);
+    OrderRepository repository = repositoryFor(order);
+    boolean[] adjusted = {false};
+    CatalogClient catalog =
+        proxy(
+            CatalogClient.class,
+            (instance, method, arguments) -> {
+              adjusted[0] = true;
+              assertEquals(7L, arguments[0]);
+              assertEquals(
+                  new CatalogClient.StockAdjustmentRequest(7L, 2), arguments[1]);
+              return null;
+            });
+    OrderService service = new OrderService(repository, null, catalog, null, null, null);
+
+    assertTrue(service.expireVnpayOrder(42L, expiration));
+
+    assertTrue(adjusted[0]);
+    assertEquals(OrderStatus.CANCELLED, order.getOrderStatus());
+    assertEquals(PaymentStatus.CANCELLED, order.getPaymentStatus());
+    assertFalse(order.isStockReserved());
+  }
+
+  @Test
+  void skipsPaidOrNotYetExpiredOrders() {
+    Instant expiration = Instant.parse("2026-08-16T08:15:00Z");
+    Order pending = order(PaymentStatus.PENDING, true);
+    pending.setExpiresAt(expiration);
+    Order paid = order(PaymentStatus.COMPLETED, true);
+    paid.setExpiresAt(expiration);
+
+    assertFalse(
+        OrderService.isExpiredVnpayOrder(
+            pending,
+            VnpayOrderExpirationScheduler.expirationCutoff(
+                expiration.plusSeconds(5 * 60 - 1))));
+    assertTrue(
+        OrderService.isExpiredVnpayOrder(
+            pending,
+            VnpayOrderExpirationScheduler.expirationCutoff(
+                expiration.plusSeconds(5 * 60))));
+    assertFalse(OrderService.isExpiredVnpayOrder(paid, expiration.plusSeconds(1)));
+  }
+
+  @Test
+  void stockFailureLeavesOrderPendingForRetry() {
+    Instant expiration = Instant.parse("2026-08-16T08:15:00Z");
+    Order order = order(PaymentStatus.PENDING, true);
+    order.setId(42L);
+    order.setExpiresAt(expiration);
+    order.getOrderItems().iterator().next().setVariantId(7L);
+    OrderRepository repository = repositoryFor(order);
+    CatalogClient catalog =
+        proxy(
+            CatalogClient.class,
+            (instance, method, arguments) -> {
+              throw new IllegalStateException("catalog unavailable");
+            });
+    OrderService service = new OrderService(repository, null, catalog, null, null, null);
+
+    assertThrows(
+        IllegalStateException.class, () -> service.expireVnpayOrder(42L, expiration));
+
+    assertEquals(OrderStatus.PENDING, order.getOrderStatus());
+    assertEquals(PaymentStatus.PENDING, order.getPaymentStatus());
+    assertTrue(order.isStockReserved());
+  }
+
+  @Test
+  void expiresOrderWithoutCallingCatalogWhenStockWasNotReserved() {
+    Instant expiration = Instant.parse("2026-08-16T08:15:00Z");
+    Order order = order(PaymentStatus.PENDING, false);
+    order.setId(42L);
+    order.setExpiresAt(expiration);
+    OrderService service =
+        new OrderService(repositoryFor(order), null, null, null, null, null);
+
+    assertTrue(service.expireVnpayOrder(42L, expiration));
+
+    assertEquals(OrderStatus.CANCELLED, order.getOrderStatus());
+    assertEquals(PaymentStatus.CANCELLED, order.getPaymentStatus());
+  }
+
+  @Test
+  void identifiesLateSuccessWithoutRevivingCancelledOrder() {
+    Order order = order(PaymentStatus.CANCELLED, false);
+    order.setId(42L);
+    order.setOrderStatus(OrderStatus.CANCELLED);
+    OrderService service =
+        new OrderService(repositoryFor(order), null, null, null, null, null);
+
+    service.updatePaymentStatus(42L, PaymentStatus.COMPLETED);
+
+    assertEquals(OrderStatus.CANCELLED, order.getOrderStatus());
+    assertEquals(PaymentStatus.CANCELLED, order.getPaymentStatus());
+  }
+
+  private static OrderRepository repositoryFor(Order order) {
+    return proxy(
+        OrderRepository.class,
+        (instance, method, arguments) ->
+            switch (method.getName()) {
+              case "findByIdForUpdate" -> Optional.of(order);
+              case "save" -> arguments[0];
+              default -> throw new UnsupportedOperationException(method.getName());
+            });
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T> T proxy(Class<T> type, java.lang.reflect.InvocationHandler handler) {
+    return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] {type}, handler);
   }
 
   private static Order order(PaymentStatus paymentStatus, boolean stockReserved) {

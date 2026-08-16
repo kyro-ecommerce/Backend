@@ -4,6 +4,7 @@ import com.kyro.enums.OrderStatus;
 import com.kyro.enums.PaymentMethod;
 import com.kyro.enums.PaymentStatus;
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
@@ -67,6 +68,9 @@ public class Order {
 
   @Column(name = "stock_reserved", nullable = false)
   private boolean stockReserved;
+
+  @Column(name = "expires_at")
+  private Instant expiresAt;
 
   public Long getId() {
     return id;
@@ -186,5 +190,13 @@ public class Order {
 
   public void setStockReserved(boolean stockReserved) {
     this.stockReserved = stockReserved;
+  }
+
+  public Instant getExpiresAt() {
+    return expiresAt;
+  }
+
+  public void setExpiresAt(Instant expiresAt) {
+    this.expiresAt = expiresAt;
   }
 }

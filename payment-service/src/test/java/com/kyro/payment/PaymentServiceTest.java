@@ -9,6 +9,7 @@ import com.kyro.enums.PaymentStatus;
 import com.kyro.exceptions.DomainException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -68,6 +69,15 @@ class PaymentServiceTest {
             DomainException.class, () -> PaymentService.reusablePayment(Optional.of(pending)));
     assertEquals(409, exception.getStatus().value());
     assertEquals("PAYMENT_ALREADY_COMPLETED", exception.getErrorCode());
+  }
+
+  @Test
+  void formatsOrderExpirationInVietnamTimezone() {
+    Instant expiration = Instant.parse("2026-08-16T08:15:30Z");
+
+    assertEquals("20260816151530", PaymentService.formatVnpayDate(expiration));
+    assertEquals(false, PaymentService.isExpired(expiration, expiration.minusSeconds(1)));
+    assertEquals(true, PaymentService.isExpired(expiration, expiration));
   }
 
   private static PaymentDetail payment() {
