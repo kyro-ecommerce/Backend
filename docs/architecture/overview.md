@@ -1,186 +1,163 @@
-# 🌐 System Architecture Overview
+# Tổng quan kiến trúc Kyro Backend
 
-> **Kyro E-Commerce Microservices Platform** được xây dựng theo kiến trúc hướng dịch vụ (SOA / Microservices), kết hợp giữa **Định tuyến tập trung (API Gateway)**, **Đăng ký dịch vụ động (Eureka Discovery)**, **Cấu hình tập trung (Config Server)**, **Giao tiếp đồng bộ (Spring Cloud OpenFeign)**, **Truyền tin bất đồng bộ (RabbitMQ)**, và **Tích hợp AI Vector Recommendation (FastAPI + pgvector + Gemini)**.
+> Nguồn sự thật của tài liệu là source code và Flyway migration trong repository, rà soát ngày 2026-08-17. AI service là hệ thống ngoài repository; các chi tiết nội bộ của AI không được khẳng định nếu không có source tương ứng.
 
----
-
-## 🏛️ 1. Sơ Đồ Kiến Trúc Tổng Quan (System Map)
+## 1. Bức tranh tổng thể
 
 ```mermaid
-graph TD
-    Client[📱 Mobile App / 💻 Web Frontend] --> Gateway[⚡ API Gateway :8080]
-
-    subgraph Infrastructure Layer
-        Eureka[🔎 Eureka Service Discovery :8761]
-        Config[⚙️ Spring Cloud Config Server :8888]
-        Dozzle[📊 Dozzle Realtime Log Viewer :9999]
-    end
-
-    subgraph Core Microservices
-        Auth[🔐 Auth Service :8081]
-        Catalog[🏷️ Catalog Service :8082]
-        Cart[🛒 Cart Service :8083]
-        Notification[🔔 Notification Service :8084]
-        Order[📦 Order Service :8085]
-        Payment[💳 Payment Service :8086]
-        AIService[🤖 Python AI Service :8000]
-    end
-
-    subgraph Storage & Persistence
-        AuthDB[(Postgres: kyro_auth)]
-        CatalogDB[(Postgres: kyro_catalog)]
-        OrderDB[(Postgres: kyro_order)]
-        PaymentDB[(Postgres: kyro_payment)]
-        RedisDB[(Redis Cache :6379)]
-        AIDB[(Postgres: pgvector)]
-    end
-
-    subgraph Event Broker
-        RabbitMQ[🐰 RabbitMQ Message Broker :5672]
-    end
-
-    %% Gateway Routing
-    Gateway --> Auth
-    Gateway --> Catalog
-    Gateway --> Cart
-    Gateway --> Notification
-    Gateway --> Order
-    Gateway --> Payment
-    Gateway --> AIService
-
-    %% Service Registrations
-    Auth -.- Eureka
-    Catalog -.- Eureka
-    Cart -.- Eureka
-    Notification -.- Eureka
-    Order -.- Eureka
-    Payment -.- Eureka
-    Gateway -.- Eureka
-
-    %% Service Configs
-    Auth -.- Config
-    Catalog -.- Config
-    Cart -.- Config
-    Notification -.- Config
-    Order -.- Config
-    Payment -.- Config
-    Gateway -.- Config
-
-    %% Database Attachments
-    Auth --> AuthDB
-    Catalog --> CatalogDB
-    Order --> OrderDB
-    Payment --> PaymentDB
-    Cart --> RedisDB
-    AIService --> AIDB
-
-    %% Synchronous Feign Inter-Service Communication
-    Order -. Feign HTTP .- Catalog
-    Order -. Feign HTTP .- Cart
-    Order -. Feign HTTP .- Auth
-    Cart -. Feign HTTP .- Catalog
-    Payment -. Feign HTTP .- Order
-    Catalog -. Feign HTTP .- Auth
-    Catalog -. Feign HTTP .- Order
-
-    %% Asynchronous Event Broker
-    Auth -- OTP & User Events --> RabbitMQ
-    Order -- Order Events --> RabbitMQ
-    Catalog -- Product Events --> RabbitMQ
-    Payment -- payment.status.updated --> RabbitMQ
-    RabbitMQ --> Notification
-    RabbitMQ --> AIService
-    RabbitMQ --> Order
+flowchart TB
+    Client[Web / REST client] --> Gateway[API Gateway :8080]
+    Config[Config Server :8888] -. cấu hình .-> Gateway
+    Eureka[Eureka :8761] -. discovery .-> Gateway
+    Gateway --> Auth[Auth :8081]
+    Gateway --> Catalog[Catalog :8082]
+    Gateway --> Cart[Cart :8083]
+    Gateway --> Order[Order :8085]
+    Gateway --> Payment[Payment :8086]
+    Gateway --> AI[AI ngoài repo :8000]
+    Auth --> AuthDB[(kyro_auth)]
+    Catalog --> CatalogDB[(kyro_catalog)]
+    Cart --> CartDB[(kyro_cart)]
+    Cart --> Redis[(Redis cache)]
+    Order --> OrderDB[(kyro_order)]
+    Payment --> PaymentDB[(kyro_payment)]
+    Auth --> Rabbit[RabbitMQ]
+    Catalog <--> Rabbit
+    Cart <--> Rabbit
+    Order <--> Rabbit
+    Payment --> Rabbit
+    Rabbit --> Notification[Notification :8084]
+    Notification --> SMTP[SMTP]
+    Catalog --> Cloudinary[Cloudinary]
+    Payment --> VNPay[VNPay Sandbox]
 ```
 
----
+Repository có 9 Maven module và Compose có 13 container: 9 ứng dụng Java, PostgreSQL, Redis, RabbitMQ và Dozzle. PostgreSQL là một container nhưng chứa database riêng cho từng service. Notification không có database. AI service không được build bởi repository này.
 
-## ⚡ 2. Các Thành Phần Hạ Tầng Chính (Infrastructure Components)
+## 2. Trách nhiệm và dữ liệu sở hữu
 
-### 1. API Gateway (`:8080`)
-- **Nhiệm vụ**: Điểm vào duy nhất (Single Point of Entry) cho mọi HTTP request từ client.
-- **Tính năng**:
-  - Giải mã và kiểm tra chữ ký JWT Token (`AuthenticationFilter.java`).
-  - Trích xuất Claims và inject HTTP Headers định danh: `X-User-Id`, `X-User-Email`, `X-User-Roles`.
-  - Định tuyến động (Dynamic Routing) qua Eureka Discovery Server (`lb://AUTH-SERVICE`, `lb://CATALOG-SERVICE`, ...).
-  - Quản lý cấu hình Cross-Origin Resource Sharing (CORS) tập trung.
+| Thành phần | Trách nhiệm | Dữ liệu sở hữu |
+| --- | --- | --- |
+| API Gateway | Route, kiểm tra JWT/role, bỏ header định danh giả, inject `X-User-*`, rate limit/circuit breaker riêng cho AI | Redis dùng cho rate limiter |
+| Auth | Đăng ký, OTP, login, refresh cookie, OAuth2, user, role, địa chỉ | `kyro_auth`: `users`, `role`, `address` |
+| Catalog | Category, product, variant/SKU, tồn kho, attribute, image, review, thống kê catalog | `kyro_catalog` |
+| Cart | Giỏ bền vững, lựa chọn checkout, revalidate giá/tồn kho | `kyro_cart` là source of truth; Redis là cache 30 phút |
+| Order | Snapshot checkout, trạng thái đơn, điều phối giữ/hoàn kho, thống kê doanh thu | `kyro_order` |
+| Payment | Tạo URL, ký/kiểm tra callback VNPay, lưu transaction | `kyro_payment` |
+| Notification | Consume event và gửi email OTP/xác nhận đơn | Không có DB |
+| Config Server | Cấp cấu hình tập trung từ `config-server/src/main/resources/config` | File YAML trong repo |
+| Eureka | Service registry để Gateway/Feign tìm instance | In-memory registry |
 
-### 2. Eureka Service Discovery (`:8761`)
-- **Nhiệm vụ**: Quản lý danh bạ địa chỉ IP/Port của tất cả các microservices Java.
-- **Lợi ích**: Giúp các service tự phát hiện và giao tiếp với nhau qua tên service (ví dụ `http://CATALOG-SERVICE`) thay vì hardcode IP.
+Database-per-service nghĩa là service không join bảng của database khác. Liên hệ chéo chỉ lưu ID/snapshot và lấy dữ liệu qua Feign hoặc event. Ví dụ `order_item.product_id` không có foreign key đến Catalog; địa chỉ trong order là bản chụp, không trỏ về `auth.address`.
 
-### 3. Config Server (`:8888`)
-- **Nhiệm vụ**: Cung cấp cấu hình tập trung (`resources/config/*.yml`) cho các dịch vụ Java khi khởi động.
+## 3. Ba đường giao tiếp phải phân biệt
 
-### 4. Dozzle Log Viewer (`:9999`)
-- **Nhiệm vụ**: Giao diện Web trực quan hiển thị Realtime Logs từ Docker Socket của tất cả 11 container.
+### Client → Gateway → service
 
----
+- Client gọi cổng `8080`.
+- Route công khai: auth, danh sách/chi tiết product, category, GET review, callback VNPay, AI.
+- Route cần đăng nhập gắn `AuthenticationFilter`; admin route yêu cầu claim role `ADMIN`.
+- Gateway xác minh JWT, xóa `X-User-Id`, `X-User-Email`, `X-User-Roles`, `X-Internal-Token` do client gửi rồi inject identity từ token.
+- Business service chủ yếu tin gateway. Compose không publish port business service ra host, nhưng deployment vẫn phải ngăn client đi vòng qua Gateway.
 
-## 🔄 3. Mô Hình Giao Tiếp Giữa Các Service (Inter-Service Communication)
+### Service → service bằng OpenFeign (đồng bộ)
 
-Hệ thống kết hợp 2 mô hình giao tiếp song song:
+- Caller chờ HTTP response rồi mới tiếp tục.
+- Feign dùng tên Eureka như `catalog-service`, không hardcode IP.
+- Request nội bộ tự gắn `X-Internal-Token`; `InternalTokenFilter` bảo vệ `/api/v1/internal/**`.
+- Shared YAML khai báo connect 2 giây, read 3 giây; cần xác minh property binding bằng runtime config/timeout test trước khi khẳng định giá trị thực thi.
+- Dùng khi cần kết quả ngay: địa chỉ, cart/giá, order/amount, quyền review, hoàn stock.
 
-### 🅰️ Giao Tiếp Đồng Bộ (Synchronous Feign REST)
-Sử dụng **Spring Cloud OpenFeign** cho các giao dịch cần phản hồi tức thì:
-- **Order Service -> Catalog Service**: Hoàn tồn kho theo `variantId` khi hủy đơn hợp lệ.
-- **Order Service -> Cart Service**: Lấy selection đã được cart revalidate để snapshot SKU, variant và giá khi đặt hàng.
-- **Order Service -> Auth Service**: Xác thực thông tin địa chỉ giao hàng (`Address`).
-- **Cart Service -> Catalog Service**: Batch revalidate active variant, tồn kho và giá backend khi thêm, cập nhật hoặc checkout.
-- **Payment Service -> Order Service**: Kiểm tra trạng thái và số tiền của đơn hàng trước khi tạo link VNPay.
+### Service ↔ RabbitMQ (bất đồng bộ)
 
-### 🅱️ Giao Tiếp Bất Đồng Bộ (Asynchronous Event-Driven Messaging)
-Sử dụng **RabbitMQ Message Broker** (`kyro-rabbitmq:5672`) dựa trên mô hình Publisher-Subscriber:
-- **Auth Events**: Phát `otp.email.queue` khi có yêu cầu đăng ký/quên mật khẩu -> `notification-service` tiêu thụ để gửi email.
-- **Order Events**: Phát `order.created.queue` -> `notification-service` gửi mail xác nhận đơn hàng cho khách.
-- **Product Events**: `catalog-service` phát sự kiện biến động sản phẩm (`product.events`) -> `ai-service` tiêu thụ để tự động cập nhật vector embeddings trong database `pgvector`.
+- Publisher gửi vào exchange; binding route sang queue; HTTP request không chờ consumer.
+- Một event đến hai service cần hai queue. `stock.reserved` có `order-saga-queue` và `cart-clear-queue`.
+- Dữ liệu giữa các DB chỉ nhất quán cuối cùng.
+- Durable queue không đồng nghĩa không mất event: code chưa có publisher confirm, outbox, DLQ hay retry policy rõ ràng.
 
----
+Xem [RabbitMQ và Feign thực tế](rabbitmq-feign-current-usage.md) và [luồng event](event-driven-flow.md).
 
-## 🗄️ 4. Phân Tách Dữ Liệu (Database-per-service Principle)
-
-Mỗi dịch vụ sở hữu cơ sở dữ liệu riêng độc lập, không truy cập chéo database của nhau:
-
-| Microservice | Loại CSDL / Engine | Tên Database / Namespace | Nhiệm Vụ |
-| :--- | :--- | :--- | :--- |
-| **Auth Service** | PostgreSQL 16 | `kyro_auth` | Lưu Role, User, Address |
-| **Catalog Service** | PostgreSQL 16 | `kyro_catalog` | Lưu Category, Product, ProductVariant/SKU, ProductAttribute, Image và Review |
-| **Order Service** | PostgreSQL 16 | `kyro_order` | Lưu Orders, OrderItems và snapshot địa chỉ giao hàng |
-| **Payment Service** | PostgreSQL 16 | `kyro_payment` | Lưu transaction và VNPay callback data |
-| **Cart Service** | PostgreSQL 16 + Redis 7 | `kyro_cart` + `kyro-redis` | PostgreSQL là source of truth; Redis cache snapshot giỏ hàng với TTL 30 phút |
-| **AI Service** | PostgreSQL 16 | `pgvector` (`postgres`) | Vector embeddings 768 chiều & Product Index |
-
----
-
-## 🔒 5. Kiến Trúc Bảo Mật & Luồng Request (Security Architecture)
+## 4. Security và identity
 
 ```mermaid
 sequenceDiagram
-    autonumber
     actor User
-    participant Gateway as API Gateway (:8080)
-    participant Auth as Auth Service (:8081)
-    participant Order as Order Service (:8085)
-
-    User->>Gateway: POST /api/v1/auth/login
-    Gateway->>Auth: Forward Auth Request
-    Auth-->>User: Return JWT Access Token + Refresh Token (Cookie/Body)
-
-    User->>Gateway: GET /api/v1/orders (Header: Authorization Bearer <token>)
-    Gateway->>Gateway: AuthenticationFilter validates JWT signature & expiration
-    Gateway->>Gateway: Extract User Claims (userId, email, roles)
-    Gateway->>Order: Forward Request + Inject Headers (X-User-Id, X-User-Email, X-User-Roles)
-    Order->>Order: Extract User Context from Headers
-    Order-->>User: Return Orders Data
+    participant GW as Gateway
+    participant Auth as Auth
+    participant Order as Order
+    User->>GW: POST /api/v1/auth/login
+    GW->>Auth: forward public request
+    Auth-->>User: accessToken + refresh cookie
+    User->>GW: GET /api/v1/orders + Bearer token
+    GW->>GW: verify signature, expiry, role
+    GW->>GW: remove untrusted X-User-* headers
+    GW->>Order: inject verified identity headers
+    Order-->>User: orders scoped by userId
 ```
 
----
+- Access token mặc định 1 giờ; refresh token mặc định 1 ngày và nằm trong cookie.
+- Logout chỉ xóa cookie; không có blacklist/revocation server-side.
+- OTP là 6 số bằng `SecureRandom`, mặc định hết hạn 10 phút, cooldown resend 1 phút.
+- OTP lưu trong `HashMap` của một process: restart làm mất OTP, nhiều instance không chia sẻ OTP, không có giới hạn số lần đoán, và code log OTP ở INFO.
+- Shared `INTERNAL_API_TOKEN` là một secret chung, không phải service identity riêng hay mTLS.
 
-## 📊 6. Tích Hợp AI Vector Search & Recommendation
+## 5. Mô hình dữ liệu đáng nhớ
 
-- **Tech Stack**: Python 3.11, FastAPI, SQLAlchemy, Alembic, Google Gemini API (`models/embedding-001`), PostgreSQL `pgvector`.
-- **Luồng hoạt động**:
-  1. Khi Admin thêm/sửa sản phẩm ở `catalog-service`, một message chứa thông tin sản phẩm được gửi lên RabbitMQ exchange.
-  2. `ai-service` lắng nghe message, trích xuất text (tên, mô tả, danh mục, giá) và gọi Gemini API sinh Vector Embedding 768 chiều.
-  3. Vector được lưu vào Postgres `pgvector`.
-  4. Người dùng gọi API gợi ý sản phẩm gợi ý semantic search -> `ai-service` thực hiện tính khoảng cách Vector Cosine Similarity trên CSDL để trả về top sản phẩm liên quan nhất.
+### Auth
+
+`users` N:1 `role`; `users` 1:N `address`. Email unique. `active` (đã kích hoạt) và `is_banned` là hai cờ khác nhau.
+
+### Catalog
+
+`category` tự tham chiếu parent; `product` N:1 category; product 1:N variant, attribute, image, review. SKU unique; `(product_id, variant_name)` unique; mỗi user chỉ có một review/product.
+
+`minPrice`, `totalStock`, `activeVariantCount`, `averageRating`, `numRatings` là Hibernate `@Formula`, tính từ variant/review. Giá sale tính từ giá variant và discount product.
+
+### Cart
+
+Mỗi user có một cart; `(cart_id, variant_id)` unique. `version` tăng khi cart thay đổi để chống checkout trên snapshot cũ. `processed_cart_events(order_id)` giúp cleanup idempotent.
+
+### Order
+
+Order lưu `user_id`, `user_email`, snapshot địa chỉ và snapshot item gồm product/variant/SKU/tên/ảnh/giá/discount. Snapshot giữ lịch sử khi Catalog đổi. `stock_reserved` theo dõi saga; VNPay order có `expires_at`.
+
+### Payment
+
+Một `payment_details` cho mỗi order (`order_id` unique). Tạo URL mới tái sử dụng row chưa completed và thay `transaction_id`; callback của transaction cũ có thể không còn tìm thấy.
+
+## 6. Trạng thái chính
+
+Order: `PENDING → CONFIRMED → SHIPPED → DELIVERED`, hoặc sang `CANCELLED` theo rule service.
+
+- COD: confirm khi giữ stock thành công; payment thành `COMPLETED` lúc giao hàng.
+- VNPay: confirm khi cả `stock_reserved=true` và payment `COMPLETED`.
+- VNPay `FAILED` vẫn để order `PENDING` để thanh toán lại đến khi hết hạn.
+- Hủy order đã thanh toán không tự refund; payment vẫn `COMPLETED`.
+
+## 7. Tìm kiếm, filter, sort và pagination
+
+| Màn hình | Cách làm hiện tại |
+| --- | --- |
+| Product | JPA `Specification`; keyword `LIKE %...%` trên title/description/brand; category cha gồm con trực tiếp; brand exact-ignore-case; giá dựa `minPrice`; stock dựa tổng stock variant active; rating từ review |
+| Order admin | `Specification`; search orderCode/email/tên/SĐT/tên sản phẩm; filter status/payment/date/total |
+| Order customer | Cùng engine nhưng ép `userId` và không nhận search |
+| User admin | JPQL search email/firstName/lastName, role, banned + `Pageable` |
+
+Sort whitelist field, page size tối đa 100 và thêm `id` làm tie-breaker. Product parameter `color` đang nhận nhưng chưa dùng. User `status=active` hiện là `banned=false`, không kiểm tra `active=true`.
+
+## 8. Những điều hiện chưa có
+
+- Không distributed transaction/2PC.
+- Không transactional outbox/inbox chung, publisher confirm, DLQ hay reconciliation job.
+- Không refund VNPay tự động; `vnpay.apiUrl` và enum `REFUNDED` chưa được dùng.
+- Không có AI consumer/topology trong repo; chỉ publisher product event và Gateway route tới AI ngoài repo.
+- Không full-text search trong Java backend; product search là SQL `LIKE`.
+- Notification không có DB/lịch sử gửi email.
+
+## 9. Tài liệu học bảo vệ
+
+- [Sổ tay bảo vệ chi tiết](../defense/defense-handbook.md)
+- [Bộ câu hỏi tự luyện](../defense/self-review-questions.md)
+- [RabbitMQ và Feign thực tế](rabbitmq-feign-current-usage.md)
+- [Luồng event-driven và rủi ro](event-driven-flow.md)
+- [Swagger/Scalar](../api/swagger-scalar.md)

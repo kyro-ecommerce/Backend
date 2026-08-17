@@ -232,7 +232,9 @@ task status          # Show container health and status
 task logs:cli        # Follow Docker Compose logs
 task test            # Run the Maven test suite
 task format:check    # Check Java formatting
-task k6:smoke        # Run the k6 smoke scenario
+task perf:feign      # Measure synchronous checkout dependencies
+task perf:rabbitmq   # Measure payment event propagation
+task perf:payment-failure # Exercise the failed-payment path
 task stop            # Stop the Compose environment
 ```
 
@@ -265,7 +267,15 @@ http://localhost:8080/cart-service/v3/api-docs
 ./mvnw clean package     # Build all Maven modules
 ```
 
-The [`k6`](k6/) directory contains smoke, browse, cart, checkout, stress, spike, and resilience scenarios. Authenticated scenarios require a dedicated customer account configured through `K6_USER_EMAIL` and `K6_USER_PASSWORD`.
+The [`k6/performance`](k6/performance/) directory contains focused Feign, RabbitMQ, and failed-payment measurements. Authenticated scenarios require a dedicated customer account configured through `K6_USER_EMAIL` and `K6_USER_PASSWORD`.
+
+For project-defense preparation and a source-verified explanation of the current implementation, read:
+
+- [Architecture overview](docs/architecture/overview.md)
+- [RabbitMQ and OpenFeign usage](docs/architecture/rabbitmq-feign-current-usage.md)
+- [Event-driven flows and failure risks](docs/architecture/event-driven-flow.md)
+- [Detailed defense handbook](docs/defense/defense-handbook.md)
+- [200 self-review questions](docs/defense/self-review-questions.md)
 
 ## Repository Layout
 

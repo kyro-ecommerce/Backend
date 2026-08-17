@@ -1,28 +1,32 @@
-# 📖 Swagger & Scalar OpenAPI Documentation
+# OpenAPI và Scalar
 
-> Hướng dẫn truy cập tài liệu API trực quan **Swagger UI** và **Scalar OpenAPI Docs** tự động tích hợp trong hệ thống Kyro Microservices.
+## Truy cập đúng
 
----
+Sau khi stack healthy, mở Scalar aggregator tại:
 
-## 🌐 1. Truy Cập Giao Diện OpenAPI Docs
+```text
+http://localhost:8080/scalar
+```
 
-Tất cả các Microservices đều tích hợp `springdoc-openapi-starter-webmvc-ui`. Khi hệ thống đang khởi chạy qua API Gateway (`task infra` hoặc `task run`), bạn có thể truy cập các đường dẫn sau:
+Gateway không tạo một file `/v3/api-docs` gộp mọi API. Scalar cấu hình nhiều source riêng và Gateway proxy từng OpenAPI JSON:
 
-### 1.1. Aggregated API Gateway OpenAPI Docs
-- **URL OpenAPI JSON**: `http://localhost:8080/v3/api-docs`
-- **Tập hợp**: Hiển thị tài liệu REST API tổng hợp của tất cả các microservices (`auth-service`, `catalog-service`, `cart-service`, `order-service`, `payment-service`) qua một cổng duy nhất `:8080`.
+| Source | URL |
+| --- | --- |
+| Auth | `http://localhost:8080/auth-service/v3/api-docs` |
+| Catalog | `http://localhost:8080/catalog-service/v3/api-docs` |
+| Cart | `http://localhost:8080/cart-service/v3/api-docs` |
+| Order | `http://localhost:8080/order-service/v3/api-docs` |
+| Payment | `http://localhost:8080/payment-service/v3/api-docs` |
+| Notification | `http://localhost:8080/notification-service/v3/api-docs` |
 
-### 1.2. Python AI Service Swagger UI
-- **URL Interactive UI**: `http://localhost:8000/docs`
-- **URL ReDoc UI**: `http://localhost:8000/redoc`
-- **Tính năng**: Thử nghiệm trực tiếp các endpoint gợi ý sản phẩm (`/api/v1/ai/recommend`) và tìm kiếm ngôn ngữ tự nhiên (`/api/v1/ai/semantic-search`).
+AI là ứng dụng ngoài repository. Nếu chạy ở `localhost:8000` và có FastAPI docs, đường dẫn thường là `/docs` và `/openapi.json`, nhưng phải kiểm tra repo/config AI thay vì xem đó là đảm bảo của backend Java.
 
----
+## Thử endpoint
 
-## 🛠️ 2. Thử Nghiệm API Trực Tiếp Trên Swagger UI
+1. Login qua `POST /api/v1/auth/login` để lấy access token.
+2. Với endpoint bảo vệ, gửi `Authorization: Bearer <accessToken>`.
+3. Không tự gửi `X-User-Id`, `X-User-Email`, `X-User-Roles`; Gateway tạo chúng từ JWT.
+4. Gọi qua port `8080`, không gọi trực tiếp business service.
+5. Internal endpoints cần `X-Internal-Token` và chỉ dành cho service-to-service, không dùng để demo client API.
 
-1. Đảm bảo ứng dụng đang khởi chạy.
-2. Truy cập `http://localhost:8080/v3/api-docs`.
-3. Nhấn nút **Authorize** ở góc phải giao diện Swagger UI.
-4. Nhập chuỗi Bearer JWT Token thu được từ API `/api/v1/auth/login`.
-5. Nhấn **Try it out** để thực thi các yêu cầu REST API trực tiếp.
+Nếu Scalar lên nhưng một source lỗi, kiểm tra service tương ứng trong Eureka/health/log. Nếu toàn bộ source lỗi, kiểm tra Config Server, Eureka và route docs ở `config-server/src/main/resources/config/api-gateway.yml`.

@@ -1,6 +1,6 @@
 # RabbitMQ và OpenFeign đang được sử dụng như thế nào?
 
-Tài liệu này phản ánh **source code hiện tại tại ngày 2026-08-13**. Mục tiêu là chỉ ra nơi RabbitMQ và OpenFeign thực sự được gọi, dữ liệu đi qua đâu, và phần nào mới chỉ được khai báo nhưng chưa hoạt động.
+Tài liệu này phản ánh **source code hiện tại tại ngày 2026-08-17**. Mục tiêu là chỉ ra nơi RabbitMQ và OpenFeign thực sự được gọi, dữ liệu đi qua đâu, và phần nào phụ thuộc hệ thống ngoài repository.
 
 ## Tóm tắt
 
@@ -23,7 +23,8 @@ RabbitMQ chạy tại `kyro-rabbitmq:5672`; giao diện quản trị được ex
 | `catalog-service` | `order-exchange` | `stock.reserved` | `cart-clear-queue` | `cart-service` | Đang dùng |
 | `catalog-service` | `order-exchange` | `stock.failed` | `order-saga-queue` | `order-service` | Đang dùng |
 | `payment-service` | `payment-exchange` | `payment.status.updated` | `order-payment-status-queue` | `order-service` | Đang dùng |
-| `order-service` | `notification-exchange` | `notification.order` | `order-queue` | `notification-service` | Có code nhưng publisher chưa được gọi |
+| `order-service` | `notification-exchange` | `notification.order` | `order-queue` | `notification-service` | Gửi khi order lần đầu thành `CONFIRMED` |
+| `order-service` | `order-exchange` | `order.delivered` | `catalog-order-delivered-queue` | `catalog-service` | Cộng `quantity_sold`, có idempotency theo orderId |
 | `catalog-service` | `product.events` | `product.created`, `product.updated`, `product.deleted` | `ai.product.events` theo comment | AI service ngoài repo này | Publisher đang được gọi; topology consumer không có trong repo |
 
 Các queue do Java service khai báo đều là durable. Message được serialize/deserialize bằng `Jackson2JsonMessageConverter`.
@@ -86,6 +87,8 @@ sequenceDiagram
 - [`PaymentStatusEventPublisher`](../../payment-service/src/main/java/com/kyro/payment/messaging/PaymentStatusEventPublisher.java) chỉ publish sang RabbitMQ ở pha `AFTER_COMMIT`, nên consumer không thấy trạng thái chưa commit.
 - [`PaymentStatusEventListener`](../../order-service/src/main/java/com/kyro/order/messaging/PaymentStatusEventListener.java) nhận `{orderId, status}` và gọi `OrderService.updatePaymentStatus`.
 
+`FAILED` không hủy order ngay: order vẫn `PENDING`, có thể giữ stock và cho thanh toán lại. Scheduler Order hủy/hoàn stock sau TTL 15 phút cộng grace callback 5 phút. Late success sau khi order đã hủy bị Order bỏ qua; Payment có thể `COMPLETED` trong khi Order `CANCELLED`, khi đó phải refund thủ công. Source chưa có VNPay refund API; config `vnpay.apiUrl` và enum `REFUNDED` chưa được sử dụng.
+
 ### 1.4. Luồng gửi OTP
 
 1. Đăng ký hoặc resend OTP gọi [`OtpService.sendOtpEmail`](../../auth-service/src/main/java/com/kyro/auth/security/otp/OtpService.java).
@@ -106,13 +109,15 @@ Payload có envelope `event_id`, `event_type`, `occurred_at`, `data`; phần `da
 
 ### 1.6. Phần RabbitMQ chưa hoạt động và giới hạn hiện tại
 
-- [`OrderService.sendOrderConfirmationEmail`](../../order-service/src/main/java/com/kyro/order/OrderService.java) có code publish `notification.order`, nhưng là private method không có caller. Vì vậy email xác nhận order hiện chưa được phát từ luồng đặt hàng.
+- Order chỉ publish `notification.order` khi lần đầu chuyển từ `PENDING` sang `CONFIRMED`, không phải lúc vừa tạo. COD chờ giữ stock; VNPay chờ cả giữ stock và payment `COMPLETED`.
 - Không tìm thấy cấu hình DLQ, dead-letter exchange, retry policy hoặc manual acknowledgement trong source hiện tại. Listener đang dùng acknowledgement mặc định của Spring AMQP.
 - `NotificationListener` bắt exception và không ném lại; lỗi gửi mail vì thế không kích hoạt redelivery theo listener container.
 - Publish `order.created` bị bắt lỗi sau khi order đã lưu; RabbitMQ lỗi có thể để order ở `PENDING` mà không có event xử lý tồn kho.
 - Publish trạng thái payment chạy `AFTER_COMMIT` nhưng chưa có transactional outbox; DB commit thành công rồi broker lỗi vẫn có thể mất event.
-- Cart consumer có chặn xử lý lặp bằng `ProcessedCartEvent(orderId)`, nhưng catalog/order consumers chưa có idempotency key hoặc state-transition guard tương đương. Event giao lại vẫn có thể trừ stock hoặc cập nhật order nhiều lần.
-- `catalog-service` trừ stock tuần tự theo item; nếu một item sau bị lỗi thì code phát `stock.failed` nhưng không hoàn tác các item đã trừ trước đó.
+- Cart consumer có chặn xử lý lặp bằng `ProcessedCartEvent(orderId)`. Order có row lock và state-transition guard nhưng không có inbox/event ID; Catalog reserve chưa có idempotency nên `order.created` giao lại vẫn có thể trừ stock nhiều lần.
+- `catalog-service` trừ stock tuần tự nhưng toàn bộ `reserveStock` chạy trong một transaction và dùng pessimistic lock; item sau lỗi làm transaction rollback toàn bộ. Rủi ro thật là event `order.created` giao lại có thể chạy transaction trừ stock thêm lần nữa vì chưa có idempotency.
+- Nếu Catalog commit trừ stock rồi publish `stock.reserved` lỗi, catch thử phát `stock.failed`. Lần hai cũng có thể mất; nếu gửi được thì Order bị hủy dù stock đã giảm. Không có outbox/reconciliation để khép failure window này.
+- `order.delivered` có idempotency phía Catalog, nhưng publisher vẫn có thể mất event sau commit nên `quantity_sold` có thể thấp hơn dữ liệu Order.
 
 ## 2. OpenFeign
 
@@ -138,7 +143,7 @@ Payload có envelope `event_id`, `event_type`, `occurred_at`, `data`; phần `da
 | `order-service` | `CartClient.getSelection` — `POST /api/v1/internal/carts/{userId}/selection` | Lấy đúng các cart item user chọn, version và tổng tiền để kiểm tra checkout |
 | `order-service` | `UserClient.getAddressById` — `GET /api/v1/internal/users/{userId}/addresses/{addressId}` | Xác minh địa chỉ thuộc user và snapshot địa chỉ vào order |
 | `order-service` | `CatalogClient.adjustStock` — `PATCH /api/v1/internal/products/variants/{variantId}/stock` | Hoàn lại tồn kho đúng SKU khi hủy order `PENDING` hoặc `CONFIRMED` |
-| `payment-service` | `OrderClient.getOrderById` — `GET /api/v1/internal/orders/{id}` | Lấy tổng tiền khi tạo URL VNPay và kiểm tra order khi đọc payment; endpoint tạo payment hiện gọi API này hai lần (controller rồi service) |
+| `payment-service` | `OrderClient.getOrderById` — `GET /api/v1/internal/orders/{id}` | Kiểm tra ownership, method/status/expiry và lấy tổng tiền; endpoint tạo payment hiện gọi API này hai lần (controller rồi service), endpoint đọc payment gọi một lần |
 
 Interface tương ứng nằm tại:
 
