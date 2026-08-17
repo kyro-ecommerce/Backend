@@ -161,8 +161,33 @@ public class ProductService {
   private void apply(Product p,String title,String description,String detail,String brand,int discount,String top,String second,List<ProductVariant> vs,List<ProductAttribute> as) {
     p.setTitle(title);p.setDescription(description);p.setDetailedReview(detail);p.setBrand(brand);p.setDiscountPercent(discount);
     if(top!=null||second!=null)p.setCategory(resolveCategory(top,second));
-    if(vs!=null){if(vs.isEmpty()||vs.stream().noneMatch(ProductVariant::isActive))throw new IllegalArgumentException("At least one active variant is required");p.getVariants().clear();p.setVariants(new ArrayList<>(vs));}
-    if(as!=null){p.getAttributes().clear();p.setAttributes(new ArrayList<>(as));}
+    if(vs!=null)replaceVariants(p,vs);
+    if(as!=null)replaceAttributes(p,as);
+  }
+  private static void replaceVariants(Product p,List<ProductVariant> incoming) {
+    if(incoming.isEmpty()||incoming.stream().noneMatch(ProductVariant::isActive))throw new IllegalArgumentException("At least one active variant is required");
+    Map<Long,ProductVariant> existing=new HashMap<>();p.getVariants().forEach(v->existing.put(v.getId(),v));
+    Set<Long> ids=new HashSet<>();Set<String> skus=new HashSet<>();Set<String> names=new HashSet<>();List<ProductVariant> next=new ArrayList<>();
+    for(ProductVariant value:incoming){
+      if(value.getId()!=null&&!ids.add(value.getId()))throw new IllegalArgumentException("Duplicate variant ID: "+value.getId());
+      if(!skus.add(value.getSku()))throw new IllegalArgumentException("Duplicate variant SKU: "+value.getSku());
+      if(!names.add(value.getVariantName()))throw new IllegalArgumentException("Duplicate variant name: "+value.getVariantName());
+      ProductVariant target=value;
+      if(value.getId()!=null){target=existing.get(value.getId());if(target==null)throw new IllegalArgumentException("Variant does not belong to product: "+value.getId());target.setSku(value.getSku());target.setVariantName(value.getVariantName());target.setPrice(value.getPrice());target.setStock(value.getStock());target.setActive(value.isActive());}
+      target.setProduct(p);next.add(target);
+    }
+    p.getVariants().clear();p.getVariants().addAll(next);
+  }
+  private static void replaceAttributes(Product p,List<ProductAttribute> incoming) {
+    Map<Long,ProductAttribute> existing=new HashMap<>();p.getAttributes().forEach(a->existing.put(a.getId(),a));
+    Set<Long> ids=new HashSet<>();List<ProductAttribute> next=new ArrayList<>();
+    for(ProductAttribute value:incoming){
+      if(value.getId()!=null&&!ids.add(value.getId()))throw new IllegalArgumentException("Duplicate attribute ID: "+value.getId());
+      ProductAttribute target=value;
+      if(value.getId()!=null){target=existing.get(value.getId());if(target==null)throw new IllegalArgumentException("Attribute does not belong to product: "+value.getId());target.setName(value.getName());target.setValue(value.getValue());target.setUnit(value.getUnit());}
+      target.setProduct(p);next.add(target);
+    }
+    p.getAttributes().clear();p.getAttributes().addAll(next);
   }
   private Category resolveCategory(String top,String second) {
     Category parent=categories.findByNameIgnoreCase(top).orElseThrow(() -> new EntityNotFoundException("Top category not found"));

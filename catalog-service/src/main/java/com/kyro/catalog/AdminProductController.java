@@ -65,7 +65,7 @@ public class AdminProductController {
 
   @PatchMapping("/{productId}")
   public ResponseEntity<ProductDTO> updateProduct(
-      @PathVariable Long productId, @RequestBody UpdateProductRequest product) {
+      @PathVariable Long productId, @Valid @RequestBody UpdateProductRequest product) {
     ProductDTO updatedProduct = productService.updateProductByID(productId, product);
     return ResponseEntity.ok(updatedProduct);
   }
