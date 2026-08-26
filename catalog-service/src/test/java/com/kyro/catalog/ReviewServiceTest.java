@@ -37,8 +37,6 @@ class ReviewServiceTest {
     Review review = review(10L, 3L, product);
     when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
     when(productRepository.findById(7L)).thenReturn(Optional.of(product));
-    when(reviewRepository.countByProductId(7L)).thenReturn(0);
-    when(reviewRepository.calculateAverageRatingByProductId(7L)).thenReturn(0.0);
 
     service.deleteReview(10L, 3L);
 

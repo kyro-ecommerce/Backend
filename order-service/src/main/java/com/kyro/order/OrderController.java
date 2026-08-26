@@ -100,7 +100,7 @@ public class OrderController {
             .sum());
     response.put("message", "Đã tạo thành công " + orders.size() + " đơn hàng.");
 
-    log.info("Successfully created {} order(s) for user ID {}", orders.size(), userId);
+    log.debug("Successfully created {} order(s) for user ID {}", orders.size(), userId);
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 

@@ -6,6 +6,8 @@ RESULTS_BASE="$ROOT/k6/results"
 
 env_value() { sed -n "s/^$1=//p" "$ROOT/.env" | tail -1; }
 export JWT_SECRET="${JWT_SECRET:-$(env_value JWT_SECRET)}"
+export VNPAY_TMN_CODE="${VNPAY_TMN_CODE:-$(env_value VNPAY_TMN_CODE)}"
+export VNPAY_HASH_SECRET="${VNPAY_HASH_SECRET:-$(env_value VNPAY_HASH_SECRET)}"
 
 sql() { docker exec -i kyro-postgres psql -U postgres -d postgres < "$1"; }
 redis_cleanup() {
@@ -41,6 +43,10 @@ run_k6() {
   at_stop=$(queue_depth)
   end=$at_stop
   while [[ "$end" -gt 0 && "$drain" -lt 30 ]]; do sleep 1; drain=$((drain + 1)); end=$(queue_depth); done
+  if [[ "$end" -gt 0 ]]; then
+    echo "Queues did not drain within 30 seconds" >&2
+    code=1
+  fi
   echo "$label,$rate,$code,$peak,$at_stop,$end,$drain" | tee -a "$RESULTS/runs.csv"
   return "$code"
 }
@@ -61,23 +67,27 @@ verify() {
   {
     echo "orders_by_status"
     docker exec kyro-postgres psql -U postgres -d kyro_order -Atc \
-      "SELECT CASE WHEN id>=9000000 THEN 'payment_fixture' ELSE 'generated' END||','||order_status||'/'||payment_status||','||count(*) FROM orders WHERE user_id BETWEEN 100000 AND 139999 GROUP BY CASE WHEN id>=9000000 THEN 'payment_fixture' ELSE 'generated' END,order_status,payment_status ORDER BY 1"
+      "SELECT CASE WHEN id>=9000000 THEN 'payment_fixture' ELSE 'generated' END||','||order_status||'/'||payment_status||'/'||CASE WHEN stock_reserved THEN 'reserved' ELSE 'not_reserved' END||','||count(*) FROM orders WHERE user_id BETWEEN 100000 AND 139999 GROUP BY CASE WHEN id>=9000000 THEN 'payment_fixture' ELSE 'generated' END,order_status,payment_status,stock_reserved ORDER BY 1"
     echo "payment_events"
     docker exec kyro-postgres psql -U postgres -d kyro_payment -Atc \
       "SELECT CASE WHEN order_id>=9000000 THEN 'payment_fixture' ELSE 'generated' END||','||payment_status||','||count(*) FROM payment_details WHERE order_id>=999999 GROUP BY CASE WHEN order_id>=9000000 THEN 'payment_fixture' ELSE 'generated' END,payment_status ORDER BY 1"
     echo "stock"
     docker exec kyro-postgres psql -U postgres -d kyro_catalog -Atc \
-      "SELECT product_id||'/'||name||','||quantity FROM sizes WHERE id IN (1,4,6,8,10,12,14,16,18,20) ORDER BY id"
+      "SELECT product_id||'/'||variant_name||','||stock FROM product_variant WHERE id IN (1,4,6,8,10,12,14,16,18,20) ORDER BY id"
   } > "$RESULTS/$label-verify.csv"
 }
 
 benchmark() {
-  local script=$1 label=$2
+  local script=$1 label=$2 runs=${PERF_RUNS:-1}
   prepare
   run_k6 "$script" "$label-warmup" 10 10s || true
-  prepare
-  run_k6 "$script" "$label" "${PERF_RATE:-25}" "${PERF_DURATION:-30s}"
-  verify "$label"
+  for ((run = 1; run <= runs; run++)); do
+    local code=0
+    prepare
+    run_k6 "$script" "$label-run-$run" "${PERF_RATE:-25}" "${PERF_DURATION:-30s}" || code=$?
+    verify "$label-run-$run"
+    ((code == 0)) || return "$code"
+  done
 }
 
 case "${1:-}" in

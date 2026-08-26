@@ -12,16 +12,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class VnpayOrderExpirationScheduler {
 
-  private static final Logger log =
-      LoggerFactory.getLogger(VnpayOrderExpirationScheduler.class);
+  private static final Logger log = LoggerFactory.getLogger(VnpayOrderExpirationScheduler.class);
   static final Duration CALLBACK_GRACE_PERIOD = Duration.ofMinutes(5);
   private static final int BATCH_SIZE = 100;
 
   private final OrderRepository orderRepository;
   private final OrderService orderService;
 
-  public VnpayOrderExpirationScheduler(
-      OrderRepository orderRepository, OrderService orderService) {
+  public VnpayOrderExpirationScheduler(OrderRepository orderRepository, OrderService orderService) {
     this.orderRepository = orderRepository;
     this.orderService = orderService;
   }

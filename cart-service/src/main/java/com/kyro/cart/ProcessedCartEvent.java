@@ -8,6 +8,10 @@ import jakarta.persistence.Table;
 @Table(name = "processed_cart_events")
 public class ProcessedCartEvent {
   @Id private Long orderId;
+
   protected ProcessedCartEvent() {}
-  public ProcessedCartEvent(Long orderId) { this.orderId = orderId; }
+
+  public ProcessedCartEvent(Long orderId) {
+    this.orderId = orderId;
+  }
 }

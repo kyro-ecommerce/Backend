@@ -30,8 +30,9 @@ public class OrderEventListener {
       Map<Long, Integer> quantities = extractQuantities(event.get("items"));
       if (orderId == null || quantities.isEmpty()) return;
       cartService.removePurchasedItems(userId, orderId, quantities);
-      log.info(
-          "Removed purchased cart items for User ID #{} following stock reservation for Order ID #{}",
+      log.debug(
+          "Removed purchased cart items for User ID #{} following stock reservation for Order ID"
+              + " #{}",
           userId,
           orderId);
     }

@@ -28,7 +28,7 @@ public class OrderEventListener {
     Long orderId =
         event.get("orderId") != null ? Long.valueOf(event.get("orderId").toString()) : null;
     Long userId = event.get("userId") != null ? Long.valueOf(event.get("userId").toString()) : null;
-    log.info("Received OrderCreatedEvent for Order ID #{}, User ID #{}", orderId, userId);
+    log.debug("Received OrderCreatedEvent for Order ID #{}, User ID #{}", orderId, userId);
 
     if (orderId == null) {
       return;
@@ -54,7 +54,7 @@ public class OrderEventListener {
               "message",
               "Stock successfully reserved");
       rabbitTemplate.convertAndSend(RabbitMQConfig.ORDER_EXCHANGE, "stock.reserved", successEvent);
-      log.info("Published stock.reserved event for Order ID #{}", orderId);
+      log.debug("Published stock.reserved event for Order ID #{}", orderId);
 
     } catch (Exception e) {
       log.error("Failed to decrease stock for Order ID #{}: {}", orderId, e.getMessage(), e);
@@ -71,7 +71,7 @@ public class OrderEventListener {
               "message",
               e.getMessage() != null ? e.getMessage() : "Insufficient stock");
       rabbitTemplate.convertAndSend(RabbitMQConfig.ORDER_EXCHANGE, "stock.failed", failedEvent);
-      log.info("Published stock.failed event for Order ID #{}", orderId);
+      log.debug("Published stock.failed event for Order ID #{}", orderId);
     }
   }
 }

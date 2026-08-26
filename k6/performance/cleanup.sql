@@ -23,7 +23,7 @@ DELETE FROM payment_details WHERE order_id >= 999999;
 SELECT setval(pg_get_serial_sequence('payment_details', 'id'), greatest(coalesce((SELECT max(id) FROM payment_details), 1), 1));
 
 \connect kyro_catalog
-UPDATE sizes SET quantity = CASE id
+UPDATE product_variant SET stock = CASE id
   WHEN 1 THEN 25 WHEN 4 THEN 29 WHEN 6 THEN 19 WHEN 8 THEN 15 WHEN 10 THEN 8
   WHEN 12 THEN 20 WHEN 14 THEN 9 WHEN 16 THEN 50 WHEN 18 THEN 59 WHEN 20 THEN 28 END
 WHERE id IN (1,4,6,8,10,12,14,16,18,20);

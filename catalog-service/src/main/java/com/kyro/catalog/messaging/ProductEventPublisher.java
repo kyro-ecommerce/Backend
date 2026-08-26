@@ -1,7 +1,7 @@
 package com.kyro.catalog.messaging;
 
-import com.kyro.catalog.Product;
 import com.kyro.catalog.Pricing;
+import com.kyro.catalog.Product;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -94,7 +94,8 @@ public class ProductEventPublisher {
     data.put("title", product.getTitle());
     data.put("brand", product.getBrand());
     data.put("original_price", product.getMinPrice());
-    data.put("discounted_price", Pricing.salePrice(product.getMinPrice(), product.getDiscountPercent()));
+    data.put(
+        "discounted_price", Pricing.salePrice(product.getMinPrice(), product.getDiscountPercent()));
     data.put("discount_percent", product.getDiscountPercent());
     data.put("average_rating", product.getAverageRating());
     data.put("num_ratings", product.getNumRatings());

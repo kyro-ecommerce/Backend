@@ -1,0 +1,5 @@
+run,rate,exit,observed_peak_backlog,backlog_at_producer_stop,backlog_after_drain,drain_seconds
+rabbitmq-warmup,10,0,0,0,0,0
+rabbitmq-run-1,50,0,1,0,0,0
+rabbitmq-run-2,50,0,1,0,0,0
+rabbitmq-run-3,50,0,1,0,0,0

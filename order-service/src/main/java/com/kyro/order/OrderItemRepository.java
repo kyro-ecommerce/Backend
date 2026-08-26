@@ -1,8 +1,8 @@
 package com.kyro.order;
 
 import com.kyro.enums.OrderStatus;
-import com.kyro.order.dto.TopSellingProductResponse;
 import com.kyro.order.dto.ProductRevenueResponse;
+import com.kyro.order.dto.TopSellingProductResponse;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,7 +29,10 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
   List<TopSellingProductResponse> findTopSellingProducts(
       @Param("status") OrderStatus status, Pageable pageable);
 
-  @Query("SELECT new com.kyro.order.dto.ProductRevenueResponse(oi.productId, SUM(oi.discountedPrice * oi.quantity)) FROM OrderItem oi WHERE oi.order.orderStatus = :status GROUP BY oi.productId")
+  @Query(
+      "SELECT new com.kyro.order.dto.ProductRevenueResponse(oi.productId, SUM(oi.discountedPrice *"
+          + " oi.quantity)) FROM OrderItem oi WHERE oi.order.orderStatus = :status GROUP BY"
+          + " oi.productId")
   List<ProductRevenueResponse> findProductRevenue(@Param("status") OrderStatus status);
 
   @Modifying

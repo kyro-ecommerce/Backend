@@ -168,8 +168,7 @@ class OrderServiceTest {
     Instant createdAt = Instant.parse("2026-08-16T08:00:00Z");
 
     assertEquals(
-        createdAt.plusSeconds(15 * 60),
-        OrderService.expirationFor(PaymentMethod.VNPAY, createdAt));
+        createdAt.plusSeconds(15 * 60), OrderService.expirationFor(PaymentMethod.VNPAY, createdAt));
     assertEquals(null, OrderService.expirationFor(PaymentMethod.COD, createdAt));
   }
 
@@ -206,7 +205,8 @@ class OrderServiceTest {
     order.setUserEmail("customer@example.com");
     order.setOrderDate(LocalDateTime.parse("2026-08-16T15:35:00"));
     order.setTotalDiscountedPrice(496_290L);
-    order.setShippingAddress(new Address(1L, "Customer", "Province", "District", "Ward", "Street", null, "0123"));
+    order.setShippingAddress(
+        new Address(1L, "Customer", "Province", "District", "Ward", "Street", null, "0123"));
     OrderItem item = order.getOrderItems().iterator().next();
     item.setSku("POWERBANK-20K");
     item.setProductName("Power Bank");
@@ -240,8 +240,7 @@ class OrderServiceTest {
             (instance, method, arguments) -> {
               adjusted[0] = true;
               assertEquals(7L, arguments[0]);
-              assertEquals(
-                  new CatalogClient.StockAdjustmentRequest(7L, 2), arguments[1]);
+              assertEquals(new CatalogClient.StockAdjustmentRequest(7L, 2), arguments[1]);
               return null;
             });
     OrderService service = new OrderService(repository, null, catalog, null, null, null);
@@ -265,13 +264,11 @@ class OrderServiceTest {
     assertFalse(
         OrderService.isExpiredVnpayOrder(
             pending,
-            VnpayOrderExpirationScheduler.expirationCutoff(
-                expiration.plusSeconds(5 * 60 - 1))));
+            VnpayOrderExpirationScheduler.expirationCutoff(expiration.plusSeconds(5 * 60 - 1))));
     assertTrue(
         OrderService.isExpiredVnpayOrder(
             pending,
-            VnpayOrderExpirationScheduler.expirationCutoff(
-                expiration.plusSeconds(5 * 60))));
+            VnpayOrderExpirationScheduler.expirationCutoff(expiration.plusSeconds(5 * 60))));
     assertFalse(OrderService.isExpiredVnpayOrder(paid, expiration.plusSeconds(1)));
   }
 
@@ -291,8 +288,7 @@ class OrderServiceTest {
             });
     OrderService service = new OrderService(repository, null, catalog, null, null, null);
 
-    assertThrows(
-        IllegalStateException.class, () -> service.expireVnpayOrder(42L, expiration));
+    assertThrows(IllegalStateException.class, () -> service.expireVnpayOrder(42L, expiration));
 
     assertEquals(OrderStatus.PENDING, order.getOrderStatus());
     assertEquals(PaymentStatus.PENDING, order.getPaymentStatus());
@@ -305,8 +301,7 @@ class OrderServiceTest {
     Order order = order(PaymentStatus.PENDING, false);
     order.setId(42L);
     order.setExpiresAt(expiration);
-    OrderService service =
-        new OrderService(repositoryFor(order), null, null, null, null, null);
+    OrderService service = new OrderService(repositoryFor(order), null, null, null, null, null);
 
     assertTrue(service.expireVnpayOrder(42L, expiration));
 
@@ -319,8 +314,7 @@ class OrderServiceTest {
     Order order = order(PaymentStatus.CANCELLED, false);
     order.setId(42L);
     order.setOrderStatus(OrderStatus.CANCELLED);
-    OrderService service =
-        new OrderService(repositoryFor(order), null, null, null, null, null);
+    OrderService service = new OrderService(repositoryFor(order), null, null, null, null, null);
 
     service.updatePaymentStatus(42L, PaymentStatus.COMPLETED);
 

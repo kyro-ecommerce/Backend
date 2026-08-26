@@ -32,10 +32,27 @@ public class Cart {
     updatedAt = createdAt;
   }
 
-  public void touch() { updatedAt = LocalDateTime.now(); }
-  public Long getId() { return id; }
-  public Long getUserId() { return userId; }
-  public void setUserId(Long userId) { this.userId = userId; }
-  public long getVersion() { return version; }
-  public List<CartItem> getItems() { return items; }
+  public void touch() {
+    updatedAt = LocalDateTime.now();
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public Long getUserId() {
+    return userId;
+  }
+
+  public void setUserId(Long userId) {
+    this.userId = userId;
+  }
+
+  public long getVersion() {
+    return version;
+  }
+
+  public List<CartItem> getItems() {
+    return items;
+  }
 }

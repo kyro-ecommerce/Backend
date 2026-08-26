@@ -54,6 +54,26 @@ kyro_postman_collection.json
 logs
 k6/results/*
 !k6/results/.gitkeep
+!k6/results/feign/
+k6/results/feign/*
+!k6/results/feign/feign-run-*.json
+!k6/results/feign/feign-run-*-verify.csv
+!k6/results/feign/runs.csv
+!k6/results/feign-boundary/
+k6/results/feign-boundary/*
+!k6/results/feign-boundary/*.json
+!k6/results/feign-boundary/*-verify.csv
+!k6/results/feign-boundary/runs.csv
+!k6/results/rabbitmq/
+k6/results/rabbitmq/*
+!k6/results/rabbitmq/rabbitmq-run-*.json
+!k6/results/rabbitmq/rabbitmq-run-*-verify.csv
+!k6/results/rabbitmq/runs.csv
+!k6/results/payment-failure/
+k6/results/payment-failure/*
+!k6/results/payment-failure/payment-failure.json
+!k6/results/payment-failure/payment-failure-verify.csv
+!k6/results/payment-failure/runs.csv
 
 # Local Development & Planning
 /plans/

@@ -23,7 +23,7 @@ public class OrderSagaEventListener {
 
   @RabbitListener(queues = RabbitMQConfig.ORDER_SAGA_QUEUE)
   public void handleStockResult(StockResultEvent event) {
-    log.info(
+    log.debug(
         "Received StockResultEvent for Order ID {}: success={}", event.orderId(), event.success());
     orderService.handleStockResult(event);
   }

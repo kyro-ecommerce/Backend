@@ -22,8 +22,12 @@ public class OrderItem {
 
   @Column(name = "product_id", nullable = false)
   private Long productId;
-  @Column(name = "variant_id", nullable = false) private Long variantId;
-  @Column(name = "sku", nullable = false) private String sku;
+
+  @Column(name = "variant_id", nullable = false)
+  private Long variantId;
+
+  @Column(name = "sku", nullable = false)
+  private String sku;
 
   @Column(name = "product_name")
   private String productName;
@@ -37,7 +41,8 @@ public class OrderItem {
   @Column(name = "price")
   private long price;
 
-  @Column(name = "variant_name") private String variantName;
+  @Column(name = "variant_name")
+  private String variantName;
 
   @Column(name = "discounted_price")
   private Long discountedPrice;
@@ -119,12 +124,30 @@ public class OrderItem {
   public void setDiscountedPrice(Long discountedPrice) {
     this.discountedPrice = discountedPrice;
   }
-  public Long getVariantId() { return variantId; }
-  public void setVariantId(Long value) { variantId = value; }
-  public String getSku() { return sku; }
-  public void setSku(String value) { sku = value; }
-  public String getVariantName() { return variantName; }
-  public void setVariantName(String value) { variantName = value; }
+
+  public Long getVariantId() {
+    return variantId;
+  }
+
+  public void setVariantId(Long value) {
+    variantId = value;
+  }
+
+  public String getSku() {
+    return sku;
+  }
+
+  public void setSku(String value) {
+    sku = value;
+  }
+
+  public String getVariantName() {
+    return variantName;
+  }
+
+  public void setVariantName(String value) {
+    variantName = value;
+  }
 
   public LocalDateTime getDeliveryDate() {
     return deliveryDate;

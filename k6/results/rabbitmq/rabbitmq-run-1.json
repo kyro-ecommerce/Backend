@@ -1,0 +1,169 @@
+{
+    "root_group": {
+        "checks": {
+            "callback accepted": {
+                "name": "callback accepted",
+                "path": "::callback accepted",
+                "id": "23cfbc24dd7cd64e7d087be769c43fa7",
+                "passes": 3001,
+                "fails": 0
+            }
+        },
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {}
+    },
+    "metrics": {
+        "http_req_blocked": {
+            "avg": 0.03362718505123614,
+            "min": 0.002,
+            "med": 0.008,
+            "max": 5.015,
+            "p(90)": 0.019,
+            "p(95)": 0.23389999999999914
+        },
+        "http_req_tls_handshaking": {
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "observed_updates": {
+            "count": 301,
+            "rate": 5.015513683662688
+        },
+        "http_req_duration": {
+            "min": 1.636,
+            "med": 7.337,
+            "max": 120.877,
+            "p(90)": 9.4206,
+            "p(95)": 10.76294999999999,
+            "avg": 7.599350210970465
+        },
+        "http_req_sending": {
+            "avg": 0.03320886075949413,
+            "min": 0.006,
+            "med": 0.028,
+            "max": 0.467,
+            "p(90)": 0.05,
+            "p(95)": 0.077
+        },
+        "http_req_failed": {
+            "fails": 3318,
+            "passes": 0,
+            "value": 0
+        },
+        "accepted_requests": {
+            "rate": 50.00517131120174,
+            "count": 3001
+        },
+        "data_sent": {
+            "count": 1281192,
+            "rate": 21348.29238338593
+        },
+        "data_received": {
+            "count": 2042621,
+            "rate": 34035.85905660054
+        },
+        "http_req_duration{expected_response:true}": {
+            "avg": 7.599350210970465,
+            "min": 1.636,
+            "med": 7.337,
+            "max": 120.877,
+            "p(90)": 9.4206,
+            "p(95)": 10.76294999999999
+        },
+        "http_req_receiving": {
+            "p(95)": 0.19314999999999985,
+            "avg": 0.08838607594936715,
+            "min": 0.021,
+            "med": 0.064,
+            "max": 3.881,
+            "p(90)": 0.113
+        },
+        "checks": {
+            "passes": 3001,
+            "fails": 0,
+            "value": 1
+        },
+        "iteration_duration": {
+            "p(95)": 12.534375,
+            "avg": 9.563829325558165,
+            "min": 5.759708,
+            "med": 8.254375,
+            "max": 121.277375,
+            "p(90)": 10.977583
+        },
+        "rabbitmq_propagation_latency": {
+            "max": 120,
+            "p(90)": 14,
+            "p(95)": 112,
+            "avg": 16.511627906976745,
+            "min": 8,
+            "med": 10,
+            "thresholds": {
+                "p(95)<=2000": false
+            }
+        },
+        "dropped_iterations": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "http_req_connecting": {
+            "med": 0,
+            "max": 4.925,
+            "p(90)": 0,
+            "p(95)": 0.18314999999999984,
+            "avg": 0.019189270644966835,
+            "min": 0
+        },
+        "http_req_waiting": {
+            "min": 1.585,
+            "med": 7.2195,
+            "max": 120.784,
+            "p(90)": 9.2083,
+            "p(95)": 10.614099999999999,
+            "avg": 7.477755274261598
+        },
+        "technical_success_rate": {
+            "passes": 3001,
+            "fails": 0,
+            "thresholds": {
+                "rate>=0.99": false
+            },
+            "value": 1
+        },
+        "iterations": {
+            "count": 3001,
+            "rate": 50.00517131120174
+        },
+        "http_reqs": {
+            "count": 3318,
+            "rate": 55.287290373397994
+        },
+        "vus_max": {
+            "value": 200,
+            "min": 200,
+            "max": 200
+        },
+        "rabbitmq_observation_success_rate": {
+            "passes": 301,
+            "fails": 0,
+            "thresholds": {
+                "rate>=0.99": false
+            },
+            "value": 1
+        },
+        "vus": {
+            "value": 1,
+            "min": 0,
+            "max": 1
+        }
+    }
+}

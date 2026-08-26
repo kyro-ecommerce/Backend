@@ -13,7 +13,7 @@ Kyro is a microservices backend for an e-commerce platform. It provides centrali
 - Database-per-service persistence with PostgreSQL
 - Redis cache-aside for persistent shopping carts
 - RabbitMQ events for notifications and cross-service workflows
-- VNPay payment URL signing and callback handling
+- VNPay payment URL signing and signed callback validation
 - Cloudinary-backed product image management
 - Service discovery and centralized configuration with Spring Cloud
 - OpenAPI documentation and k6 load-testing scenarios
@@ -267,7 +267,20 @@ http://localhost:8080/cart-service/v3/api-docs
 ./mvnw clean package     # Build all Maven modules
 ```
 
-The [`k6/performance`](k6/performance/) directory contains focused Feign, RabbitMQ, and failed-payment measurements. Authenticated scenarios require a dedicated customer account configured through `K6_USER_EMAIL` and `K6_USER_PASSWORD`.
+The [`k6/performance`](k6/performance/) directory contains focused Feign, RabbitMQ, and failed-payment measurements. The scenarios use isolated SQL fixtures and locally signed JWTs; they do not require a real customer account or measure the external AI service.
+
+### Verified local performance
+
+Measured with Docker limited to 4 vCPU and 8 GB RAM. Headline values use the minimum throughput, worst p95, minimum success rate, and maximum backlog-after-drain across three runs.
+
+| Scenario | Throughput | Worst p95 | Success | Dropped | Backlog after drain |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Warm Feign order path | 249.909 req/s | 539 ms | 100% | 0 | 0 |
+| RabbitMQ payment propagation | 49.997 req/s | 112 ms | 100% | 0 | 0 |
+
+The Feign boundary sweep found a sharp saturation cliff: 275 req/s passed once but failed on repeat, and 276 req/s failed with a 5.24 s p95 and 665 dropped iterations. Therefore 250 req/s remains the highest defensible three-run result rather than selecting the best isolated probe.
+
+See the [backend verification report](docs/verification.md) for the environment, warm-up scope, per-run results, raw evidence, database checks, and limitations. These are local development measurements, not production or cold-start capacity claims.
 
 For project-defense preparation and a source-verified explanation of the current implementation, read:
 

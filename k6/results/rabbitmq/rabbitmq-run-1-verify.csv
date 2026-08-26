@@ -1,0 +1,17 @@
+orders_by_status
+payment_fixture,PENDING/COMPLETED/not_reserved,3001
+payment_fixture,PENDING/PENDING/not_reserved,36999
+payment_events
+payment_fixture,COMPLETED,3001
+payment_fixture,PENDING,36999
+stock
+1/256GB,100000
+2/256GB,100000
+3/256GB,100000
+4/i5/8GB/512GB SSD/RTX 3050,100000
+5/Ryzen 9/32GB/2TB SSD/RTX 4090,100000
+6/i5/8GB/512GB SSD,100000
+7/i7/16GB/1TB SSD,100000
+8/25600mAh,100000
+9/20000mAh,100000
+10/Một cỡ,100000

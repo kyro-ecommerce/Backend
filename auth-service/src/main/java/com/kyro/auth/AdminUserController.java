@@ -87,7 +87,10 @@ public class AdminUserController {
         throw new IllegalArgumentException("Unsupported user sort: " + tokens.get(i));
       Sort.Direction direction = Sort.Direction.fromString(tokens.get(i + 1));
       Sort.Order order = new Sort.Order(direction, field);
-      orders.add(("email".equals(tokens.get(i)) || "name".equals(tokens.get(i))) ? order.ignoreCase() : order);
+      orders.add(
+          ("email".equals(tokens.get(i)) || "name".equals(tokens.get(i)))
+              ? order.ignoreCase()
+              : order);
       if ("name".equals(tokens.get(i)))
         orders.add(new Sort.Order(direction, "lastName").ignoreCase());
     }

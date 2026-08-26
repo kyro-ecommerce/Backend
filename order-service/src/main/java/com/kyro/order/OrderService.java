@@ -145,12 +145,7 @@ public class OrderService {
     }
     Set<String> fields =
         Set.of(
-            "id",
-            "orderCode",
-            "orderDate",
-            "deliveryDate",
-            "totalDiscountedPrice",
-            "totalItems");
+            "id", "orderCode", "orderDate", "deliveryDate", "totalDiscountedPrice", "totalItems");
     List<String> sortTokens = sortTokens(sortValues);
     List<Sort.Order> orders = new ArrayList<>();
     for (int index = 0; index < sortTokens.size(); index += 2) {
@@ -305,8 +300,7 @@ public class OrderService {
     order.setOrderStatus(OrderStatus.PENDING);
     order.setPaymentStatus(PaymentStatus.PENDING);
     order.setStockReserved(false);
-    PaymentMethod selectedPaymentMethod =
-        paymentMethod != null ? paymentMethod : PaymentMethod.COD;
+    PaymentMethod selectedPaymentMethod = paymentMethod != null ? paymentMethod : PaymentMethod.COD;
     order.setPaymentMethod(selectedPaymentMethod);
     order.setExpiresAt(expirationFor(selectedPaymentMethod, Instant.now()));
 
@@ -316,7 +310,7 @@ public class OrderService {
     order.setTotalDiscountedPrice(totalDiscountedPrice);
 
     Order savedOrderIntermediate = orderRepository.save(order);
-    log.info("Saved intermediate order ID: {}", savedOrderIntermediate.getId());
+    log.debug("Saved intermediate order ID: {}", savedOrderIntermediate.getId());
 
     List<OrderItem> orderItems = new ArrayList<>();
     List<com.kyro.order.event.OrderCreatedEvent.OrderItemEvent> eventItems = new ArrayList<>();
@@ -349,7 +343,7 @@ public class OrderService {
     savedOrderIntermediate.setOrderItems(orderItems);
     Order finalSavedOrder = orderRepository.save(savedOrderIntermediate);
     createdOrders.add(finalSavedOrder);
-    log.info("Successfully created order ID: {} with status PENDING", finalSavedOrder.getId());
+    log.debug("Successfully created order ID: {} with status PENDING", finalSavedOrder.getId());
 
     eventPublisher.publishEvent(
         new com.kyro.order.event.OrderCreatedEvent(

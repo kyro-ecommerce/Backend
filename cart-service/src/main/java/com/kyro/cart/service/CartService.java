@@ -42,10 +42,12 @@ public class CartService {
   @Transactional
   public CartDTO addItemToCart(String userId, CartItemDTO request) {
     if (request.getProductId() == null || request.getQuantity() < 1) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sản phẩm và số lượng hợp lệ là bắt buộc.");
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Sản phẩm và số lượng hợp lệ là bắt buộc.");
     }
     CatalogClient.ProductResponse product = getProduct(request.getProductId());
-    CatalogClient.VariantResponse variant = requireAvailable(product, request.getVariantId(), request.getQuantity());
+    CatalogClient.VariantResponse variant =
+        requireAvailable(product, request.getVariantId(), request.getQuantity());
     Cart cart = lockedCart(Long.valueOf(userId));
     CartItem item =
         cart.getItems().stream()
@@ -72,11 +74,13 @@ public class CartService {
 
   @Transactional
   public CartDTO updateCartItem(String userId, Long itemId, int quantity) {
-    if (quantity < 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Số lượng phải lớn hơn 0.");
+    if (quantity < 1)
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Số lượng phải lớn hơn 0.");
     Cart cart = lockedCart(Long.valueOf(userId));
     CartItem item = findItem(cart, itemId);
     CatalogClient.ProductResponse product = getProduct(item.getProductId());
-    CatalogClient.VariantResponse variant = requireAvailable(product, item.getVariantId(), quantity);
+    CatalogClient.VariantResponse variant =
+        requireAvailable(product, item.getVariantId(), quantity);
     applyProduct(item, product, variant);
     item.setQuantity(quantity);
     cart.touch();
@@ -106,12 +110,15 @@ public class CartService {
 
   public CartDTO getSelection(String userId, List<Long> itemIds) {
     if (itemIds == null || itemIds.isEmpty() || new HashSet<>(itemIds).size() != itemIds.size()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Danh sách item cần checkout không hợp lệ.");
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Danh sách item cần checkout không hợp lệ.");
     }
     CartDTO cart = getCart(userId);
     Set<Long> ids = new HashSet<>(itemIds);
-    List<CartItemDTO> selected = cart.getItems().stream().filter(i -> ids.contains(i.getId())).toList();
-    if (selected.size() != ids.size()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Có item không thuộc giỏ hàng.");
+    List<CartItemDTO> selected =
+        cart.getItems().stream().filter(i -> ids.contains(i.getId())).toList();
+    if (selected.size() != ids.size())
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Có item không thuộc giỏ hàng.");
     if (selected.stream().anyMatch(i -> !i.isAvailable())) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Có sản phẩm không còn đủ hàng.");
     }
@@ -140,7 +147,9 @@ public class CartService {
   }
 
   private Cart lockedCart(Long userId) {
-    return cartRepository.findWithItemsForUpdateByUserId(userId).orElseGet(() -> createCart(userId));
+    return cartRepository
+        .findWithItemsForUpdateByUserId(userId)
+        .orElseGet(() -> createCart(userId));
   }
 
   private Cart createCart(Long userId) {
@@ -157,33 +166,55 @@ public class CartService {
     return cart.getItems().stream()
         .filter(i -> i.getId().equals(itemId))
         .findFirst()
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy item trong giỏ."));
+        .orElseThrow(
+            () ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Không tìm thấy item trong giỏ."));
   }
 
   private CartDTO refresh(CartDTO cart) {
     if (cart.getItems().isEmpty()) return cart;
     Map<Long, CatalogClient.ProductResponse> products;
     try {
-      products = catalogClient.getProducts(new CatalogClient.ProductLookupRequest(
-              cart.getItems().stream().map(CartItemDTO::getProductId).distinct().toList()))
-          .stream().collect(Collectors.toMap(CatalogClient.ProductResponse::id, p -> p));
+      products =
+          catalogClient
+              .getProducts(
+                  new CatalogClient.ProductLookupRequest(
+                      cart.getItems().stream().map(CartItemDTO::getProductId).distinct().toList()))
+              .stream()
+              .collect(Collectors.toMap(CatalogClient.ProductResponse::id, p -> p));
     } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Không thể xác minh sản phẩm.", e);
+      throw new ResponseStatusException(
+          HttpStatus.SERVICE_UNAVAILABLE, "Không thể xác minh sản phẩm.", e);
     }
     for (CartItemDTO item : cart.getItems()) {
       CatalogClient.ProductResponse product = products.get(item.getProductId());
       if (product == null) {
-        item.setAvailable(false); item.setUnavailableReason("PRODUCT_NOT_FOUND"); continue;
+        item.setAvailable(false);
+        item.setUnavailableReason("PRODUCT_NOT_FOUND");
+        continue;
       }
-      CatalogClient.VariantResponse variant = product.variants().stream().filter(v -> v.id().equals(item.getVariantId())).findFirst().orElse(null);
-      if (variant == null || !variant.active()) { item.setAvailable(false); item.setUnavailableReason("VARIANT_UNAVAILABLE"); continue; }
+      CatalogClient.VariantResponse variant =
+          product.variants().stream()
+              .filter(v -> v.id().equals(item.getVariantId()))
+              .findFirst()
+              .orElse(null);
+      if (variant == null || !variant.active()) {
+        item.setAvailable(false);
+        item.setUnavailableReason("VARIANT_UNAVAILABLE");
+        continue;
+      }
       long oldPrice = item.getSalePrice();
       long newPrice = variant.salePrice();
       item.setPriceChanged(oldPrice != newPrice);
       item.setProductName(product.title());
-      item.setPrice(variant.price()); item.setSalePrice(variant.salePrice()); item.setDiscountPercent(product.discountPercent());
-      item.setSku(variant.sku()); item.setVariantName(variant.variantName());
-      if (product.images() != null && !product.images().isEmpty()) item.setProductImageUrl(product.images().get(0).downloadUrl());
+      item.setPrice(variant.price());
+      item.setSalePrice(variant.salePrice());
+      item.setDiscountPercent(product.discountPercent());
+      item.setSku(variant.sku());
+      item.setVariantName(variant.variantName());
+      if (product.images() != null && !product.images().isEmpty())
+        item.setProductImageUrl(product.images().get(0).downloadUrl());
       item.setAvailable(variant.stock() >= item.getQuantity());
       item.setUnavailableReason(item.isAvailable() ? null : "INSUFFICIENT_STOCK");
     }
@@ -193,29 +224,48 @@ public class CartService {
 
   private CartDTO toDto(Cart cart) {
     CartDTO dto = new CartDTO();
-    dto.setUserId(cart.getUserId().toString()); dto.setVersion(cart.getVersion());
+    dto.setUserId(cart.getUserId().toString());
+    dto.setVersion(cart.getVersion());
     for (CartItem item : cart.getItems()) {
       CartItemDTO out = new CartItemDTO();
-      out.setId(item.getId()); out.setProductId(item.getProductId()); out.setProductName(item.getProductName());
-      out.setProductImageUrl(item.getProductImageUrl()); out.setQuantity(item.getQuantity()); out.setPrice(item.getPrice());
-      out.setVariantId(item.getVariantId()); out.setSku(item.getSku()); out.setVariantName(item.getVariantName());
-      out.setDiscountPercent(item.getDiscountPercent()); out.setSalePrice(item.getSalePrice());
+      out.setId(item.getId());
+      out.setProductId(item.getProductId());
+      out.setProductName(item.getProductName());
+      out.setProductImageUrl(item.getProductImageUrl());
+      out.setQuantity(item.getQuantity());
+      out.setPrice(item.getPrice());
+      out.setVariantId(item.getVariantId());
+      out.setSku(item.getSku());
+      out.setVariantName(item.getVariantName());
+      out.setDiscountPercent(item.getDiscountPercent());
+      out.setSalePrice(item.getSalePrice());
       dto.getItems().add(out);
     }
     dto.calculateTotalAmount();
     return dto;
   }
 
-  private void applyProduct(CartItem item, CatalogClient.ProductResponse product, CatalogClient.VariantResponse variant) {
-    item.setProductName(product.title()); item.setPrice(variant.price()); item.setSalePrice(variant.salePrice()); item.setDiscountPercent(product.discountPercent());
-    item.setSku(variant.sku()); item.setVariantName(variant.variantName());
-    if (product.images() != null && !product.images().isEmpty()) item.setProductImageUrl(product.images().get(0).downloadUrl());
+  private void applyProduct(
+      CartItem item, CatalogClient.ProductResponse product, CatalogClient.VariantResponse variant) {
+    item.setProductName(product.title());
+    item.setPrice(variant.price());
+    item.setSalePrice(variant.salePrice());
+    item.setDiscountPercent(product.discountPercent());
+    item.setSku(variant.sku());
+    item.setVariantName(variant.variantName());
+    if (product.images() != null && !product.images().isEmpty())
+      item.setProductImageUrl(product.images().get(0).downloadUrl());
   }
 
-  private CatalogClient.VariantResponse requireAvailable(CatalogClient.ProductResponse product, Long variantId, int quantity) {
-    if (product == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Sản phẩm không tồn tại.");
-    CatalogClient.VariantResponse variant = product.variants().stream().filter(v -> v.id().equals(variantId)).findFirst().orElse(null);
-    if (variant == null || !variant.active() || variant.stock() < quantity) throw new ResponseStatusException(HttpStatus.CONFLICT, "Biến thể không khả dụng hoặc không đủ tồn kho.");
+  private CatalogClient.VariantResponse requireAvailable(
+      CatalogClient.ProductResponse product, Long variantId, int quantity) {
+    if (product == null)
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Sản phẩm không tồn tại.");
+    CatalogClient.VariantResponse variant =
+        product.variants().stream().filter(v -> v.id().equals(variantId)).findFirst().orElse(null);
+    if (variant == null || !variant.active() || variant.stock() < quantity)
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "Biến thể không khả dụng hoặc không đủ tồn kho.");
     return variant;
   }
 
@@ -223,7 +273,8 @@ public class CartService {
     try {
       return catalogClient.getProductById(productId);
     } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Không thể xác minh sản phẩm.", e);
+      throw new ResponseStatusException(
+          HttpStatus.SERVICE_UNAVAILABLE, "Không thể xác minh sản phẩm.", e);
     }
   }
 
@@ -231,14 +282,22 @@ public class CartService {
     try {
       Object cached = redisTemplate.opsForValue().get(CART_KEY_PREFIX + userId);
       return cached instanceof CartDTO dto ? dto : null;
-    } catch (Exception ignored) { return null; }
+    } catch (Exception ignored) {
+      return null;
+    }
   }
 
   private void evict(String userId) {
-    try { redisTemplate.delete(CART_KEY_PREFIX + userId); } catch (Exception ignored) { }
+    try {
+      redisTemplate.delete(CART_KEY_PREFIX + userId);
+    } catch (Exception ignored) {
+    }
   }
 
   private void writeCache(String userId, CartDTO cart) {
-    try { redisTemplate.opsForValue().set(CART_KEY_PREFIX + userId, cart, 30, TimeUnit.MINUTES); } catch (Exception ignored) { }
+    try {
+      redisTemplate.opsForValue().set(CART_KEY_PREFIX + userId, cart, 30, TimeUnit.MINUTES);
+    } catch (Exception ignored) {
+    }
   }
 }

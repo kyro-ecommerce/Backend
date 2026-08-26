@@ -1,9 +1,8 @@
 import http from 'k6/http';
 import exec from 'k6/execution';
-import { check, sleep } from 'k6';
+import { check } from 'k6';
 import {
-  BASE_URL, BASE_USER_ID, auth, body, checkoutSuccess, consumed, observationSuccess, propagationLatency, produced,
-  syncPathLatency, technicalSuccess, thresholds, userId,
+  BASE_URL, BASE_USER_ID, acceptedRequests, auth, body, syncPathLatency, technicalSuccess, thresholds, userId,
 } from './common.js';
 
 export const options = {
@@ -17,7 +16,10 @@ export const options = {
       maxVUs: Number(__ENV.MAX_VUS || 1000),
     },
   },
-  thresholds: thresholds(),
+  thresholds: {
+    ...thresholds(),
+    synchronous_path_latency: ['p(95)<=2000'],
+  },
 };
 
 export default function () {
@@ -26,7 +28,7 @@ export default function () {
   const started = Date.now();
   const response = http.post(`${BASE_URL}/orders`, JSON.stringify({
     addressId: id,
-    paymentMethod: 'COD',
+    paymentMethod: 'VNPAY',
     cartItemIds: [id],
     cartVersion: 0,
     expectedTotalDiscountedPrice: price(id),
@@ -35,23 +37,8 @@ export default function () {
   const orderId = body(response).orders?.[0]?.id;
   const accepted = check(response, { 'order accepted': (r) => r.status === 201 && !!orderId });
   technicalSuccess.add(accepted);
-  checkoutSuccess.add(accepted);
   if (!accepted) return;
-  produced.add(1);
-
-  if (exec.scenario.iterationInTest % 10 !== 0) return;
-  const waitStarted = Date.now();
-  while (Date.now() - waitStarted < 10000) {
-    const order = body(http.get(`${BASE_URL}/orders/${orderId}`, { headers, tags: { path: 'observer' } }));
-    if (order.orderStatus === 'CONFIRMED' || order.orderStatus === 'CANCELLED') {
-      propagationLatency.add(Date.now() - waitStarted);
-      consumed.add(1);
-      observationSuccess.add(true);
-      return;
-    }
-    sleep(0.1);
-  }
-  observationSuccess.add(false);
+  acceptedRequests.add(1);
 }
 
 function price(id) {

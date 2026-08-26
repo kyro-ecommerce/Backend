@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 
 public final class Pricing {
   private Pricing() {}
+
   public static long salePrice(long price, int discountPercent) {
     return BigDecimal.valueOf(price)
         .multiply(BigDecimal.valueOf(100L - discountPercent))

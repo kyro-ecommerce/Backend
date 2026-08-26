@@ -12,7 +12,8 @@ public class CartDTO {
 
   public CartDTO() {}
 
-  public CartDTO(String userId, long version, List<CartItemDTO> items, long totalPrice, long totalSalePrice) {
+  public CartDTO(
+      String userId, long version, List<CartItemDTO> items, long totalPrice, long totalSalePrice) {
     this.userId = userId;
     this.version = version;
     this.items = items != null ? items : new ArrayList<>();
@@ -28,8 +29,13 @@ public class CartDTO {
     this.userId = userId;
   }
 
-  public long getVersion() { return version; }
-  public void setVersion(long version) { this.version = version; }
+  public long getVersion() {
+    return version;
+  }
+
+  public void setVersion(long version) {
+    this.version = version;
+  }
 
   public List<CartItemDTO> getItems() {
     return items;
@@ -57,6 +63,7 @@ public class CartDTO {
 
   public void calculateTotalAmount() {
     this.totalPrice = items.stream().mapToLong(item -> item.getPrice() * item.getQuantity()).sum();
-    this.totalSalePrice = items.stream().mapToLong(item -> item.getSalePrice() * item.getQuantity()).sum();
+    this.totalSalePrice =
+        items.stream().mapToLong(item -> item.getSalePrice() * item.getQuantity()).sum();
   }
 }

@@ -20,9 +20,15 @@ class AdminUserControllerTest {
 
   @Test
   void numericAndDateSortsDoNotApplyLowercase() {
-    assertFalse(AdminUserController.userPageable(0, 10, List.of("id,asc"))
-        .getSort().getOrderFor("id").isIgnoreCase());
-    assertFalse(AdminUserController.userPageable(0, 10, List.of("createdAt,desc"))
-        .getSort().getOrderFor("createdAt").isIgnoreCase());
+    assertFalse(
+        AdminUserController.userPageable(0, 10, List.of("id,asc"))
+            .getSort()
+            .getOrderFor("id")
+            .isIgnoreCase());
+    assertFalse(
+        AdminUserController.userPageable(0, 10, List.of("createdAt,desc"))
+            .getSort()
+            .getOrderFor("createdAt")
+            .isIgnoreCase());
   }
 }

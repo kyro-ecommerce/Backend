@@ -17,13 +17,18 @@ public interface CartClient {
   CartResponse getCart(@PathVariable("userId") Long userId);
 
   @PostMapping("/api/v1/internal/carts/{userId}/selection")
-  CartResponse getSelection(@PathVariable("userId") Long userId, @RequestBody CartSelectionRequest request);
+  CartResponse getSelection(
+      @PathVariable("userId") Long userId, @RequestBody CartSelectionRequest request);
 
   @DeleteMapping("/api/v1/internal/carts/{userId}")
   void clearCart(@PathVariable("userId") Long userId);
 
   record CartResponse(
-      String userId, long version, List<CartItemResponse> items, long totalPrice, long totalSalePrice) {}
+      String userId,
+      long version,
+      List<CartItemResponse> items,
+      long totalPrice,
+      long totalSalePrice) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   record CartItemResponse(

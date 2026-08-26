@@ -26,7 +26,8 @@ public class OrderItemDTO {
   public OrderItemDTO(OrderItem orderItem) {
     this.id = orderItem.getId();
     this.productId = orderItem.getProductId();
-    this.variantId = orderItem.getVariantId(); this.sku = orderItem.getSku();
+    this.variantId = orderItem.getVariantId();
+    this.sku = orderItem.getSku();
     this.productTitle = orderItem.getProductName();
     this.imageUrl = orderItem.getProductImageUrl();
     this.quantity = orderItem.getQuantity();
@@ -100,10 +101,22 @@ public class OrderItemDTO {
   public void setDiscountedPrice(Long discountedPrice) {
     this.discountedPrice = discountedPrice;
   }
-  public Long getVariantId() { return variantId; }
-  public void setVariantId(Long value) { variantId = value; }
-  public String getSku() { return sku; }
-  public void setSku(String value) { sku = value; }
+
+  public Long getVariantId() {
+    return variantId;
+  }
+
+  public void setVariantId(Long value) {
+    variantId = value;
+  }
+
+  public String getSku() {
+    return sku;
+  }
+
+  public void setSku(String value) {
+    sku = value;
+  }
 
   public Integer getDiscountPercent() {
     return discountPercent;

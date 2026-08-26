@@ -1,8 +1,8 @@
 package com.kyro.order;
 
 import com.kyro.order.dto.OrderInternalResponse;
-import com.kyro.order.dto.TopSellingProductResponse;
 import com.kyro.order.dto.ProductRevenueResponse;
+import com.kyro.order.dto.TopSellingProductResponse;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +31,9 @@ public class InternalOrderController {
       @RequestParam(defaultValue = "10") int limit) {
     return orderService.getTopSellingProducts(limit);
   }
+
   @GetMapping("/product-revenue")
-  public List<ProductRevenueResponse> getProductRevenue() { return orderService.getProductRevenue(); }
+  public List<ProductRevenueResponse> getProductRevenue() {
+    return orderService.getProductRevenue();
+  }
 }

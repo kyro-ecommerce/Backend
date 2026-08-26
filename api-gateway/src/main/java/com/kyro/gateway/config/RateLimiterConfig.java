@@ -8,17 +8,18 @@ import reactor.core.publisher.Mono;
 @Configuration
 public class RateLimiterConfig {
 
-    @Bean
-    public KeyResolver userKeyResolver() {
-        return exchange -> {
-            String userId = exchange.getRequest().getHeaders().getFirst("X-User-Id");
-            if (userId != null && !userId.isBlank()) {
-                return Mono.just("user_" + userId);
-            }
-            String remoteIp = exchange.getRequest().getRemoteAddress() != null
-                    ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
-                    : "anonymous";
-            return Mono.just("ip_" + remoteIp);
-        };
-    }
+  @Bean
+  public KeyResolver userKeyResolver() {
+    return exchange -> {
+      String userId = exchange.getRequest().getHeaders().getFirst("X-User-Id");
+      if (userId != null && !userId.isBlank()) {
+        return Mono.just("user_" + userId);
+      }
+      String remoteIp =
+          exchange.getRequest().getRemoteAddress() != null
+              ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
+              : "anonymous";
+      return Mono.just("ip_" + remoteIp);
+    };
+  }
 }

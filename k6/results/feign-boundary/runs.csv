@@ -1,0 +1,4 @@
+run,requested_rate,exit,actual_throughput,p95_ms,success_rate,dropped,observed_peak_backlog,backlog_at_producer_stop,backlog_after_drain,drain_seconds
+feign-275-probe-pass,275,0,274.894834,384,1.0,0,12736,9997,0,4
+feign-275-repeat-fail,275,99,251.871399,4383,1.0,486,22185,20576,0,5
+feign-276-fail,276,99,246.401637,5240,1.0,665,21610,19954,0,5
